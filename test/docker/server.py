@@ -1,3 +1,8 @@
+'''
+HTTP server to provide content of file requestd in RTL.
+Started to listen on IP and PORT
+'''
+
 import string
 import cgi
 import time
@@ -10,10 +15,7 @@ class MyHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         try:
             print('requested: ' + self.path)
-#            fullpath = '/usr/bin' + self.path
-#            print('fullpath: ' + fullpath)
-#            f = open(fullpath, 'rb') #self.path has /test.html
-            f = open(self.path, 'rb') #self.path has /test.html
+            f = open(self.path, 'rb')
             self.send_response(200)
             self.send_header('Content-type', 'text/html')
             self.end_headers()
