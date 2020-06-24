@@ -4,16 +4,21 @@
 
 . ../common.sh
 
-echo "==========================================="
-echo "# (Re)building NODE docker image (${LINUX_IMG})"
-echo "==========================================="
-CHECK=`sudo docker images | awk '{print $1":"$2}' | grep ${LINUX_IMG}`
-if [ "${CHECK}" ]; then
-    echo "# Removing old image..."
-    sudo docker rmi ${LINUX_IMG}
+CONTAINERS=`docker ps | grep ${LINUX_IMG}`
+if [ "${CONTAINERS}" ] ; then
+    echo "# Docker image is in use. Stop following containers first:"
+    echo "${CONTAINERS}"
+    exit 1
 fi
 
-echo "### Building new image..."
+CHECK=`sudo docker images | awk '{print $1":"$2}' | grep ${LINUX_IMG}`
+if [ "${CHECK}" ]; then
+    echo "# Removing old docker image..."
+    sudo docker rmi ${LINUX_IMG}
+    sudo docker images
+fi
+
+echo "### Building '${LINUX_IMG}'..."
 sudo docker build --tag ${LINUX_IMG} -f node.Dockerfile .
 
 #check
