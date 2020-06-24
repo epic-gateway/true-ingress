@@ -64,7 +64,7 @@ Docker image can be (re)built by issuing following command:
 
     ./docker.sh
 
-This script sources _common.sh_ which contains topology configuration including docker image name:
+This script sources _common.cfg_ which contains topology configuration including docker image name:
 
     LINUX_IMG="acnodal-test:latest"
 
