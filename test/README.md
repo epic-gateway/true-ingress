@@ -46,15 +46,40 @@ Simple IPv4 NAT/Firewall box realized using iptables.
 > Note: iptables ... -j MASQUERADE preserves PORT value.
 
 
-### Setup
+### Run
 
 #### Topology
 
-    TBD
+    TBD: About topology...
+
+##### Docker image
+
+    TBD: About topology...
+
+##### Setup
+
+    TBD: How to start docker images, connect them and setup basic configuration
+
+##### Teardown
+
+    TBD: How to stop and cleanup
+
 
 #### Service
 
-    TBD
+    TBD: What is service...
+
+##### Setup
+
+    TBD: How to start Service, configure Node and EGW
+
+##### Teardown
+
+    TBD: How to stop and cleanup
 
 
 ## Tests
+
+> Note: All tests are manual no automated framework for result evaluation planned yet.
+
+    TBD: list of test cases
