@@ -54,7 +54,20 @@ Simple IPv4 NAT/Firewall box realized using iptables.
 
 ##### Docker image
 
-    TBD: About topology...
+Default docker image is based on Ubunutu 18.04 LTS with few tools for crafting, sending packets and collecting metrics.
+Also contains web server as testing service.
+In the future it will contain eBPF binaries to be loaded on network interfaces.
+
+docker image related files are locaten in _docker_ subfolder.
+
+Docker image can be (re)built by issuing following command:
+
+    ./docker.sh
+
+This script sources _common.sh_ which contains topology configuration including docker image name:
+
+    LINUX_IMG="acnodal-test:latest"
+
 
 ##### Setup
 
