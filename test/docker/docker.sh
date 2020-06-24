@@ -2,7 +2,7 @@
 # Rebuild (remove existing image first) node docker image
 # usage: $0
 
-. ../common.sh
+. ../common.cfg
 
 CONTAINERS=`docker ps | grep ${LINUX_IMG}`
 if [ "${CONTAINERS}" ] ; then
