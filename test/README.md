@@ -17,6 +17,11 @@ Red "service" are running on local IPs.
 
 eBPF is PCF programm attached to network interface doing packet processing/forwarding/GUE encapsulation and decapsulation in order to achive service proxying seamless.
 
+Network interfaces are listed in case you want to trace flowing packets. 
+Each docker container has default network attached to eth0 and connected to internet. That one can be used for updating/downloading/browsing, but is not relevant for purpose of demo topology and is intentionally left out from the picture.
+Usually each node is connected to demo network using one network interface (eth1).
+Only exception is NAT which translate IP addresses from local network (eth2) to public network (eth1)
+
 #### Client
 
 Send requests to proxy IP and PORT.
@@ -192,6 +197,29 @@ Script will perform following operations:
 
     TBD: How to stop and cleanup
 
+#### Helpers
+
+There is bunch of other scripts to help you with testing and debugging. They will be described here.
+
+##### cli.sh
+
+    TBD: What id does and how to run it
+
+##### pktdump.sh
+
+    TBD: What id does and how to run it
+
+##### test_icmp.sh
+
+    TBD: What id does and how to run it
+
+##### test_tcp.sh
+
+    TBD: What id does and how to run it
+
+##### test_udp.sh
+
+    TBD: What id does and how to run it
 
 ## Tests
 
