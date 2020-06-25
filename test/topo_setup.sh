@@ -2,8 +2,7 @@
 # Setup topology defined in config file
 # usage: $0 <config> [<docker-image>]
 #           <config>        - file with topology description
-#           <docker-image>  - docker image to use, if not specified, default image will be used
-# + ETCD for nat-ha sync
+#           <docker-image>  - (OPTIONAL) docker image to use, if not specified, default image will be used
 
 STEPS=9
 VERIFY="1"
@@ -15,7 +14,7 @@ echo "# [1/${STEPS}] Checking topology configuration '$1'"
 echo "==========================================="
 CHECK=`ls "$1"`
 if [ ! "${CHECK}" ] ; then
-    echo "ERROR: Wrong <config-file> specified '$1'"
+    echo "ERROR: Unknown <config-file> specified '$1'"
     echo "Usage: $0 <config-file> [<docker-image>]"
     echo "          <config-file>   - file with topology description"
     echo "          <docker-image>  - docker image to use, if not specified, default image will be used"
