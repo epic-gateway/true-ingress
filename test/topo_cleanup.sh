@@ -2,7 +2,7 @@
 # Cleanup topology defined in config file
 # usage: $0 <config> [<docker-image>]
 #           <config>        - file with topology description
-#           <docker-image>  - (OPTIONAL) docker image to use, if not specified, default image will be used
+#           <docker-image>  - (OPTIONAL) docker image used for containers. If not specified, default image will be used.
 
 STEPS=3
 VERIFY="1"
@@ -16,7 +16,7 @@ if [ ! "${CHECK}" ] ; then
     echo "ERROR: Unknown <config-file> specified '$1'"
     echo "Usage: $0 <config-file> [<docker-image>]"
     echo "          <config-file>   - file with topology description"
-    echo "          <docker-image>  - docker image to use, if not specified, default image will be used"
+    echo "          <docker-image>  - (OPTIONAL) docker image used for containers. If not specified, default image will be used."
     exit 1
 fi
 

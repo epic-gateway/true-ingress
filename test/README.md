@@ -48,35 +48,136 @@ Simple IPv4 NAT/Firewall box realized using iptables.
 
 ### Run
 
-#### Topology
-
-    TBD: About topology...
-
-##### Docker image
+#### Docker image
 
 Default docker image is based on Ubunutu 18.04 LTS with few tools for crafting, sending packets and collecting metrics.
 Also contains web server as testing service.
 In the future it will contain eBPF binaries to be loaded on network interfaces.
 
-docker image related files are locaten in _docker_ subfolder.
+Docker image related files are locaten in _docker_ subfolder.
 
 Docker image can be (re)built by issuing following command:
 
     ./docker.sh
 
-This script sources _common.cfg_ which contains topology configuration including docker image name:
+This script sources _common.cfg_ which contains default docker image name:
 
     LINUX_IMG="acnodal-test:latest"
 
+You need to build docker image first to be able to proceed with following steps.
+
+> Note: sudo may be required
+#### Topology
+
+First step is to mimic final solution using existing linux infrastructure like _ip route_, _iptables_ and generic GUE tunnel.
+This solution requires few workarounds:
+
+1) Linux GUE tunnel doesn't support GUE header fields
+2) Address translation is done on **EGW** instead of **NODE**
+3) there is one more address translation layer, when packet enter GUE tunnel on **EGW** side
+4) GUE control packets are not supported, so GUE ping is replaces by **NODE** address recognition and then this address is supplied to service setup
+
+##### Definition
+
+Plan is that topology _setup/cleanup_ scripts will be topology agnostic anf topology itsels will be defined in _*.cfg_ file.
+But at the moment _setup_ still handles some topology specific stuff (like node configuration)
+
+Topology depicted above is defined in:
+
+    basic.cfg
+
+Config file should contain following information (from _basic.cfg_):
+
+List of names of containers with different roles:
+
+    CLIENTS="client"
+    PROXIES="egw"
+    SERVERS="node1 node2"
+    NATS="nat"
+
+List of all containers in topology:
+
+    NODES="${CLIENTS} ${PROXIES} ${SERVERS} ${NATS}"
+
+Network name prefix used for easier identification (for _topo_cleanup_):
+
+    NAME_PREFIX="basic"
+
+Array of docker network names:
+
+    NETWORK_NAME=("foo" "${NAME_PREFIX}-public" "${NAME_PREFIX}-nat")
+
+Array of docker network names:
+
+    NETWORK_SUBNET=("foo" "172.1.0.0/16" "172.2.0.0/16")
+
+> Note: Order of names and subnets must fit, because they are used together.
+> Note: Both arrays use foo as first value to workaround indexing from 0.
+
+Public IP address of EGW, reachable by all nodes:
+
+    PROXY_IP="5.5.5.5"
+
+Array of list of nodes belonging to each docker network:
+
+    NET_MAPPING=("foo"  "client egw node1 nat" )
+
+> Note: Order of lists must fit NETWORK_NAME array. So mapping is as follows:
+
+    NETWORK_NAME[0]="foo"                    -> NET_MAPPING[0]="foo"
+    NETWORK_NAME[1]="${NAME_PREFIX}-public"  -> NET_MAPPING[1]="client egw node1 nat"
+    NETWORK_NAME[2]="${NAME_PREFIX}-nat"     -> NET_MAPPING[2]="nat node2"
 
 ##### Setup
 
-    TBD: How to start docker images, connect them and setup basic configuration
+When you want to bring demo topology up, use following script:
+
+    ./topo_setup.sh <config> [<docker-image>]
+
+where
+
+    <config>        - file with topology description
+    <docker-image>  - (OPTIONAL) docker image to use for containers. If not specified, default image will be used.
+
+e.g.:
+
+    ./topo_setup.sh basic.cfg
+
+Script will perform following operations:
+
+1) Check input args
+2) Load kernel modules (fou) for GUE tunnel
+3) Start docker containers
+4) Create docker networks and attach them to containers
+5) Configure containers to allow them to perform their roles
+6) Check node connectivity
+
+After that topology should be up and running and ready to create some servive and connect to it.
+
+> Note: sudo may be required
 
 ##### Teardown
 
-    TBD: How to stop and cleanup
+When testing is done you can bring topology down and free resources by using of following command:
 
+    ./topo_cleanup.sh <config> [<docker-image>]
+
+where
+
+    <config>        - file with topology description
+    <docker-image>  - (OPTIONAL) docker image used for containers. If not specified, default image will be used.
+
+e.g.:
+
+    ./topo_cleanup.sh basic.cfg
+
+Script will perform following operations:
+
+1) Check input args
+2) Stop docker containers
+3) Delete docker networks
+
+> Note: sudo may be required
 
 #### Service
 
