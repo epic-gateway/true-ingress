@@ -111,8 +111,7 @@ Array of docker network names:
 
     NETWORK_SUBNET=("foo" "172.1.0.0/16" "172.2.0.0/16")
 
-> Note: Order of names and subnets must fit, because they are used together.
-> Note: Both arrays use foo as first value to workaround indexing from 0.
+> Note: Order of items in NETWORK_NAME and NETWORK_SUBNET must match, because they are used together.
 
 Public IP address of EGW, reachable by all nodes:
 
@@ -127,6 +126,8 @@ Array of list of nodes belonging to each docker network:
     NETWORK_NAME[0]="foo"                    -> NET_MAPPING[0]="foo"
     NETWORK_NAME[1]="${NAME_PREFIX}-public"  -> NET_MAPPING[1]="client egw node1 nat"
     NETWORK_NAME[2]="${NAME_PREFIX}-nat"     -> NET_MAPPING[2]="nat node2"
+
+> Note: Arrays use "foo" as first value to workaround indexing starting from 0.
 
 ##### Setup
 
