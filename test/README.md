@@ -77,10 +77,12 @@ You need to build docker image first to be able to proceed with following steps.
 First step is to mimic final solution using existing linux infrastructure like _ip route_, _iptables_ and generic GUE tunnel.
 This solution requires few workarounds:
 
-1) Linux GUE tunnel doesn't support GUE header fields
-2) Address translation is done on **EGW** instead of **NODE**
-3) there is one more address translation layer, when packet enter GUE tunnel on **EGW** side
-4) GUE control packets are not supported, so GUE ping is replaces by **NODE** address recognition and then this address is supplied to service setup
+1) Linux GUE tunnel doesn't support GUE header fields.
+2) Address translation is done on **EGW** instead of **NODE**.
+3) There is one more address translation layer, when packet enter GUE tunnel on **EGW** side.
+4) Linux GUE implementation doesn't allow to fill and parse GUE header.
+5) GUE control packets are not supported, so GUE ping is replaces by **NODE** address recognition and then this address is supplied to service setup.
+6) There is only one service active at a time and GUE tunnel uses 6080 as source and destination port.
 
 ##### Definition
 
@@ -124,7 +126,7 @@ Public IP address of EGW, reachable by all nodes:
 
 Array of list of nodes belonging to each docker network:
 
-    NET_MAPPING=("foo"  "client egw node1 nat" )
+    NET_MAPPING=("foo" "client egw node1 nat" "nat node2")
 
 > Note: Order of lists must fit NETWORK_NAME array. So mapping is as follows:
 
