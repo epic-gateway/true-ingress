@@ -1,5 +1,5 @@
 #!/bin/bash
-# usage: $0 <ip> "<node list>"
+# usage: $0 <ip> "<node-list>"
 # example: $0 1.1.1.1 client1
 # example: $0 1.1.1.1 "client1 client2 client3"
 

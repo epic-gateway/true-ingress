@@ -151,12 +151,12 @@ When you want to bring demo topology up, use following script:
 
     ./topo_setup.sh <config> [<docker-image>]
 
-where
+Where
 
     <config>        - file with topology description
     <docker-image>  - (OPTIONAL) docker image to use for containers. If not specified, default image will be used.
 
-e.g.:
+Example:
 
     ./topo_setup.sh basic.cfg
 
@@ -179,12 +179,12 @@ When testing is done you can bring topology down and free resources by using of 
 
     ./topo_cleanup.sh <config> [<docker-image>]
 
-where
+Where
 
     <config>        - file with topology description
     <docker-image>  - (OPTIONAL) docker image used for containers. If not specified, default image will be used.
 
-e.g.:
+Example:
 
     ./topo_cleanup.sh basic.cfg
 
@@ -213,7 +213,7 @@ To start demo HTTP service run following command:
 
     ./http_start.sh <node> <ip> <port> <service-id>
     
-example:
+Example:
 
     ./http_start.sh node1 1.1.1.1 4000 100
 
@@ -238,7 +238,7 @@ To enable forwarding for created service run following command:
 
     ./forwarding_setup.sh <service-id> <node> <proxy> <proto> <service-ip> <service-port> <proxy-ip> <proxy-port> <tunnel> [<client>]
 
-example:
+Example:
 
     ./forwarding_setup.sh 100 node1 egw tcp 1.1.1.1 4000 5.5.5.5 3100 client
 
@@ -290,15 +290,40 @@ There is bunch of other scripts to help you with testing and debugging. They wil
 
 ### cli.sh
 
-    TBD: What id does and how to run it
+This is wrapper to help you to attach linux console of _<docker-name>_ container:
+
+    ./cli.sh <docker-name>
+
+Example:
+
+    ./cli.sh client
 
 ### pktdump.sh
 
-    TBD: What id does and how to run it
+This is wrapper start tcpdump on _<interface>_ inside _<docker>_ container:
+
+    ./pktdump.sh <docker-name> <interface> [<filter>]
+
+Example:
+
+    ./pktdump.sh egw eth1 "udp and port 6080"
+    
+Optionally you can specify filter, what kind of packets you are insterested in.
+
+> Note: By default it executes with "-nvvvXXes 0", which means no name resolving, verbose, including Ethernet header, including hexdump of whole packet.
 
 ### test_icmp.sh
 
-    TBD: What id does and how to run it
+This is wrapper send ICMP ping to given _<ip>_ from all _<node-list>_:
+
+    ./test_icmp.sh <ip> "<node-list>"
+
+Where _<node-list>_ can be one or more docker containers.
+
+Example:
+
+    ./test_icmp.sh 5.5.5.5 client
+    ./test_icmp.sh 5.5.5.5 "client node1 node2"
 
 ### test_tcp.sh
 
