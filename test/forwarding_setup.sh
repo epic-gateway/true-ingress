@@ -1,5 +1,5 @@
 #!/bin/bash
-# syntax: $0 <service-id> <node> <proxy> <proto> <service-ip> <service-port> <proxy-ip> <proxy-port> <tunnel> <client>
+# syntax: $0 <service-id> <node> <proxy> <proto> <service-ip> <service-port> <proxy-ip> <proxy-port> <tunnel> [<client>]
 # 1) setup EGW on $PROXY
 # 2) setup PFC on $NODE
 
