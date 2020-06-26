@@ -244,9 +244,9 @@ Example:
 
 It will:
 
-1) CAll _gue_ping.sh_ to start "GUE ping" on _<node>_ and resolve source address on _<proxy>_ to see real IP address of _<node>_.
-2) CAll _egw_setup.sh_ to configure GUE tunnel, forwarding and address translation on _<proxy>_.
-3) CAll _pfc_setup.sh_ to configure GUE tunnel and forwarding on _<node>_.
+1) Call _gue_ping.sh_ to start "GUE ping" on _< node >_ and resolve source address on _ <proxy> _ to see real IP address of _ <node> _.
+2) Call _egw_setup.sh_ to configure GUE tunnel, forwarding and address translation on _ <proxy> _.
+3) Call _pfc_setup.sh_ to configure GUE tunnel and forwarding on _ <node> _.
 
 ##### Teardown
 
