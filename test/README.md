@@ -53,7 +53,15 @@ Simple IPv4 NAT/Firewall box realized using iptables.
 
 ### Run
 
-#### Docker image
+In order to successfully perform some tests you need to go through following steps:
+
+1) Build docker image
+2) Bring up topology consistg of at least one of each: **Client**, **EGW**, **Node**. **EGW** is running public ip address accessible from all other nodes.
+3) Create a service on a **Node**. Service is not accessible from network.
+4) Setup forwarding, this create GUE tunnel, forwarding rules and neccessary IP address translation
+5) Now client can access service throug **EGW's** pulic IP address and PORT
+
+#### 1. Docker image
 
 Default docker image is based on Ubunutu 18.04 LTS with few tools for crafting, sending packets and collecting metrics.
 Also contains web server as testing service.
@@ -72,19 +80,20 @@ This script sources _common.cfg_ which contains default docker image name:
 You need to build docker image first to be able to proceed with following steps.
 
 > Note: sudo may be required
-#### Topology
+
+#### 2. Topology
 
 First step is to mimic final solution using existing linux infrastructure like _ip route_, _iptables_ and generic GUE tunnel.
 This solution requires few workarounds:
 
 1) Linux GUE tunnel doesn't support GUE header fields.
 2) Address translation is done on **EGW** instead of **NODE**.
-3) There is one more address translation layer, when packet enter GUE tunnel on **EGW** side.
+3) There is one more address translation layer, when packet enter GUE tunnel on **EGW** side. This could be avoided by source based routing on **NODE**.
 4) Linux GUE implementation doesn't allow to fill and parse GUE header.
 5) GUE control packets are not supported, so GUE ping is replaced by **NODE** address recognition and then this address is supplied to service setup.
 6) There can be only one service active at a time with one GUE tunnel using 6080 as source and destination port. Servive namespace need to be separated, to allow them to run in parallel. GUE source and destination ports are configurable, but for lack of time it was not testied with different values yes.
 
-##### Definition
+#####  Definition
 
 Plan is that topology _setup/cleanup_ scripts will be topology agnostic anf topology itsels will be defined in _*.cfg_ file.
 But at the moment _setup_ still handles some topology specific stuff (like node configuration)
@@ -187,44 +196,114 @@ Script will perform following operations:
 
 > Note: sudo may be required
 
-#### Service
+#### 3. Service
 
-    TBD: What is service...
+For purpose of this demo topology by service we mean HTTP server. Different kind of services can be added later.
+
+HTTP server can run on given **NODE** listening on give IP address and PORT.
+HTTP server can serve content of file specified in URL.
+Once service is started there are few files created.
+
+1) hello - contains service identification, by displaying thi file user should easily see which service is connected to
+2) data_10M.bin data_5M.bin data_2M.bin data_1M.bin - binary file od specific size for longer download.
 
 ##### Setup
 
-    TBD: How to start Service, configure Node and EGW
+To start demo HTTP service run following command:
+
+    ./http_start.sh <node> <ip> <port> <service-id>
+    
+example:
+
+    ./http_start.sh node1 1.1.1.1 4000 100
+
+It will:
+
+1) Attach to docker named _<node>_.
+2) Configure _<ip>_ on local _lo_ intreface.
+3) Start HTTP server listening on _<ip>:<port>_.
+4) Create hello file including _<service-id>_ and other files for download.
 
 ##### Teardown
 
     TBD: How to stop and cleanup
 
-#### Helpers
+#### 4. Forwarding
 
-There is bunch of other scripts to help you with testing and debugging. They will be described here.
+Service is running locally. To make it publicly available, create proxy setting on **EGW**. **EGW** will forward incomming requests to the backend.
 
-##### cli.sh
+##### Setup
 
-    TBD: What id does and how to run it
+To enable forwarding for created service run following command:
 
-##### pktdump.sh
+    ./forwarding_setup.sh <service-id> <node> <proxy> <proto> <service-ip> <service-port> <proxy-ip> <proxy-port> <tunnel> [<client>]
 
-    TBD: What id does and how to run it
+example:
 
-##### test_icmp.sh
+    ./forwarding_setup.sh 100 node1 egw tcp 1.1.1.1 4000 5.5.5.5 3100 client
 
-    TBD: What id does and how to run it
+It will:
 
-##### test_tcp.sh
+1) Start "GUE ping" on _<node>_ and resolve source address on _<proxy>_ to see real IP address of _<node>_.
+2) Configure GUE tunnel, forwarding and address translation on _<proxy>_.
+3) Configure GUE tunnel and forwarding on _<node>_.
 
-    TBD: What id does and how to run it
+##### Teardown
 
-##### test_udp.sh
+    TBD: How to stop and cleanup
 
-    TBD: What id does and how to run it
+#### 5. Testing
+
+Now you are able to run HTTP requests against **EGW** and it will forward it to the backend.
+To see what operation can be done, proceed to followig section.
+
 
 ## Tests
 
 > Note: All tests are manual no automated framework for result evaluation planned yet.
+> Note: At the moment service and forwarding cleanup desn't work properly therefore topology has to be created and discarded for each test separately.
 
-    TBD: list of test cases
+### test_01.sh
+
+1) Creates topology based on _basic.cfg_
+2) Start HTTP server with service-id 100 on Node1, listening on 1.1.1.1:4000
+3) Creates forwarding rules for service-id 100 on EGW which forward 5.5.5.5:3100 to 1.1.1.1:4000
+4) Send curl request to 5.5.5.5:3100 requesting _hello_. Service send response with identification.
+5) Tear topology down
+
+Status: PASS
+
+### test_02.sh
+
+1) Creates topology based on _basic.cfg_
+2) Start HTTP server with service-id 200 on Node2, listening on 2.2.2.2:4000
+3) Creates forwarding rules for service-id 200 on EGW which forward 5.5.5.5:3200 to 2.2.2.2:4000
+4) Send curl request to 5.5.5.5:3200 requesting _hello_. Service send response with identification.
+5) Tear topology down
+
+Status: PASS
+
+
+## Helpers
+
+There is bunch of other scripts to help you with testing and debugging. They will be described here.
+
+### cli.sh
+
+    TBD: What id does and how to run it
+
+### pktdump.sh
+
+    TBD: What id does and how to run it
+
+### test_icmp.sh
+
+    TBD: What id does and how to run it
+
+### test_tcp.sh
+
+    TBD: What id does and how to run it
+
+### test_udp.sh
+
+    TBD: What id does and how to run it
