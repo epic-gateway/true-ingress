@@ -21,6 +21,16 @@ The Packet Forwarding Component (PFC) is the eBPF program and associated infrast
 
 ## Prerequisites
 
+PFC was developed and tested on Ubuntu 18.04 LST.
+
+Building and testing require following packages:
+
+    git build-essential llvm clang docker.io python python-pip
+
+> Note: Only mandatory packages are listed. Tools for improving quality of life (like favorite IDE) are not listed.
+
+Python scripts have following dependencies (pip install ...):
+
     TBD
 
 ## Build
