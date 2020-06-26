@@ -81,8 +81,8 @@ This solution requires few workarounds:
 2) Address translation is done on **EGW** instead of **NODE**.
 3) There is one more address translation layer, when packet enter GUE tunnel on **EGW** side.
 4) Linux GUE implementation doesn't allow to fill and parse GUE header.
-5) GUE control packets are not supported, so GUE ping is replaces by **NODE** address recognition and then this address is supplied to service setup.
-6) There is only one service active at a time and GUE tunnel uses 6080 as source and destination port.
+5) GUE control packets are not supported, so GUE ping is replaced by **NODE** address recognition and then this address is supplied to service setup.
+6) There can be only one service active at a time with one GUE tunnel using 6080 as source and destination port. Servive namespace need to be separated, to allow them to run in parallel. GUE source and destination ports are configurable, but for lack of time it was not testied with different values yes.
 
 ##### Definition
 
