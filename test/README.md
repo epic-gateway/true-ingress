@@ -219,10 +219,10 @@ Example:
 
 It will:
 
-1) Attach to docker named _<node>_.
-2) Configure _<ip>_ on local _lo_ intreface.
-3) Start HTTP server listening on _<ip>:<port>_.
-4) Create hello file including _<service-id>_ and other files for download.
+1) Attach to docker named _< node >_.
+2) Configure _< ip >_ on local _lo_ intreface.
+3) Start HTTP server listening on _< ip >_:_< port >_.
+4) Create hello file including _< service-id >_ and other files for download.
 
 ##### Teardown
 
@@ -244,9 +244,9 @@ Example:
 
 It will:
 
-1) Call _gue_ping.sh_ to start "GUE ping" on _< node >_ and resolve source address on _ <proxy> _ to see real IP address of _ <node> _.
-2) Call _egw_setup.sh_ to configure GUE tunnel, forwarding and address translation on _ <proxy> _.
-3) Call _pfc_setup.sh_ to configure GUE tunnel and forwarding on _ <node> _.
+1) Call _gue_ping.sh_ to start "GUE ping" on _< node >_ and resolve source address on _< proxy >_ to see real IP address of _< node >_.
+2) Call _egw_setup.sh_ to configure GUE tunnel, forwarding and address translation on _< proxy >_.
+3) Call _pfc_setup.sh_ to configure GUE tunnel and forwarding on _< node >_.
 
 ##### Teardown
 
@@ -298,13 +298,13 @@ Example:
 
     ./gue_ping.sh node2 200 172.1.0.4 6080 6080 30
 
-It sends UDP packet from localhost:_<local-port>_ to _<remote-ip>_:_<remote-port>_ every _<delay>_ seconds.
+It sends UDP packet from localhost:_< local-port >_ to _< remote-ip >_:_< remote-port >_ every _< delay >_ seconds.
 a.k.a.
 It sends UDP packet from localhost:6080 to 172.1.0.4:6080 every 30 seconds.
 
 ### egw_setup.sh
 
-Configure GUE tunnel, forwarding and address translation on _<node>_:
+Configure GUE tunnel, forwarding and address translation on _< node >_:
 
     ./egw_setup.sh <node> <service-id> <proto> <service-ip> <service-port> <real-ip> <real-port> <proxy-ip> <proxy-port> <foo-ip>
 
@@ -312,11 +312,11 @@ Example:
 
     ./egw_setup.sh egw 100 tcp 1.1.1.1 4000 172.1.0.5 6080 5.5.5.5 3100 10.1.1.100
 
-> Note: The _<foo-ip>_ address is a routing workaround. It is IP address assigned to _tun_ interface on **EGW** side. **EGW** is doing SNAT to this ip address, and **Node** uses it ad destination for routing packets into the tunnel. 
+> Note: The _< foo-ip >_ address is a routing workaround. It is IP address assigned to _tun_ interface on **EGW** side. **EGW** is doing SNAT to this ip address, and **Node** uses it ad destination for routing packets into the tunnel. 
 
 ### pfc_setup.sh
 
-Configure GUE tunnel and forwarding on _<node>_:
+Configure GUE tunnel and forwarding on _< node >_:
 
     ./pfc_setup.sh <node> <service-id> <proto> <service-ip> <service-port> <remote-tunnel-ip> <remote-tunnel-port> <foo-ip>
 
@@ -324,11 +324,11 @@ Example:
 
     ./pfc_setup.sh node1 100 tcp 1.1.1.1 4000 172.1.0.4 6080 10.1.1.100
 
-> Note: The _<foo-ip>_ address is a routing workaround. It is IP address assigned to _tun_ interface on **EGW** side. **EGW** is doing SNAT to this ip address, and **Node** uses it ad destination for routing packets into the tunnel.    
+> Note: The _< foo-ip >_ address is a routing workaround. It is IP address assigned to _tun_ interface on **EGW** side. **EGW** is doing SNAT to this ip address, and **Node** uses it ad destination for routing packets into the tunnel.    
 
 ### cli.sh
 
-This is wrapper to help you to attach linux console of _<docker-name>_ container:
+This is wrapper to help you to attach linux console of _< docker-name >_ container:
 
     ./cli.sh <docker-name>
 
@@ -338,7 +338,7 @@ Example:
 
 ### pktdump.sh
 
-This is wrapper start tcpdump on _<interface>_ inside _<docker>_ container:
+This is wrapper start tcpdump on _< interface >_ inside _< docker >_ container:
 
     ./pktdump.sh <docker-name> <interface> [<filter>]
 
@@ -352,11 +352,11 @@ Optionally you can specify filter, what kind of packets you are insterested in.
 
 ### test_icmp.sh
 
-This is wrapper send ICMP ping to given _<ip>_ from all _<node-list>_:
+This is wrapper send ICMP ping to given _< ip >_ from all _< node-list >_:
 
     ./test_icmp.sh <ip> "<node-list>"
 
-Where _<node-list>_ can be one or more docker containers.
+Where _< node-list >_ can be one or more docker containers.
 
 Example:
 
