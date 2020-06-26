@@ -244,9 +244,9 @@ Example:
 
 It will:
 
-1) Start "GUE ping" on _<node>_ and resolve source address on _<proxy>_ to see real IP address of _<node>_.
-2) Configure GUE tunnel, forwarding and address translation on _<proxy>_.
-3) Configure GUE tunnel and forwarding on _<node>_.
+1) CAll _gue_ping.sh_ to start "GUE ping" on _<node>_ and resolve source address on _<proxy>_ to see real IP address of _<node>_.
+2) CAll _egw_setup.sh_ to configure GUE tunnel, forwarding and address translation on _<proxy>_.
+3) CAll _pfc_setup.sh_ to configure GUE tunnel and forwarding on _<node>_.
 
 ##### Teardown
 
@@ -287,6 +287,44 @@ Status: PASS
 ## Helpers
 
 There is bunch of other scripts to help you with testing and debugging. They will be described here.
+
+### gue_ping.sh
+
+This is workaroud for periodical GUE control packet. It does not contain _Service-id_ in GUE header, but it still punches hole into the NAT/Firewall:
+
+    ./gue_ping.sh <node> <service-id> <remote-ip> <remote-port> <local-port> <delay>
+
+Example:
+
+    ./gue_ping.sh node2 200 172.1.0.4 6080 6080 30
+
+It sends UDP packet from localhost:_<local-port>_ to _<remote-ip>_:_<remote-port>_ every _<delay>_ seconds.
+a.k.a.
+It sends UDP packet from localhost:6080 to 172.1.0.4:6080 every 30 seconds.
+
+### egw_setup.sh
+
+Configure GUE tunnel, forwarding and address translation on _<node>_:
+
+    ./egw_setup.sh <node> <service-id> <proto> <service-ip> <service-port> <real-ip> <real-port> <proxy-ip> <proxy-port> <foo-ip>
+
+Example:
+
+    ./egw_setup.sh egw 100 tcp 1.1.1.1 4000 172.1.0.5 6080 5.5.5.5 3100 10.1.1.100
+
+> Note: The _<foo-ip>_ address is a routing workaround. It is IP address assigned to _tun_ interface on **EGW** side. **EGW** is doing SNAT to this ip address, and **Node** uses it ad destination for routing packets into the tunnel. 
+
+### pfc_setup.sh
+
+Configure GUE tunnel and forwarding on _<node>_:
+
+    ./pfc_setup.sh <node> <service-id> <proto> <service-ip> <service-port> <remote-tunnel-ip> <remote-tunnel-port> <foo-ip>
+
+Example:
+
+    ./pfc_setup.sh node1 100 tcp 1.1.1.1 4000 172.1.0.4 6080 10.1.1.100
+
+> Note: The _<foo-ip>_ address is a routing workaround. It is IP address assigned to _tun_ interface on **EGW** side. **EGW** is doing SNAT to this ip address, and **Node** uses it ad destination for routing packets into the tunnel.    
 
 ### cli.sh
 

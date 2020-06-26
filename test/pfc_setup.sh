@@ -1,5 +1,5 @@
 #!/bin/bash
-# syntax: $0 <node> <service-id> <proto> <service-ip> <service-port> <tunnel-ip> <tunnel-port> <foo-ip>
+# syntax: $0 <node> <service-id> <proto> <service-ip> <service-port> <remote-tunnel-ip> <remote-tunnel-port> <foo-ip>
 
 # 1) setup GUE tunnel
 # 2) add routing to the tunnel
