@@ -283,6 +283,10 @@ Status: PASS
 
 Status: PASS
 
+### Multiservice
+
+Group of tests for running multiple service instances on same node.
+
 
 ## Helpers
 

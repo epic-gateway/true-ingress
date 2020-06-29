@@ -1,7 +1,7 @@
 # Multiservice tests
 
 Tests to create multiple independent services on same node.
-Tests need to have unique service-id, and _Endpoint_ (IP+PORT).
+Service instances need to have unique service-id, and _Endpoint_ (IP+PORT).
 
 ## test_01.sh
 
