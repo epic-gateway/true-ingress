@@ -12,7 +12,7 @@ SERVICE_ID=$4
 #CMD="docker exec -it ${NODE} bash -c \"curl ${IP}:${PORT}/tmp/hello\""
 echo "#####################################################"
 #echo "docker exec -it ${NODE} bash -c curl --connect-timeout 3 ${IP}:${PORT}/tmp/hello"
-docker exec -it ${NODE} bash -c "curl --connect-timeout 3 ${IP}:${PORT}/tmp/hello"
+docker exec -it ${NODE} bash -c "curl --connect-timeout 3 ${IP}:${PORT}/hello"
 echo "#####################################################"
 #echo "LOG (/tmp/${SERVICE_ID}.log):"
 #docker exec -it ${NODE} bash -c "curl --connect-timeout 3 ${IP}:${PORT}/tmp/${SERVICE_ID}.log"

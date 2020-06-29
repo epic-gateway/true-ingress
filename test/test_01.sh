@@ -7,6 +7,7 @@
 
 NODE="node1"
 PROXY="egw"
+SERVICE="http"
 SERVICE_ID="100"
 SERVICE_IP="1.1.1.1"
 SERVICE_PORT="4000"
@@ -20,8 +21,8 @@ echo "#######################################################"
 read
 
 # setup HTTP service
-#                <node>  <ip>          <port>          <service-id>
-./http_start.sh ${NODE} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_ID}
+#                <node>  <ip>          <port>          <service-id>    <service>
+./service_start.sh ${NODE} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_ID} ${SERVICE}
 
 echo "#########################################################"
 echo "# Service up'n'runnin. Hit <ENTER> to setup forwarding. #"
@@ -30,7 +31,8 @@ echo "#########################################################"
 read
 
 # setup forwarding
-./forwarding_setup.sh ${SERVICE_ID} ${NODE} ${PROXY} tcp ${SERVICE_IP} ${SERVICE_PORT} ${PROXY_IP} ${PROXY_PORT} client
+#                      <service-id>  <node>  <proxy> <proto> <service-ip>  <service-port>  <proxy-ip>  <proxy-port> [<client>]
+./forwarding_setup.sh ${SERVICE_ID} ${NODE} ${PROXY} tcp    ${SERVICE_IP} ${SERVICE_PORT} ${PROXY_IP} ${PROXY_PORT} client
 
 echo "######################################"
 echo "# Test done. Hit <ENTER> to cleanup. #"

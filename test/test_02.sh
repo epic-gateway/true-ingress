@@ -20,8 +20,8 @@ echo "#######################################################"
 read
 
 # setup HTTP service
-#                <node>  <ip>          <port>          <service-id>
-./http_start.sh ${NODE} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_ID}
+#                <node>  <ip>          <port>          <service-id>    <service>
+./service_start.sh ${NODE} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_ID} ${SERVICE}
 
 echo "#########################################################"
 echo "# Service up'n'runnin. Hit <ENTER> to setup forwarding. #"
