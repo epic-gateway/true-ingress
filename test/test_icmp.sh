@@ -14,9 +14,7 @@ NODES=$2
 for NODE in ${NODES}
 do
     echo -e "\n# PING ${NODE} -> ${IP}"
-    docker exec -it ${NODE} bash -c "ping -c3 ${IP}"
+    docker exec -it ${NODE} bash -c "ping -q -c3 ${IP}"
     #docker exec -it ${NODE} bash -c "nping -c3 --icmp ${IP}"
 done
-
-echo -e "### Done ###\n"
 

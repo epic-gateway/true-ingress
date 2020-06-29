@@ -19,9 +19,13 @@ TUNNEL_REMOTE_IP=$6
 TUNNEL_REMOTE_PORT=$7
 FOO_IP=$8
 
-TUNNEL_PORT=6080
+#VERBOSE="1"
 
-echo "PFC.ADD: NODE='${NODE}' SERVICE_ID='${SERVICE_ID}' PROTO='${PROTO}' SERVICE_IP='${SERVICE_IP}' SERVICE_PORT='${SERVICE_PORT}' TUNNEL_REMOTE_IP='${TUNNEL_REMOTE_IP}' TUNNEL_REMOTE_PORT='${TUNNEL_REMOTE_PORT}' FOO_IP='${FOO_IP}'"
+if [ "${VERBOSE}" ]; then
+    echo -e "\nPFC.ADD : NODE='${NODE}' SERVICE_ID='${SERVICE_ID}' PROTO='${PROTO}' SERVICE_IP='${SERVICE_IP}' SERVICE_PORT='${SERVICE_PORT}' TUNNEL_REMOTE_IP='${TUNNEL_REMOTE_IP}' TUNNEL_REMOTE_PORT='${TUNNEL_REMOTE_PORT}' FOO_IP='${FOO_IP}'"
+fi
+
+TUNNEL_PORT=6080
 
 IFNAME="gue${SERVICE_ID}"
 CHECK=`docker exec -it ${NODE} bash -c "ip addr" | grep ${IFNAME}`
@@ -34,7 +38,7 @@ fi
 TUNNEL_LOCAL_IP=${TUNNEL_PREFIX}${SERVICE_ID}
 
 echo -e "\n==============================================="
-echo "# PFC.ADD: [1/${STEPS}] Create GUE tunnel (${IFNAME}) to ${TUNNEL_REMOTE_IP}:${TUNNEL_REMOTE_PORT})"
+echo "# PFC.ADD [1/${STEPS}] : Create GUE tunnel (${IFNAME}) to ${TUNNEL_REMOTE_IP}:${TUNNEL_REMOTE_PORT})"
 
 docker exec -it ${NODE} bash -c "ip fou add port ${TUNNEL_PORT} gue"
 docker exec -it ${NODE} bash -c "ip link add name ${IFNAME} type ipip remote ${TUNNEL_REMOTE_IP} encap gue encap-sport ${TUNNEL_PORT} encap-dport ${TUNNEL_REMOTE_PORT}"
@@ -46,19 +50,25 @@ if [ ! "${CHECK}" ] ; then
 fi
 
 echo -e "\n==============================================="
-echo "# PFC.ADD: [2/${STEPS}] Assign IP ${TUNNEL_LOCAL_IP} to ${IFNAME} and bring it up"
+echo "# PFC.ADD [2/${STEPS}] : Assign IP ${TUNNEL_LOCAL_IP} to ${IFNAME} and bring it up"
 
 docker exec -it ${NODE} bash -c "ip addr add ${TUNNEL_LOCAL_IP}/24 dev ${IFNAME}"
 docker exec -it ${NODE} bash -c "ip link set ${IFNAME} up"
 # check
-docker exec -it ${NODE} bash -c "ip addr"
+if [ "${VERBOSE}" ]; then
+    echo ""
+    docker exec -it ${NODE} bash -c "ip addr"
+fi
 
 echo -e "\n==============================================="
-echo "# PFC.ADD: [3/${STEPS}] Set Route for service ${FOO_IP}/32 via ${IFNAME}"
+echo "# PFC.ADD [3/${STEPS}] : Set Route for service ${FOO_IP}/32 via ${IFNAME}"
 
 docker exec -it ${NODE} bash -c "ip route add ${FOO_IP}/32 dev ${IFNAME}"
 # check
-docker exec -it ${NODE} bash -c "ip route"
+if [ "${VERBOSE}" ]; then
+    echo ""
+    docker exec -it ${NODE} bash -c "ip route"
+fi
 
 echo -e "\n==============================================="
-echo "# PFC.ADD: DONE"
+echo "# PFC.ADD : DONE"
