@@ -62,16 +62,20 @@ fi
 CHECK=`docker exec -it ${NODE} bash -c "ls ${SERVICE_DIR}/${SERVICE_ID}" | grep -v "No such file or directory"`
 if [ "${CHECK}" ] ; then
 #if [ -d "${SERVICE_DIR}/${SERVICE_ID}" ] ; then
-    echo "ERROR: Service ID '${SERVICE_ID}' already exists."
+    echo "Service ID '${SERVICE_ID}' : already exists"
     exit 1
+else
+    echo "Service ID '${SERVICE_ID}' : OK"
 fi
 
 # check ip:port
 CHECK=`docker exec -it ${NODE} bash -c "ls ${ADDR_DIR}/${IP}/${PORT}" | grep -v "No such file or directory"`
 if [ "${CHECK}" ] ; then
 #if [ -f "${ADDR_DIR}/${IP}/${PORT}" ] ; then
-    echo "ERROR: Combination '${IP}:${PORT}' is already used."
+    echo "Endpoint '${IP}:${PORT}' : already used"
     exit 1
+else
+    echo "Endpoint '${IP}:${PORT}' : OK"
 fi
 
 echo -e "\n==============================================="
@@ -88,23 +92,27 @@ if [ ! "${CHECK}" ] ; then
     docker exec -it ${NODE} bash -c "mkdir -p ${ADDR_DIR}/${IP}"
     echo "# Setup service IP ${IP}"
     docker exec -it ${NODE} bash -c "ip addr add ${IP} dev lo"
-    docker exec -it ${NODE} bash -c "ip addr"
+    # check
+    if [ "${VERBOSE}" ]; then
+        echo ""
+        docker exec -it ${NODE} bash -c "ip addr"
+    fi
 fi
 
 # create $PORT record
 docker exec -it ${NODE} bash -c "touch ${ADDR_DIR}/${IP}/${PORT}"
-
-# check
-if [ "${VERBOSE}" ]; then
-    echo ""
-    docker exec -it ${NODE} bash -c "ls -R ${BASE_DIR}"
-fi
 
 echo -e "\n==============================================="
 echo "# SERVICE(${SERVICE_ID}).START [4/${STEPS}] : Start service on '${NODE}'"
 
 #                      <node>  <ip>  <port>  <service-id>  <home-dir>
 ./${SERVICE}_start.sh ${NODE} ${IP} ${PORT} ${SERVICE_ID} ${SERVICE_DIR}/${SERVICE_ID}
+
+# check
+if [ "${VERBOSE}" ]; then
+    echo ""
+    docker exec -it ${NODE} bash -c "ls -R ${BASE_DIR}"
+fi
 
 if [ -x "./${SERVICE}_check.sh" ] ; then
     echo -e "\n==============================================="
