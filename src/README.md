@@ -44,6 +44,13 @@ To attach pfc program to both ingress and egress of eth0 or:
 
 To attach egw program to ingress of eth0.
 
+Attached eBPF programm uses kernel trace to log information.
+Logged messages can be found:
+
+    less /sys/kernel/debug/tracing/trace
+
+However this looks unreliable, some information seems to be missing occasionaly.
+
 ## Detach
 
 Removes attached TC program from ingress or egress queue of network interface.
