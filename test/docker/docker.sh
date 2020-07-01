@@ -1,8 +1,13 @@
 #!/bin/bash
 # Rebuild (remove existing image first) node docker image
-# usage: $0
+# usage: $0 [<docker-image>]
+#           <docker-image>  - (OPTIONAL) docker image name to use. If not specified, default image name will be used.
 
 . ../common.cfg
+
+if [ "$1" ] ; then
+    LINUX_IMG="$1"
+fi
 
 TMP_FOLDER="/tmp/docker"
 FILES="node.Dockerfile  server.py ../../src/egw_egress_tc.o ../../src/egw_ingress_tc.o ../../src/pfc_egress_tc.o ../../src/pfc_ingress_tc.o ../../src/attach_tc.sh ../../src/detach_tc.sh ../../src/reattach_tc.sh ../../src/show_tc.sh"
@@ -19,7 +24,6 @@ mkdir -p ${TMP_FOLDER}
 
 for FILE in ${FILES}
 do
-    
     if [ -f "${FILE}" ] ; then
         cp ${FILE} ${TMP_FOLDER}
         echo "# Copy '${FILE}' : OK"

@@ -63,23 +63,8 @@ In order to successfully perform some tests you need to go through following ste
 
 #### 1. Docker image
 
-Default docker image is based on Ubunutu 18.04 LTS with few tools for crafting, sending packets and collecting metrics.
-Also contains web server as testing service.
-In the future it will contain eBPF binaries to be loaded on network interfaces.
-
-Docker image related files are locaten in _docker_ subfolder.
-
-Docker image can be (re)built by issuing following command:
-
-    ./docker.sh
-
-This script sources _common.cfg_ which contains default docker image name:
-
-    LINUX_IMG="acnodal-test:latest"
-
-You need to build docker image first to be able to proceed with following steps.
-
-> Note: sudo may be required
+Docker related files are located in *docker* subfolder.
+Check inside about details.
 
 #### 2. Topology
 
