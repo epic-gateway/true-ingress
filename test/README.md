@@ -283,9 +283,13 @@ Status: PASS
 
 Status: PASS
 
-### Multiservice
+### multiservice
 
-Group of tests for running multiple service instances on same node.
+Set of tests for running multiple service instances on same node.
+
+### ebpf
+
+Set of tests for attaching and detaching TC programs to **EGW** and **NODE**.
 
 
 ## Helpers
