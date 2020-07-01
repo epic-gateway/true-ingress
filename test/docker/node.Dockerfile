@@ -13,13 +13,12 @@ RUN apt-get update && apt-get install -y sudo python3 python3-pip vim iputils-pi
 # Install python modules
 #RUN pip3 install ...
 
-# Copy files
-# for PFC
-
-# for EGW
+# Copy eBPF
+COPY *.o /tmp/.acnodal/bin/
+COPY *.sh /tmp/.acnodal/bin/
 
 # for WEB server
-COPY server.py /tmp/
+COPY server.py /tmp/.acnodal/bin/
 
 
 # Shell on attach
