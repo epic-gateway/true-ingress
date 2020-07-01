@@ -7,6 +7,7 @@
 
 NODE="node2"
 PROXY="egw"
+SERVICE="http"
 SERVICE_ID="200"
 SERVICE_IP="2.2.2.2"
 SERVICE_PORT="4000"
@@ -30,6 +31,7 @@ echo "#########################################################"
 read
 
 # setup forwarding
+#                      <service-id>  <node>  <proxy> <proto> <service-ip>  <service-port>  <proxy-ip>  <proxy-port> [<client>]
 ./forwarding_setup.sh ${SERVICE_ID} ${NODE} ${PROXY} tcp ${SERVICE_IP} ${SERVICE_PORT} ${PROXY_IP} ${PROXY_PORT} client
 
 echo "######################################"
