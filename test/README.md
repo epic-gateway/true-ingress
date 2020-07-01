@@ -205,7 +205,7 @@ HTTP server can serve content of file specified in URL.
 Once service is started there are few files created.
 
 1) hello - contains service identification, by displaying thi file user should easily see which service is connected to
-2) data_10M.bin data_5M.bin data_2M.bin data_1M.bin - binary file od specific size for longer download.
+2) data_10M.bin, data_5M.bin, data_2M.bin, data_1M.bin - binary file od specific size for longer download.
 
 ##### Setup
 
