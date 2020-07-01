@@ -59,7 +59,8 @@ echo "==========================================="
 for NODE in ${NODES}
 do
     echo "### Starting '${NODE}' container ###"
-    sudo docker run --rm -itd --cap-add=NET_ADMIN --name ${NODE} -e MICROSERVICE_LABEL=${NODE} ${LINUX_IMG}
+#    sudo docker run --rm -itd --cap-add=NET_ADMIN --name ${NODE} -e MICROSERVICE_LABEL=${NODE} ${LINUX_IMG}
+    sudo docker run --rm -itd  --privileged --name ${NODE} -e MICROSERVICE_LABEL=${NODE} ${LINUX_IMG}
 done
 
 if [ "${VERBOSE}" ]; then
