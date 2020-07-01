@@ -2,6 +2,8 @@
 # Setup HTTP service on NODE behind NAT, expose it on EGW and send request from CLIENT.
 # usage: $0
 
+cd ..
+
 # setup topology
 ./topo_setup.sh basic.cfg
 
