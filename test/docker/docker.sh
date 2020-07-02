@@ -12,7 +12,7 @@ fi
 TMP_FOLDER="/tmp/docker"
 FILES="node.Dockerfile  server.py ../../src/egw_egress_tc.o ../../src/egw_ingress_tc.o ../../src/pfc_egress_tc.o ../../src/pfc_ingress_tc.o ../../src/attach_tc.sh ../../src/detach_tc.sh ../../src/reattach_tc.sh ../../src/show_tc.sh"
 
-CONTAINERS=`docker ps | grep ${LINUX_IMG}`
+CONTAINERS=`sudo docker ps | grep ${LINUX_IMG}`
 if [ "${CONTAINERS}" ] ; then
     echo "# Docker image is in use. Stop following containers first:"
     echo "${CONTAINERS}"
@@ -51,6 +51,6 @@ echo "### Building '${LINUX_IMG}'..."
 sudo docker build --tag ${LINUX_IMG} -f node.Dockerfile .
 
 #check
-docker images
+sudo docker images
 
 echo "### Done ###"
