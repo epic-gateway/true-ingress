@@ -14,16 +14,18 @@
 #include <linux/udp.h>
 #include <linux/if_arp.h>
 
+#include "dump_tc.h"
+
 /* A minimal, stand-alone unit, which matches on all traffic
  * with the default classid (return code of -1) looks like: */
 
 //__section("ingress")
-int tc_ingress(struct __sk_buff *skb)
+int pfc_rx(struct __sk_buff *skb)
 {
     char msg[] = "PFC RX << ifindex %u, len %u\n";
     bpf_trace_printk(msg, sizeof(msg), skb->ifindex, skb->len);
-
-    return TC_ACT_UNSPEC;
+    dump_pkt(skb);
+    return dump_action(TC_ACT_UNSPEC);
 }
 
 char _license[] SEC("license") = "GPL";
