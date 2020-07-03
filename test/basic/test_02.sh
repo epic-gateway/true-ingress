@@ -23,7 +23,7 @@ echo "#######################################################"
 read
 
 # setup HTTP service
-#                <node>  <ip>          <port>          <service-id>    <service>
+#                   <node>  <ip>          <port>          <service-id>  <service>
 ./service_start.sh ${NODE} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_ID} ${SERVICE}
 
 echo "#########################################################"
@@ -32,9 +32,9 @@ echo "#########################################################"
 
 read
 
-# setup forwarding
-#                      <service-id>  <node>  <proxy> <proto> <service-ip>  <service-port>  <proxy-ip>  <proxy-port> [<client>]
-./forwarding_setup.sh ${SERVICE_ID} ${NODE} ${PROXY} tcp ${SERVICE_IP} ${SERVICE_PORT} ${PROXY_IP} ${PROXY_PORT} client
+# setup linux forwarding
+#                          <service-id>  <node>  <proxy> <proto>  <service-ip>  <service-port>  <proxy-ip>  <proxy-port> [<client>]
+./forwarding_lnx_setup.sh ${SERVICE_ID} ${NODE} ${PROXY} tcp     ${SERVICE_IP} ${SERVICE_PORT} ${PROXY_IP} ${PROXY_PORT} client
 
 echo "######################################"
 echo "# Test done. Hit <ENTER> to cleanup. #"

@@ -34,22 +34,13 @@ echo "#########################################################"
 
 read
 
-# setup forwarding
-#                      <service-id>  <node>  <proxy> <proto> <service-ip>  <service-port>  <proxy-ip>  <proxy-port> [<client>]
-./forwarding_setup.sh ${SERVICE_ID} ${NODE} ${PROXY} tcp ${SERVICE_IP} ${SERVICE_PORT} ${PROXY_IP} ${PROXY_PORT} ${CLIENT}
+# setup TC forwarding
+#                         <service-id>  <node>  <proxy> <proto>  <service-ip>  <service-port>  <proxy-ip>  <proxy-port> [<client>]
+./forwarding_tc_setup.sh ${SERVICE_ID} ${NODE} ${PROXY} tcp     ${SERVICE_IP} ${SERVICE_PORT} ${PROXY_IP} ${PROXY_PORT} ${CLIENT}
 
-echo "##################################################"
-echo "# Service up'n'runnin. Hit <ENTER> to attach TC. #"
-echo "##################################################"
-
-read
-
-docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin ; ./attach_tc.sh eth1 egw"
-docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin ; ./attach_tc.sh eth1 pfc"
-
-echo "#########################################"
-echo "# TC attached. Hit <ENTER> to run test. #"
-echo "#########################################"
+echo "#################################################"
+echo "# Service up'n'runnin. Hit <ENTER> to run test. #"
+echo "#################################################"
 
 read
 
@@ -63,14 +54,14 @@ tail -n60 /sys/kernel/debug/tracing/trace
 # check traces after
 tail -n60 /sys/kernel/debug/tracing/trace
 
-echo "#################################################"
-echo "# Test done. Hit <ENTER> to detach TC from EGW. #"
-echo "#################################################"
+#echo "########################################"
+#echo "# Test done. Hit <ENTER> to detach TC. #"
+#echo "########################################"
 
-read
+#read
 
-docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin ; ./detach_tc.sh eth1"
-docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin ; ./detach_tc.sh eth1"
+#docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin ; ./detach_tc.sh eth1"
+#docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin ; ./detach_tc.sh eth1"
 
 echo "#################################################"
 echo "# TC detached. Hit <ENTER> to cleanup topology. #"

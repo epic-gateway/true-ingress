@@ -217,21 +217,38 @@ It will:
 
 Service is running locally. To make it publicly available, create proxy setting on **EGW**. **EGW** will forward incomming requests to the backend.
 
-##### Setup
+##### Setup forwarding using Linux infrastructure
+
+Uses existing Linux native infrastructure like *IPTABLES*, *ip route*, and *GUE tunnel*.
 
 To enable forwarding for created service run following command:
 
-    ./forwarding_setup.sh <service-id> <node> <proxy> <proto> <service-ip> <service-port> <proxy-ip> <proxy-port> <tunnel> [<client>]
+    ./forwarding_lnx_setup.sh <service-id> <node> <proxy> <proto> <service-ip> <service-port> <proxy-ip> <proxy-port> <tunnel> [<client>]
 
 Example:
 
-    ./forwarding_setup.sh 100 node1 egw tcp 1.1.1.1 4000 5.5.5.5 3100 client
+    ./forwarding_lnx_setup.sh 100 node1 egw tcp 1.1.1.1 4000 5.5.5.5 3100 client
 
 It will:
 
 1) Call _gue_ping.sh_ to start "GUE ping" on _< node >_ and resolve source address on _< proxy >_ to see real IP address of _< node >_.
 2) Call _egw_setup.sh_ to configure GUE tunnel, forwarding and address translation on _< proxy >_.
 3) Call _pfc_setup.sh_ to configure GUE tunnel and forwarding on _< node >_.
+
+##### Setup forwarding using TC
+
+Uses developed TC binaries attached to network RT or TX queues performing packet filtering, packer tranforming, GUE encap and decap.
+
+To enable forwarding for created service run following command:
+
+    ./forwarding_tc_setup.sh <service-id> <node> <proxy> <proto> <service-ip> <service-port> <proxy-ip> <proxy-port> <tunnel> [<client>]
+
+Example:
+
+    ./forwarding_tc_setup.sh 100 node1 egw tcp 1.1.1.1 4000 5.5.5.5 3100 client
+
+> Note: forwarding_tc_setup.sh is a simple copy of forwarding_lnx_setup.sh. As TC functionality will be implemented it will replace it's Linux counterpart functionality.
+
 
 ##### Teardown
 

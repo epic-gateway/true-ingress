@@ -16,7 +16,7 @@ CLIENT=$9
 #VERBOSE="1"
 
 if [ "${VERBOSE}" ]; then
-    echo -e "\nFORWARDING.ADD : SERVICE_ID='${SERVICE_ID}' NODE='${NODE}' PROXY='${PROXY}' PROTO='${PROTO}' SERVICE_IP='${SERVICE_IP}' SERVICE_PORT='${SERVICE_PORT}' PROXY_IP='${PROXY_IP}' PROXY_PORT='${PROXY_PORT}' CLIENT='${CLIENT}'"
+    echo -e "\nFORWARDING.TC.ADD : SERVICE_ID='${SERVICE_ID}' NODE='${NODE}' PROXY='${PROXY}' PROTO='${PROTO}' SERVICE_IP='${SERVICE_IP}' SERVICE_PORT='${SERVICE_PORT}' PROXY_IP='${PROXY_IP}' PROXY_PORT='${PROXY_PORT}' CLIENT='${CLIENT}'"
 fi
 
 STEPS=7
@@ -35,7 +35,7 @@ echo "TUNNEL_PORT   : [${TUNNEL_PORT}]"
 echo "FOO_IP        : [${FOO_IP}]"
 
 echo -e "\n==============================================="
-echo "# FORWARDING.ADD [1/${STEPS}] : Docker check"
+echo "# FORWARDING.TC.ADD [1/${STEPS}] : Docker check"
 
 CHECK=`sudo docker ps | awk '{print $NF}' | grep "${NODE}"`
 if [ "${CHECK}" ] ; then
@@ -54,7 +54,7 @@ else
 fi
 
 echo -e "\n==============================================="
-echo "# FORWARDING.ADD [2/${STEPS}] : Reachability check"
+echo "# FORWARDING.TC.ADD [2/${STEPS}] : Reachability check"
 
 echo -e "\n### Ping '${NODE}' -> '${PROXY_IFIP}'"
 docker exec -it ${NODE} bash -c "ping -c3 ${PROXY_IFIP}"
@@ -62,12 +62,12 @@ echo -e "\n### Ping '${PROXY}' -> '${NODE_IP}'"
 docker exec -it ${PROXY} bash -c "ping -c3 ${NODE_IP}"
 
 echo -e "\n==============================================="
-echo "# FORWARDING.ADD [3/${STEPS}] : (OUT OF ORDER) Start tunnel ping (in background) for service ID ${SERVICE_ID} every ${DELAY} seconds"
+echo "# FORWARDING.TC.ADD [3/${STEPS}] : (OUT OF ORDER) Start tunnel ping (in background) for service ID ${SERVICE_ID} every ${DELAY} seconds"
 # syntax:  $0  <node>  <service-id>  <remote-ip>   <remote-port>  <local-ip>     <delay>
 ./gue_ping.sh ${NODE} ${SERVICE_ID} ${PROXY_IFIP} ${TUNNEL_PORT} ${TUNNEL_PORT} ${DELAY}
 
 echo -e "\n==============================================="
-echo "# FORWARDING.ADD [4/${STEPS}] (FAKE) Early NAT address resolution (instead of GUE ping)"
+echo "# FORWARDING.TC.ADD [4/${STEPS}] (FAKE) Early NAT address resolution (instead of GUE ping)"
 CHECK=`sudo docker exec -it egw bash -c "tcpdump -ns 0 -c1 -i eth1 'udp and host ${PROXY_IFIP} and port ${TUNNEL_PORT}'" | grep "UDP" | awk '{print $3}' | sed -e 's/.\([^.]*\)$/ \1/'`
 echo "${CHECK}"
 REAL_IP=`echo "${CHECK}" | awk '{print $1}'`
@@ -76,20 +76,20 @@ echo "REAL_IP       : [${REAL_IP}]"
 echo "REAL_PORT     : [${REAL_PORT}]"
 
 echo -e "\n==============================================="
-echo "# FORWARDING.ADD [5/${STEPS}] : Configure EGW on '${PROXY}'"
+echo "# FORWARDING.TC.ADD [5/${STEPS}] : Configure EGW on '${PROXY}'"
 # syntax:  $0  <node>   <service-id>  <proto>  <service-ip>  <service-port>  <real-ip>  <real-port>  <proxy-ip>  <proxy-port>  <foo-ip>
-./egw_setup.sh ${PROXY} ${SERVICE_ID} ${PROTO} ${SERVICE_IP} ${SERVICE_PORT} ${REAL_IP} ${REAL_PORT} ${PROXY_IP} ${PROXY_PORT} ${FOO_IP}
+./egw_tc_setup.sh ${PROXY} ${SERVICE_ID} ${PROTO} ${SERVICE_IP} ${SERVICE_PORT} ${REAL_IP} ${REAL_PORT} ${PROXY_IP} ${PROXY_PORT} ${FOO_IP}
 # here should we receive EGW response
 #PROXY_IP=$7
 #PROXY_PORT=$8
 
 echo -e "\n==============================================="
-echo "# FORWARDING.ADD [6/${STEPS}] : Configure PFC on '${NODE}'"
+echo "# FORWARDING.TC.ADD [6/${STEPS}] : Configure PFC on '${NODE}'"
 # syntax:  $0  <node>  <service-id>  <proto>  <service-ip>  <service-port>  <tunnel-ip>   <tunnel-port>  <foo-ip>
-./pfc_setup.sh ${NODE} ${SERVICE_ID} ${PROTO} ${SERVICE_IP} ${SERVICE_PORT} ${PROXY_IFIP} ${TUNNEL_PORT} ${FOO_IP}
+./pfc_tc_setup.sh ${NODE} ${SERVICE_ID} ${PROTO} ${SERVICE_IP} ${SERVICE_PORT} ${PROXY_IFIP} ${TUNNEL_PORT} ${FOO_IP}
 
 echo -e "\n==============================================="
-echo "# FORWARDING.ADD [7/${STEPS}] : CHECK:"
+echo "# FORWARDING.TC.ADD [7/${STEPS}] : CHECK:"
 echo -e "\n### ping '${PROXY}' -> ${SERVICE_IP}"
 docker exec -it ${PROXY} bash -c "ping -c3 ${SERVICE_IP}"
 
@@ -114,4 +114,4 @@ if [ "${CLIENT}" ] ; then
 fi
 
 echo -e "\n==============================================="
-echo "# FORWARDING.ADD : DONE"
+echo "# FORWARDING.TC.ADD : DONE"
