@@ -27,7 +27,7 @@ docker exec -it ${NODE} bash -c "echo -e \"ID=${SERVICE_ID}\nPROTO=tcp\nIP=${IP}
 echo -e "\n==============================================="
 echo "# HTTP.START [2/${STEPS}] : Create files in ${HOME}"
 
-docker exec -it ${NODE} bash -c "echo -e \"HELLO from ${SERVICE_ID}, running on '${NODE}' ${IP}:${PORT}\" > ${HOME}/hello"
+docker exec -it ${NODE} bash -c "echo -e \"HELLO from '${NODE}', HTTP Service: ID ${SERVICE_ID}, Endpoint ${IP}:${PORT}\" > ${HOME}/hello"
 
 docker exec -it ${NODE} bash -c "dd if=/dev/zero of=${HOME}/data_10M.bin count=10 bs=1048576" > /dev/null 2>&1
 docker exec -it ${NODE} bash -c "dd if=/dev/zero of=${HOME}/data_5M.bin count=5 bs=1048576" > /dev/null 2>&1
