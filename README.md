@@ -22,24 +22,43 @@ The Packet Forwarding Component (PFC) is the eBPF program and associated infrast
 |      src               | Sources of eBPF and helpers                                       |
 |      test              | Tests and scripts to setup test topology                          |
 
-## Prerequisites
+## Geting started
 
-PFC was developed and tested on Ubuntu 18.04 LST.
+### Prerequisites
+
+PFC was developed and tested on Ubuntu 18.04 LTS.
 
 For starting you need only:
 
     git make
 
-Once you clone project locally, issue:
+### Clone repository
+
+Once you clone project locally, run following command from main folder:
 
     make init
     
-And it will get all dependencies for you.
+And it will get all dependencies for you. Now you are ready to procees with building sources.
 
-## Build
+### Build
 
-Follow instructions in [src](src/README.md) folder in order to build eBPF programs and helpers.
+Let's compile TC programs into *.o* files and make userspace binaries like *cli*. 
+Simple version is:
 
-## Run
+    make build
 
-Follow instructions in [test](test/README.md) folder in order to setup a demo topology and run some tests. 
+For detailed instructions go to [src](src/).
+
+When binaries and docker image are ready, you can run some tests.
+
+### Run
+
+First let's put compiled binaries into docker image:
+
+    make prod-img
+
+And then you can build testing topology and run basic test:
+
+    make test
+
+For detailed information about testing topology and additional test cases proceed to [test](test/) folder. 
