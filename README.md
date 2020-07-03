@@ -26,24 +26,20 @@ The Packet Forwarding Component (PFC) is the eBPF program and associated infrast
 
 PFC was developed and tested on Ubuntu 18.04 LST.
 
-Building and testing require following packages:
+For starting you need only:
 
-    git llvm clang build-essential docker.io python3 python3-pip libelf-dev libpcap-dev gcc-multilib linux-headers-$(uname -r)
+    git make
 
-> Note: Only mandatory packages are mentioned. Tools for improving quality of life (like favorite IDE) are not listed.
+Once you clone project locally, issue:
 
-Kernel version required at least 5.1
-
-    TBD: verify dependencies on clean installation
-
-Python scripts have following dependencies (pip3 install ...):
-
-    TBD: verify dependencies on clean installation
+    make init
+    
+And it will get all dependencies for you.
 
 ## Build
 
-Follow instructions in [[file:src/README.org][src]] folder in order to build eBPF programs and helpers.
+Follow instructions in ![src](src/README.org) folder in order to build eBPF programs and helpers.
 
 ## Run
 
-Follow instructions in [[file:test/README.org][test]] folder in order to setup a demo topology and run some tests. 
+Follow instructions in ![test](test/README.org) folder in order to setup a demo topology and run some tests. 
