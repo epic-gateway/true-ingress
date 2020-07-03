@@ -181,6 +181,13 @@ Script will perform following operations:
 
 > Note: sudo may be required
 
+##### Check
+
+For the sake of completeness there is a script that enlists all topology related docker containers and networks running:
+
+    ./topo_check.sh basic.cfg
+
+
 #### 3. Service
 
 For purpose of this demo topology by service we mean HTTP server. Different kind of services can be added later.
