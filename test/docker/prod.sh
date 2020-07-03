@@ -10,7 +10,7 @@ if [ "$1" ] ; then
 fi
 
 TMP_FOLDER="/tmp/docker"
-FILES="node.Dockerfile  server.py ../../src/egw_egress_tc.o ../../src/egw_ingress_tc.o ../../src/pfc_egress_tc.o ../../src/pfc_ingress_tc.o ../../src/attach_tc.sh ../../src/detach_tc.sh ../../src/reattach_tc.sh ../../src/show_tc.sh"
+FILES="prod.Dockerfile  server.py ../../src/egw_egress_tc.o ../../src/egw_ingress_tc.o ../../src/pfc_egress_tc.o ../../src/pfc_ingress_tc.o ../../src/attach_tc.sh ../../src/detach_tc.sh ../../src/reattach_tc.sh ../../src/show_tc.sh"
 
 # chack no containers are running
 CONTAINERS=`sudo docker ps | grep ${PRODUCTION_IMG}`
@@ -59,7 +59,7 @@ fi
 
 # build new production image
 echo "### Building '${PRODUCTION_IMG}'..."
-sudo docker build --tag ${PRODUCTION_IMG} -f node.Dockerfile .
+sudo docker build --tag ${PRODUCTION_IMG} -f prod.Dockerfile .
 
 #check
 sudo docker images

@@ -47,7 +47,11 @@ Simple way from top level makefile:
 
 Detailed from */test/docker* folder:
 
-    ./docker-system.sh
+    ./system.sh
+
+Used *.Dockerfile*:
+
+    ./system.Dockerfile
 
 
 ### Production image
@@ -67,7 +71,11 @@ Simple way from top level makefile:
 
 Detailed from */test/docker* folder:
 
-    ./docker.sh [<docker-image>]
+    ./prod.sh [<docker-image>]
+
+Used *.Dockerfile*:
+
+    ./prod.Dockerfile
 
 You can optionally specify docker image name otherwise default name from _common.cfg_ will be used.
 
