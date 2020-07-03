@@ -3,10 +3,12 @@
 SOURCES = $(wildcard src)
 CLEAN = $(addsuffix _clean,$(SOURCES))
 
-.PHONY: clean $(SOURCES) $(CLEAN)
+.PHONY: clean $(SOURCES) $(CLEAN) test
 
 all: $(SOURCES) prod-img
+
 clean: $(CLEAN)
+
 build: $(SOURCES)
 
 system-img:
@@ -23,6 +25,9 @@ init-dependencies:
 
 init: init-submodules init-dependencies system-img
 
+test:
+	$(MAKE) -C test/basic
+
 $(SOURCES):
 	$(MAKE) -C $@
 
@@ -36,3 +41,4 @@ help:
 	@echo 'system-img	(re)build docker system image'
 	@echo 'prod-img		(re)build docker production image'
 	@echo 'init		submodule init + install dependencies + docker-system'
+	@echo 'test		execute simple test scenario test/basic/test_01.sh'
