@@ -6,19 +6,28 @@
 . ../common.cfg
 
 if [ "$1" ] ; then
-    LINUX_IMG="$1"
+    PRODUCTION_IMG="$1"
 fi
 
 TMP_FOLDER="/tmp/docker"
 FILES="node.Dockerfile  server.py ../../src/egw_egress_tc.o ../../src/egw_ingress_tc.o ../../src/pfc_egress_tc.o ../../src/pfc_ingress_tc.o ../../src/attach_tc.sh ../../src/detach_tc.sh ../../src/reattach_tc.sh ../../src/show_tc.sh"
 
-CONTAINERS=`sudo docker ps | grep ${LINUX_IMG}`
+# chack no containers are running
+CONTAINERS=`sudo docker ps | grep ${PRODUCTION_IMG}`
 if [ "${CONTAINERS}" ] ; then
-    echo "# Docker image is in use. Stop following containers first:"
+    echo "# Docker image '${PRODUCTION_IMG}' is in use. Stop following containers first:"
     echo "${CONTAINERS}"
     exit 1
 fi
 
+# check system image exists
+CHECK=`sudo docker images | awk '{print $1":"$2}' | grep ${SYSTEM_IMG}`
+if [ ! "${CHECK}" ]; then
+    echo "# System image missing. Need to build it first..."
+    ./system.sh
+fi
+
+# create temporary folder and copy files
 rm -rf ${TMP_FOLDER} &> /dev/null
 mkdir -p ${TMP_FOLDER}
 
@@ -40,15 +49,17 @@ cd ${TMP_FOLDER}
 
 ls
 
-CHECK=`sudo docker images | awk '{print $1":"$2}' | grep ${LINUX_IMG}`
+# remove old production image if exists
+CHECK=`sudo docker images | awk '{print $1":"$2}' | grep ${PRODUCTION_IMG}`
 if [ "${CHECK}" ]; then
     echo "# Removing old docker image..."
-    sudo docker rmi ${LINUX_IMG}
+    sudo docker rmi ${PRODUCTION_IMG}
     sudo docker images
 fi
 
-echo "### Building '${LINUX_IMG}'..."
-sudo docker build --tag ${LINUX_IMG} -f node.Dockerfile .
+# build new production image
+echo "### Building '${PRODUCTION_IMG}'..."
+sudo docker build --tag ${PRODUCTION_IMG} -f node.Dockerfile .
 
 #check
 sudo docker images

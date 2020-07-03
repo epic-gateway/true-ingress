@@ -27,16 +27,16 @@ fi
 . $1
 
 if [ "$2" ] ; then
-    LINUX_IMG="$2"
+    PRODUCTION_IMG="$2"
 fi
 
 # docker image
-CHECK=`sudo docker images | awk '{print $1":"$2}' | grep ${LINUX_IMG}`
+CHECK=`sudo docker images | awk '{print $1":"$2}' | grep ${PRODUCTION_IMG}`
 if [ ! "${CHECK}" ]; then
-    echo "Docker image '${LINUX_IMG}' : Not found! You need to build it first."
+    echo "Docker image '${PRODUCTION_IMG}' : Not found! You need to build it first."
     exit 1
 else
-    echo "Docker image '${LINUX_IMG}' : OK"
+    echo "Docker image '${PRODUCTION_IMG}' : OK"
 fi
 
 echo -e "\n==========================================="
@@ -59,8 +59,8 @@ echo "==========================================="
 for NODE in ${NODES}
 do
     echo "### Starting '${NODE}' container ###"
-#    sudo docker run --rm -itd --cap-add=NET_ADMIN --name ${NODE} -e MICROSERVICE_LABEL=${NODE} ${LINUX_IMG}
-    sudo docker run --rm -itd  --privileged --name ${NODE} -e MICROSERVICE_LABEL=${NODE} ${LINUX_IMG}
+#    sudo docker run --rm -itd --cap-add=NET_ADMIN --name ${NODE} -e MICROSERVICE_LABEL=${NODE} ${PRODUCTION_IMG}
+    sudo docker run --rm -itd  --privileged --name ${NODE} -e MICROSERVICE_LABEL=${NODE} ${PRODUCTION_IMG}
 done
 
 if [ "${VERBOSE}" ]; then

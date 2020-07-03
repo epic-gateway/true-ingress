@@ -26,14 +26,14 @@ fi
 . $1
 
 if [ "$2" ] ; then
-    LINUX_IMG="$2"
+    PRODUCTION_IMG="$2"
 fi
 
 echo -e "\n==========================================="
 echo "# TOPO($1).STOP [2/${STEPS}] : Stoping containers"
 echo "==========================================="
 
-CONTAINERS=`docker ps | grep ${LINUX_IMG} | awk '{print $NF}'`
+CONTAINERS=`docker ps | grep ${PRODUCTION_IMG} | awk '{print $NF}'`
 #echo "CONTAINERS to delete:[$CONTAINERS]"
 for CONTAINER in $CONTAINERS
 do
