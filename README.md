@@ -38,8 +38,8 @@ And it will get all dependencies for you.
 
 ## Build
 
-Follow instructions in ![src](src/README.org) folder in order to build eBPF programs and helpers.
+Follow instructions in [src](src/README.md) folder in order to build eBPF programs and helpers.
 
 ## Run
 
-Follow instructions in ![test](test/README.org) folder in order to setup a demo topology and run some tests. 
+Follow instructions in [test](test/README.md) folder in order to setup a demo topology and run some tests. 
