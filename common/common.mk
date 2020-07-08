@@ -54,8 +54,6 @@ all: llvm-check $(USER_TARGETS) $(BPF_OBJ)
 .PHONY: clean $(CLANG) $(LLC)
 
 clean:
-	rm -rf $(LIBBPF_DIR)/build
-	$(MAKE) -C $(LIBBPF_DIR) clean
 #	$(MAKE) -C $(COMMON_DIR) clean
 #	rm -f $(USER_TARGETS) $(BPF_OBJ) $(USER_OBJ) $(COPY_LOADER) $(COPY_STATS)
 	rm -f $(USER_TARGETS) $(BPF_OBJ) $(USER_OBJ)
