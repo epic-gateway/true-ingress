@@ -5,7 +5,7 @@
 # 2) add routing to the tunnel
 # 3) add neccessary NAT
 
-STEPS=7
+STEPS=8
 #TUNNEL_PREFIX="10.1.1."
 
 NODE=$1
@@ -105,9 +105,25 @@ if [ "${VERBOSE}" ]; then
 fi
 
 echo -e "\n==============================================="
-echo "# EGW.TC.ADD [7/${STEPS}] : Attach TC to ${IFNAME}"
+echo "# EGW.TC.ADD [7/${STEPS}] : Mount bpf FS"
+
+if [ ! -d "/sys/fs/bpf" ] ; then
+    echo "BPF FS: Mounting..."
+    docker exec -it ${NODE} bash -c "mount -t bpf bpf /sys/fs/bpf/"
+else
+    echo "BPF FS: OK"
+fi
+
+echo -e "\n==============================================="
+echo "# EGW.TC.ADD [8/${STEPS}] : Attach TC to ${IFNAME}"
 
 docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./attach_tc.sh eth1 egw"
+
+# check
+#if [ "${VERBOSE}" ]; then
+    echo ""
+    docker exec -it ${NODE} bash -c "ls -R /sys/fs/bpf/"
+#fi
 
 echo -e "\n==============================================="
 echo "# EGW.TC.ADD : DONE"

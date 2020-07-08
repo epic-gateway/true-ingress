@@ -5,7 +5,7 @@
 # 2) add routing to the tunnel
 # 3) send GUE ping
 
-STEPS=4
+STEPS=5
 TUNNEL_PREFIX="10.2.1."
 
 NODE=$1
@@ -71,9 +71,25 @@ if [ "${VERBOSE}" ]; then
 fi
 
 echo -e "\n==============================================="
-echo "# EGW.ADD [4/${STEPS}] : Attach TC to ${IFNAME}"
+echo "# PFC.TC.ADD [4/${STEPS}] : Mount bpf FS"
+
+if [ ! -d "/sys/fs/bpf" ] ; then
+    echo "BPF FS: Mounting..."
+    docker exec -it ${NODE} bash -c "mount -t bpf bpf /sys/fs/bpf/"
+else
+    echo "BPF FS: OK"
+fi
+
+echo -e "\n==============================================="
+echo "# PFC.ADD [5/${STEPS}] : Attach TC to ${IFNAME}"
 
 docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./attach_tc.sh eth1 pfc"
+
+# check
+#if [ "${VERBOSE}" ]; then
+    echo ""
+    docker exec -it ${NODE} bash -c "ls -R /sys/fs/bpf/"
+#fi
 
 echo -e "\n==============================================="
 echo "# PFC.TC.ADD : DONE"
