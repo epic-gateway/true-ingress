@@ -5,10 +5,6 @@
 
 #include "struct_tc.h"
 
-#define CFG_IDX_RX      0
-#define CFG_IDX_TX      1
-#define CFG_IDX_MAX     2
-
 struct bpf_elf_map SEC("maps") map_config = {
     .type       = BPF_MAP_TYPE_ARRAY,
     .size_key   = sizeof(__u32),

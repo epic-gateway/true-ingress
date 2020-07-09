@@ -66,6 +66,10 @@ struct service {
 
 #define CFG_NAME_SIZE   16
 
+#define CFG_IDX_RX      0
+#define CFG_IDX_TX      1
+#define CFG_IDX_MAX     2
+
 struct config {
     __u32   id;
     __u32   flags;
