@@ -18,4 +18,8 @@ else
 fi
 
 ./show_tc.sh ${NIC} ${DIRECTION}
+
+# unmount maps? not to mess with other eBPF?
+sudo umount /sys/fs/bpf/
+
 echo "DONE"

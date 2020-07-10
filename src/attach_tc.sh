@@ -6,6 +6,8 @@ NIC=$1
 BINARY=$2
 DIRECTION=$3
 
+sudo mount -t bpf bpf /sys/fs/bpf/
+
 echo "Loading PFC(TC) to ${NIC}..."
 CHECK=`tc qdisc show | grep clsact | grep ${NIC}`
 if [ "${CHECK}" ]; then
