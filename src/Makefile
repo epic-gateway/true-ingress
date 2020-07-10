@@ -7,7 +7,8 @@ BPF_TARGETS := \
     egw_egress_tc
 
 USER_TARGETS := \
-    cli_cfg
+    cli_cfg \
+    cli_tunnel
 
 USER_LIBS := -lz
 #COPY_LOADER = xdp_loader
