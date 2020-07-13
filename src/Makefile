@@ -8,7 +8,8 @@ BPF_TARGETS := \
 
 USER_TARGETS := \
     cli_cfg \
-    cli_tunnel
+    cli_tunnel \
+    cli_service
 
 USER_LIBS := -lz
 #COPY_LOADER = xdp_loader
