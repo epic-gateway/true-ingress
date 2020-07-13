@@ -54,6 +54,9 @@ Mkfile.old
 dkms.conf
 
 # Userspace programs
+cli_cfg
+cli_tunnel
+cli_service
 
 # tracing userspace programs
 
