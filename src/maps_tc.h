@@ -15,7 +15,7 @@
 #define MAX_SERVICE_ENTRIES     1024
 
 ////////////////////////////////
-// TABLE-NAT		EP -> EP
+// TABLE-NAT        EP -> EP
 
 struct bpf_elf_map SEC("maps") map_nat = {
     .type           = BPF_MAP_TYPE_HASH,
@@ -26,7 +26,7 @@ struct bpf_elf_map SEC("maps") map_nat = {
 };
 
 ////////////////////////////////
-// TABLE-DECAP		EP -> EMPTY
+// TABLE-DECAP      EP -> EMPTY
 
 struct bpf_elf_map SEC("maps") map_decap = {
     .type           = BPF_MAP_TYPE_HASH,
@@ -38,7 +38,7 @@ struct bpf_elf_map SEC("maps") map_decap = {
 };
 
 ////////////////////////////////
-// TABLE-ENCAP		EP -> SERVICE
+// TABLE-ENCAP      EP -> SERVICE
 
 struct bpf_elf_map SEC("maps") map_encap = {
     .type           = BPF_MAP_TYPE_HASH,
@@ -49,9 +49,9 @@ struct bpf_elf_map SEC("maps") map_encap = {
 };
 
 ////////////////////////////////
-// TABLE-SERVICE	SID -> KEY
+// TABLE-VERIFY     SID -> KEY
 
-struct bpf_elf_map SEC("maps") map_service = {
+struct bpf_elf_map SEC("maps") map_verify = {
     .type           = BPF_MAP_TYPE_HASH,
     .size_key       = sizeof(struct identity),
     .size_value     = sizeof(struct key),
@@ -60,7 +60,7 @@ struct bpf_elf_map SEC("maps") map_service = {
 };
 
 ////////////////////////////////
-// TABLE-TUNNEL	tunnel-id -> GUE
+// TABLE-TUNNEL tunnel-id -> GUE
 
 struct bpf_elf_map SEC("maps") map_tunnel = {
     .type           = BPF_MAP_TYPE_HASH,
