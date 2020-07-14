@@ -72,23 +72,39 @@ make_identity(struct identity *ref,
 
 #define SECURITY_KEY_SIZE   16      /* bytes */
 
-struct key {
+struct verify {
     __u8   value[SECURITY_KEY_SIZE];        /* GUE security KEY */
+    struct endpoint dnat;
+    struct endpoint snat;
 };
+
+struct verify *
+make_verify(struct verify   *ref,
+            struct endpoint *dnat,
+            struct endpoint *snat)
+{
+    ref->dnat.ip    = dnat->ip;
+    ref->dnat.port  = dnat->port;
+    ref->dnat.proto = dnat->proto;
+    ref->snat.ip    = snat->ip;
+    ref->snat.port  = snat->port;
+    ref->snat.proto = snat->proto;
+    return ref;
+}
 
 ////////////////////////////////
 // Service (GUE Header)
 struct service {
     __u32           tunnel_id;
     struct identity identity;
-    struct key      key;
+    struct verify   key;
 };
 
 struct service *
 make_service(struct service  *ref,
              __u32            tunnel_id,
              struct identity *identity,
-             struct key      *key)
+             struct verify   *key)
 {
     ref->tunnel_id  = bpf_htonl(tunnel_id);
     ref->identity   = *identity;
