@@ -19,65 +19,114 @@
 #include "stat_tc.h"
 #include "maps_tc.h"
 
+#include "common_tc.h"
+
 //__section("egress")
 int pfc_tx(struct __sk_buff *skb)
 {
-    char msg1[] = "PFC TX << ifindex %u, len %u\n";
-    bpf_trace_printk(msg1, sizeof(msg1), skb->ifindex, skb->len);
-
     // get config
     __u32 cfg_key = CFG_IDX_TX;
     struct config *cfg = bpf_map_lookup_elem(&map_config, &cfg_key);
     if (!cfg) {
-        char msg[] = "ERR: Config not found!\n";
-        bpf_trace_printk(msg, sizeof(msg));
-        return TC_ACT_UNSPEC;
+        bpf_print("ERR: Config not found!\n");
+        return dump_action(TC_ACT_UNSPEC);
     }
 
-    char msg2[] = "CFG: id %u, flags %x, name %s\n";
-    bpf_trace_printk(msg2, sizeof(msg2), cfg->id, cfg->flags, cfg->name);
+    // log hello
+    bpf_print("%s(%u) TX <<<< (cfg flags %x)\n", cfg->name, cfg->id, cfg->flags);
+//    bpf_print("FLAGS CFG_TX_PROXY(%u) : %u\n", CFG_TX_PROXY, cfg->flags & CFG_TX_PROXY);
+//    bpf_print("FLAGS CFG_TX_SNAT(%u)  : %u\n", CFG_TX_SNAT, cfg->flags & CFG_TX_SNAT);
+//    bpf_print("FLAGS CFG_TX_DUMP(%u)  : %u\n", CFG_TX_DUMP, cfg->flags & CFG_TX_DUMP);
+    bpf_print("PKT #%u, ifindex %u, len %u\n", stats_update(skb->ifindex, STAT_IDX_TX, skb), skb->ifindex, skb->len);
+
+    // parse packet
+    struct headers hdr = { 0 };
+    if (parse_headers(skb, &hdr) == TC_ACT_SHOT) {
+        bpf_print("Uninteresting packet type, IGNORING\n");
+        return dump_action(TC_ACT_OK);
+    }
+
+    // dump packet
+    if (cfg->flags & CFG_TX_DUMP) {
+//      stats_update(skb->ifindex, skb);
+//      stats_print(skb->ifindex);
+    
+        dump_pkt(skb);
+    }
 
     // start processing
-    stats_update(skb->ifindex, skb);
-    stats_print(skb->ifindex);
-    dump_pkt(skb);
-    
     struct endpoint ep = { 0 };
 
     // check ROLE
     if (cfg->flags & CFG_TX_PROXY) {
-        char msg3[] = "Is PROXY\n";
-        bpf_trace_printk(msg3, sizeof(msg3));
+        bpf_print("Is PROXY\n");
 
-        // get DEP
-        // ...
-        char msg4[] = "Parsed DEP: ip %x, port %u, proto %u\n";
-        bpf_trace_printk(msg4, sizeof(msg4), ep.ip, ep.port, ep.proto);
-        
+        // get Destination EP
+        parse_dest_ep(&ep, &hdr);
+
         // is Service endpoint?
         struct service *svc = bpf_map_lookup_elem(&map_encap, &ep);
         if (svc) {
-            char msg5[] = "GUE Encap\n";
-            bpf_trace_printk(msg5, sizeof(msg5));
+            bpf_print("GUE Encap: service-id %u, group-id %u, key %s\n", svc->identity.service_id, svc->identity.group_id, svc->key.value);
+            bpf_print("GUE Encap: tunnel-id %u ", svc->tunnel_id);
+            struct tunnel *tun = bpf_map_lookup_elem(&map_tunnel, &svc->tunnel_id);
+            if (!tun) {
+                bpf_print("NOT FOUND\n");
+                return dump_action(TC_ACT_UNSPEC);
+            }
+
+            bpf_print("(%x:%u -> ", tun->ip_local, tun->port_local);
+            bpf_print("%x:%u)\n", tun->ip_remote, tun->port_remote);
 
             return dump_action(TC_ACT_OK);
         }
+
+        // check output mode
+        if (cfg->flags & CFG_TX_SNAT) {
+            bpf_print("Checking SNAT\n");
+
+            // get Source EP
+            parse_src_ep(&ep, &hdr);
+
+            struct endpoint *snat = bpf_map_lookup_elem(&map_nat, &ep);
+            if (snat) {
+                bpf_print("SNAT to %x:%u\n", snat->ip, bpf_ntohs(snat->port));
+                return dump_action(TC_ACT_OK);
+            }
+        }
     } else {
-        char msg3[] = "Is NODE\n";
-        bpf_trace_printk(msg3, sizeof(msg3));
+        bpf_print("Is NODE\n");
 
         // get SEP
-        // ...
-        char msg4[] = "Parsed SEP: ip %x, port %u, proto %u\n";
-        bpf_trace_printk(msg4, sizeof(msg4), ep.ip, ep.port, ep.proto);
+        parse_src_ep(&ep, &hdr);
 
-        // chack output mode
-        if (cfg->flags & CFG_TX_DSO) {
-            char msg6[] = "Output mode: DSO\n";
-            bpf_trace_printk(msg6, sizeof(msg6));
+        // check output mode
+        if (cfg->flags & CFG_TX_SNAT) {
+            bpf_print("Output mode: DSO (SNAT)\n");
+
+            struct endpoint *snat = bpf_map_lookup_elem(&map_nat, &ep);
+            if (snat) {
+                bpf_print("SNAT to %x:%u\n", snat->ip, bpf_ntohs(snat->port));
+                return dump_action(TC_ACT_OK);
+            }
         } else {
-            char msg6[] = "Output mode: Regular\n";
-            bpf_trace_printk(msg6, sizeof(msg6));
+            bpf_print("Output mode: Regular (GUE Encap)\n");
+
+            struct service *svc = bpf_map_lookup_elem(&map_encap, &ep);
+            if (svc) {
+                bpf_print("GUE Encap: service-id %u, group-id %u, key %s\n", svc->identity.service_id, svc->identity.group_id, svc->key.value);
+                bpf_print("GUE Encap: tunnel-id %u ", svc->tunnel_id);
+                struct tunnel *tun = bpf_map_lookup_elem(&map_tunnel, &svc->tunnel_id);
+                if (!tun) {
+                    bpf_print("NOT FOUND\n");
+                    return dump_action(TC_ACT_UNSPEC);
+                }
+
+                bpf_print("(%x:%u -> ", tun->ip_local, tun->port_local);
+                bpf_print("%x:%u)\n", tun->ip_remote, tun->port_remote);
+
+                return dump_action(TC_ACT_OK);
+            }
         }
     }
 
