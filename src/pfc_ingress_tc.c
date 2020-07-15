@@ -19,62 +19,74 @@
 #include "stat_tc.h"
 #include "maps_tc.h"
 
+#include "common_tc.h"
+
 //__section("ingress")
 int pfc_rx(struct __sk_buff *skb)
 {
-    char msg1[] = "PFC RX << ifindex %u, len %u\n";
-    bpf_trace_printk(msg1, sizeof(msg1), skb->ifindex, skb->len);
-
     // get config
     __u32 cfg_key = CFG_IDX_RX;
     struct config *cfg = bpf_map_lookup_elem(&map_config, &cfg_key);
     if (!cfg) {
-        char msg[] = "ERR: Config not found!\n";
-        bpf_trace_printk(msg, sizeof(msg));
-        return TC_ACT_UNSPEC;
+        bpf_print("ERR: Config not found!\n");
+        return dump_action(TC_ACT_UNSPEC);
     }
 
-    char msg2[] = "CFG: id %u, flags %x, name %s\n";
-    bpf_trace_printk(msg2, sizeof(msg2), cfg->id, cfg->flags, cfg->name);
+    // log hello
+    bpf_print("%s(%u) RX <<<< (cfg flags %x)\n", cfg->name, cfg->id, cfg->flags);
+//    bpf_print("FLAGS CFG_RX_GUE(%u) : %u\n", CFG_RX_GUE, cfg->flags & CFG_RX_GUE);
+//    bpf_print("FLAGS CFG_RX_DNAT(%u): %u\n", CFG_RX_DNAT, cfg->flags & CFG_RX_DNAT);
+//    bpf_print("FLAGS CFG_RX_DUMP(%u): %u\n", CFG_RX_DUMP, cfg->flags & CFG_RX_DUMP);
+    bpf_print("PKT #%u, ifindex %u, len %u\n", stats_update(skb->ifindex, STAT_IDX_RX, skb), skb->ifindex, skb->len);
+
+    // parse packet
+    struct headers hdr = { 0 };
+    if (parse_headers(skb, &hdr) == TC_ACT_SHOT) {
+        bpf_print("Uninteresting packet type, IGNORING\n");
+        return dump_action(TC_ACT_OK);
+    }
+
+    // dump packet
+    if (cfg->flags & CFG_RX_DUMP) {
+//      stats_update(skb->ifindex, skb);
+//      stats_print(skb->ifindex);
+
+        dump_pkt(skb);
+    }
 
     // start processing
-    stats_update(skb->ifindex, skb);
-    stats_print(skb->ifindex);
-    dump_pkt(skb);
-
-    // get DEP
+    // get Destination EP
     struct endpoint ep = { 0 };
-    // ...
-    char msg4[] = "Parsed DEP: ip %x, port %u, proto %u\n";
-    bpf_trace_printk(msg4, sizeof(msg4), ep.ip, ep.port, ep.proto);
-    
+    parse_dest_ep(&ep, &hdr);
+
     // check packet for DECAP
     if (cfg->flags & CFG_RX_GUE) {
-        char msg3[] = "Checking GUE\n";
-        bpf_trace_printk(msg3, sizeof(msg3));
-        
         // is GUE endpoint?
-        __u32 *found = bpf_map_lookup_elem(&map_decap, &ep);
-        if (found) {
-            char msg5[] = "Processing GUE\n";
-            bpf_trace_printk(msg5, sizeof(msg5));
+        if (bpf_map_lookup_elem(&map_decap, &ep)) {
+            bpf_print("Parsing GUE header\n");
             // control or data
-            // verify GUE header
-            // decap
+            if (0) {
+                bpf_print("GUE Control: tunnel-id %u from %x:%u\n", 0, 0, 0);
+            } else {
+                bpf_print("GUE Data: service-id %u, group-id %u\n", 0, 0);
+                if (0) {
+                    bpf_print("GUE service verification failed\n");
+                    return dump_action(TC_ACT_SHOT);
+                }
+
+                bpf_print("GUE Decap\n");
+                // decap
+            }
             return dump_action(TC_ACT_OK);
         }
     }
 
     // check packet for DNAT
     if (cfg->flags & CFG_RX_DNAT) {
-        char msg3[] = "Checking DNAT\n";
-        bpf_trace_printk(msg3, sizeof(msg3));
-        
         // is PROXY endpoint?
         struct endpoint *dnat = bpf_map_lookup_elem(&map_nat, &ep);
         if (dnat) {
-            char msg5[] = "Processing DNAT\n";
-            bpf_trace_printk(msg5, sizeof(msg5));
+            bpf_print("DNAT to %x:%u\n", dnat->ip, bpf_ntohs(dnat->port));
             return dump_action(TC_ACT_OK);
         }
     }
