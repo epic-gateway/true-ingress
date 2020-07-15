@@ -15,7 +15,7 @@ struct endpoint {
     __u16  proto;                   /* IP proto */
 };
 
-struct endpoint *
+static inline struct endpoint *
 make_endpoint(struct endpoint *ref,
               __u32  ip,
               __u16  port,
@@ -35,7 +35,7 @@ struct tunnel {
     __u16  port_remote;           /* outer: target port */                // can be NAT, filled from GUE control packet
 };
 
-struct tunnel *
+static inline struct tunnel *
 make_tunnel(struct tunnel *ref,
             __u32  ip_local,
             __u16  port_local,
@@ -58,7 +58,7 @@ struct identity {
     GID_SID_TYPE  group_id;                /* GUE group ID */
 };
 
-struct identity *
+static inline struct identity *
 make_identity(struct identity *ref,
               GID_SID_TYPE service_id,
               GID_SID_TYPE group_id)
@@ -78,7 +78,7 @@ struct verify {
     struct endpoint snat;
 };
 
-struct verify *
+static inline struct verify *
 make_verify(struct verify   *ref,
             struct endpoint *dnat,
             struct endpoint *snat)
@@ -100,7 +100,7 @@ struct service {
     struct verify   key;
 };
 
-struct service *
+static inline struct service *
 make_service(struct service  *ref,
              __u32            tunnel_id,
              struct identity *identity,
@@ -122,9 +122,11 @@ make_service(struct service  *ref,
 
 #define CFG_RX_GUE      1
 #define CFG_RX_DNAT     2
+#define CFG_RX_DUMP     8
 
 #define CFG_TX_PROXY    1
-#define CFG_TX_DSO      2
+#define CFG_TX_SNAT     2
+#define CFG_TX_DUMP     8
 
 #define CFG_NAME_SIZE   16
 
@@ -137,6 +139,16 @@ struct config {
     __u32   flags;
     char    name[CFG_NAME_SIZE];
 };
+
+static inline struct config *
+make_config(struct config  *ref,
+             __u32   id,
+             __u32   flags)
+{
+    ref->id     = id;
+    ref->flags  = flags;
+    return ref;
+}
 
 ////////////////////////////////
 // Statistics
