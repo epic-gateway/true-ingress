@@ -34,9 +34,6 @@ int pfc_tx(struct __sk_buff *skb)
 
     // log hello
     bpf_print("%s(%u) TX <<<< (cfg flags %x)\n", cfg->name, cfg->id, cfg->flags);
-//    bpf_print("FLAGS CFG_TX_PROXY(%u) : %u\n", CFG_TX_PROXY, cfg->flags & CFG_TX_PROXY);
-//    bpf_print("FLAGS CFG_TX_SNAT(%u)  : %u\n", CFG_TX_SNAT, cfg->flags & CFG_TX_SNAT);
-//    bpf_print("FLAGS CFG_TX_DUMP(%u)  : %u\n", CFG_TX_DUMP, cfg->flags & CFG_TX_DUMP);
     bpf_print("PKT #%u, ifindex %u, len %u\n", stats_update(skb->ifindex, STAT_IDX_TX, skb), skb->ifindex, skb->len);
 
     // parse packet
@@ -48,9 +45,6 @@ int pfc_tx(struct __sk_buff *skb)
 
     // dump packet
     if (cfg->flags & CFG_TX_DUMP) {
-//      stats_update(skb->ifindex, skb);
-//      stats_print(skb->ifindex);
-    
         dump_pkt(skb);
     }
 

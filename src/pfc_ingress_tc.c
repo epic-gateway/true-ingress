@@ -49,9 +49,6 @@ int pfc_rx(struct __sk_buff *skb)
 
     // log hello
     bpf_print("%s(%u) RX <<<< (cfg flags %x)\n", cfg->name, cfg->id, cfg->flags);
-//    bpf_print("FLAGS CFG_RX_GUE(%u) : %u\n", CFG_RX_GUE, cfg->flags & CFG_RX_GUE);
-//    bpf_print("FLAGS CFG_RX_DNAT(%u): %u\n", CFG_RX_DNAT, cfg->flags & CFG_RX_DNAT);
-//    bpf_print("FLAGS CFG_RX_DUMP(%u): %u\n", CFG_RX_DUMP, cfg->flags & CFG_RX_DUMP);
     bpf_print("PKT #%u, ifindex %u, len %u\n", stats_update(skb->ifindex, STAT_IDX_RX, skb), skb->ifindex, skb->len);
 
     // parse packet
@@ -63,9 +60,6 @@ int pfc_rx(struct __sk_buff *skb)
 
     // dump packet
     if (cfg->flags & CFG_RX_DUMP) {
-//      stats_update(skb->ifindex, skb);
-//      stats_print(skb->ifindex);
-
         dump_pkt(skb);
     }
 
