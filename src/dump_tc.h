@@ -79,7 +79,7 @@ int dump_icmp(void *data, __u64 nh_off, void *data_end)
     }
     else
     {
-        char msg6[] = "  ICMP: type %x, code %x\n";
+        char msg6[] = "  ICMP : type %x, code %x\n";
         bpf_trace_printk(msg6, sizeof(msg6), icmph->type, icmph->code);
     }
 
@@ -97,8 +97,32 @@ int dump_tcp(void *data, __u64 nh_off, void *data_end)
         return TC_ACT_SHOT;
     }
 
-    char msg2[] = "  TCP: %d -> %d\n";
+    char msg2[] = "  TCP  : %d -> %d\n";
     bpf_trace_printk(msg2, sizeof(msg2), bpf_ntohs(tcph->source), bpf_ntohs(tcph->dest));
+    /*char msg4[] = "       (";
+    bpf_trace_printk(msg4, sizeof(msg4));
+    if (tcph->rst)
+    {
+        char msg[] = " RST";
+        bpf_trace_printk(msg, sizeof(msg));
+    }
+    if (tcph->syn)
+    {
+        char msg[] = " SYN";
+        bpf_trace_printk(msg, sizeof(msg));
+    }
+    if (tcph->fin)
+    {
+        char msg[] = " FIN";
+        bpf_trace_printk(msg, sizeof(msg));
+    }
+    if (tcph->ack)
+    {
+        char msg[] = " ACK";
+        bpf_trace_printk(msg, sizeof(msg));
+    }
+    char msg3[] = " )\n";
+    bpf_trace_printk(msg3, sizeof(msg3));*/
 
     return TC_ACT_OK;
 }
@@ -114,7 +138,7 @@ int dump_udp(void *data, __u64 nh_off, void *data_end)
         return TC_ACT_SHOT;
     }
 
-    char msg2[] = "  UDP: %d -> %d\n";
+    char msg2[] = "  UDP  : %d -> %d\n";
     bpf_trace_printk(msg2, sizeof(msg2), bpf_ntohs(udph->source), bpf_ntohs(udph->dest));
 
     return TC_ACT_OK;
@@ -133,7 +157,7 @@ int dump_ipv4(void *data, __u64 nh_off, void *data_end)
         return TC_ACT_SHOT;
     }
 
-    char msg2[] = "  IPv4: %x -> %x, proto %u\n";
+    char msg2[] = "  IPv4 : %x -> %x, proto %u\n";
     bpf_trace_printk(msg2, sizeof(msg2), bpf_ntohl(iph->saddr), bpf_ntohl(iph->daddr), iph->protocol);
 //    bpf_trace_printk(msg2, sizeof(msg2), iph->saddr, iph->daddr, iph->protocol);
 
@@ -150,7 +174,7 @@ int dump_ipv4(void *data, __u64 nh_off, void *data_end)
 static inline
 int dump_ipv6(void *data, __u64 nh_off, void *data_end)
 {
-    char msg[] = "  IPv6: NOT SUPPORTED\n";
+    char msg[] = "  IPv6  : NOT SUPPORTED\n";
     bpf_trace_printk(msg, sizeof(msg));
 
     return TC_ACT_OK;
@@ -171,7 +195,7 @@ int dump_vlan(void *data, __u64 nh_off, void *data_end)
 
     __u16 h_proto = vhdr->h_vlan_encapsulated_proto;
 
-    char msg2[] = "  VLAN: id %u, proto %x\n";
+    char msg2[] = "  VLAN : id %u, proto %x\n";
     bpf_trace_printk(msg2, sizeof(msg2), bpf_ntohs(vhdr->h_vlan_TCI), bpf_ntohs(h_proto));
 
     if (h_proto == bpf_htons(ETH_P_IP))
@@ -231,7 +255,7 @@ int dump_arp(void *data, __u64 nh_off, void *data_end)
     }
     else
     {
-        char msg6[] = "  ARP: op %u\n";
+        char msg6[] = "  ARP  : op %u\n";
         bpf_trace_printk(msg6, sizeof(msg6), bpf_ntohs(arph->ar_op));
     }
 
@@ -243,7 +267,7 @@ int dump_eth(void *data, void *data_end)
 {
     struct ethhdr *eth = data;
     char msg1[] = "ERROR: (ETH) Invalid packet size\n";
-    char msg2[] = "  ETH: %x -> %x, proto %x\n";
+    char msg2[] = "  ETH  : %x -> %x, proto %x\n";
 
     __u64 nh_off = sizeof(*eth);
     if (data + nh_off > data_end)
