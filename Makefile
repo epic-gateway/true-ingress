@@ -28,6 +28,12 @@ init: init-submodules init-dependencies system-img
 test:
 	$(MAKE) -C test/basic
 
+attach:
+	$(MAKE) -C src attach
+
+detach:
+	$(MAKE) -C src detach
+
 $(SOURCES):
 	$(MAKE) -C $@
 

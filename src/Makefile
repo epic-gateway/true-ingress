@@ -22,3 +22,11 @@ LIBBPF_DIR = ../libbpf/src
 COMMON_DIR = ../common
 
 include $(COMMON_DIR)/common.mk
+
+attach:
+	./attach_tc.sh ens33 pfc
+	sudo ls -R /sys/fs/bpf/
+
+detach:
+	./detach_tc.sh ens33
+	sudo ls -R /sys/fs/bpf/
