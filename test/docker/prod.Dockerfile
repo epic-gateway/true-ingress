@@ -19,6 +19,9 @@ FROM ubuntu:18.04-recent
 COPY *.o /tmp/.acnodal/bin/
 COPY *.sh /tmp/.acnodal/bin/
 
+# Copy CLI
+COPY cli_* /tmp/.acnodal/bin/
+
 # for WEB server
 COPY server.py /tmp/.acnodal/bin/
 
