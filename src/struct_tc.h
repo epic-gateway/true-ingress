@@ -152,9 +152,14 @@ make_config(struct config  *ref,
 
 ////////////////////////////////
 // Statistics
+
+#define STAT_IDX_RX      0
+#define STAT_IDX_TX      1
+#define STAT_IDX_MAX     2
+
 struct statistics {
-    __u64   packets;
-    __u64   bytes;
+    __u64   packets[STAT_IDX_MAX];
+    __u64   bytes[STAT_IDX_MAX];
 };
 
 #endif /* STRUCT_TC_H_ */
