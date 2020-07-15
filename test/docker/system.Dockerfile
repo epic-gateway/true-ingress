@@ -11,5 +11,9 @@ RUN apt-get update && apt-get upgrade -y && apt-get dist-upgrade -y
 RUN apt-get install -y sudo python3 python3-pip vim iputils-ping iptables iproute2 tcpdump wget curl net-tools traceroute nmap iperf3 mtr
 
 
+# Install python modules
+RUN pip3 install scapy
+
+
 # Shell on attach
 CMD ["bash"]

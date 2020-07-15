@@ -10,7 +10,7 @@ if [ "$1" ] ; then
 fi
 
 TMP_FOLDER="/tmp/docker"
-FILES="prod.Dockerfile  server.py ../../src/egw_egress_tc.o ../../src/egw_ingress_tc.o ../../src/pfc_egress_tc.o ../../src/pfc_ingress_tc.o ../../src/attach_tc.sh ../../src/detach_tc.sh ../../src/reattach_tc.sh ../../src/show_tc.sh ../../src/cli_cfg ../../src/cli_tunnel ../../src/cli_service"
+FILES="prod.Dockerfile server.py gue_ping_tun.py ../../src/egw_egress_tc.o ../../src/egw_ingress_tc.o ../../src/pfc_egress_tc.o ../../src/pfc_ingress_tc.o ../../src/attach_tc.sh ../../src/detach_tc.sh ../../src/reattach_tc.sh ../../src/show_tc.sh ../../src/cli_cfg ../../src/cli_tunnel ../../src/cli_service"
 
 # chack no containers are running
 CONTAINERS=`sudo docker ps | grep ${PRODUCTION_IMG}`

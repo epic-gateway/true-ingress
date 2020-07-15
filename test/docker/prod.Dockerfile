@@ -13,7 +13,7 @@ FROM ubuntu:18.04-recent
 #RUN apt-get install -y sudo python3 python3-pip vim iputils-ping iptables iproute2 tcpdump wget curl net-tools traceroute nmap iperf3 mtr
 
 # Install python modules
-#RUN pip3 install ...
+#RUN pip3 install scapy
 
 # Copy eBPF
 COPY *.o /tmp/.acnodal/bin/
@@ -22,8 +22,11 @@ COPY *.sh /tmp/.acnodal/bin/
 # Copy CLI
 COPY cli_* /tmp/.acnodal/bin/
 
-# for WEB server
+# for WEB Server
 COPY server.py /tmp/.acnodal/bin/
+
+# for GUE Ping
+COPY gue_ping_tun.py /tmp/.acnodal/bin/
 
 
 # Shell on attach
