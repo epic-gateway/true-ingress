@@ -122,6 +122,7 @@ int pfc_rx(struct __sk_buff *skb)
 
                 return dump_action(TC_ACT_SHOT);
             } else {
+                ASSERT(gue->hlen != 0, dump_action(TC_ACT_UNSPEC), "Linux GUE (no ext fields)\n");              // FIXME: remove when linux infra not used anymore
                 ASSERT(gue->hlen == 5, dump_action(TC_ACT_SHOT), "Unexpected GUE data HLEN %u\n", gue->hlen);
 
                 bpf_print("GUE ext: ID + KEY\n");
