@@ -35,6 +35,31 @@ struct guehdr {
     __u8 proto_ctype;
     __u16 flags;
 };
+
+struct gueext1hdr {
+    __u32   id;
+};
+
+struct gueext5hdr {
+    __u32   id;
+    __u8    key[16];
+};
+
+static inline
+int update_tunnel_from_guec(__u32 tunnel_id, struct headers *hdr)
+{
+    // update map
+    struct tunnel *tun = bpf_map_lookup_elem(&map_tunnel, &tunnel_id);
+    ASSERT(tun, TC_ACT_SHOT, "ERROR: Failed to update tunnel-id %u\n", tunnel_id);
+
+    struct endpoint ep = { 0 };
+    parse_src_ep(&ep, hdr);
+    bpf_print("GUE Control: Updating tunnel-id %u remote to %x:%u\n", tunnel_id, ep.ip, bpf_ntohs(ep.port));
+    tun->ip_remote = ep.ip;
+    tun->port_remote = ep.port;
+
+    return TC_ACT_SHOT;
+}
 //////////////////////////////
 //__section("ingress")
 int pfc_rx(struct __sk_buff *skb)
@@ -79,27 +104,31 @@ int pfc_rx(struct __sk_buff *skb)
             bpf_print("  gue->control = %u\n", gue->control);
             if (gue->control) {
                 bpf_print("  gue->hlen = %u\n", gue->hlen);
-                ASSERT(gue->hlen == 1, dump_action(TC_ACT_SHOT), "ERROR: Unexpected GUE control HLEN %u\n", gue->hlen);
+                if (gue->hlen == 1) {
+                    bpf_print("GUE ext: ID\n");
+                    struct gueext1hdr *gueext = (struct gueext1hdr *)&gue[1];
+                    ASSERT((void*)&gueext[1] <= data_end, dump_action(TC_ACT_SHOT), "ERROR: (GUEext) Invalid packet size\n");
 
-                __u32 *tunnel_id_ptr = (__u32 *)&gue[1];
-                ASSERT((void*)&tunnel_id_ptr[1] <= data_end, dump_action(TC_ACT_SHOT), "ERROR: (GUE) Invalid packet size\n");
-                __u32 tunnel_id = bpf_ntohl(*tunnel_id_ptr);
-                bpf_print("  tunnel_id = %u\n", tunnel_id);
+                    return dump_action(update_tunnel_from_guec(bpf_ntohl(gueext->id), &hdr));
+                } else if (gue->hlen == 5) {
+                    bpf_print("GUE ext: ID + KEY\n");
+                    struct gueext5hdr *gueext = (struct gueext5hdr *)&gue[1];
+                    ASSERT((void*)&gueext[1] <= data_end, dump_action(TC_ACT_SHOT), "ERROR: (GUEext) Invalid packet size\n");
 
-                // update map
-                struct tunnel *tun = bpf_map_lookup_elem(&map_tunnel, &tunnel_id);
-                ASSERT(tun, dump_action(TC_ACT_SHOT), "ERROR: Failed to update tunnel-id %u\n", tunnel_id);
-
-                parse_src_ep(&ep, &hdr);
-                bpf_print("GUE Control: Updating tunnel-id %u remote to %x:%u\n", tunnel_id, ep.ip, bpf_ntohs(ep.port));
-                tun->ip_remote = ep.ip;
-                tun->port_remote = ep.port;
+                    return dump_action(update_tunnel_from_guec(bpf_ntohl(gueext->id), &hdr));
+                } else {
+                    ASSERT(0, dump_action(TC_ACT_SHOT), "ERROR: Unexpected GUE control HLEN %u\n", gue->hlen);
+                }
 
                 return dump_action(TC_ACT_SHOT);
             } else {
                 ASSERT(gue->hlen == 5, dump_action(TC_ACT_SHOT), "Unexpected GUE data HLEN %u\n", gue->hlen);
 
-                bpf_print("GUE Data: service-id %u, group-id %u\n", 0, 0);
+                bpf_print("GUE ext: ID + KEY\n");
+                struct gueext5hdr *gueext = (struct gueext5hdr *)&gue[1];
+                ASSERT((void*)&gueext[1] <= data_end, dump_action(TC_ACT_SHOT), "ERROR: (GUEext) Invalid packet size\n");
+
+                bpf_print("GUE Data: service-id %u, group-id %u\n", gueext->id & 0xFFFF, (gueext->id >> 16) & 0xFFFF);
                 ASSERT(1, dump_action(TC_ACT_SHOT), "ERROR: GUE service verification failed\n");
 
                 bpf_print("GUE Decap\n");
