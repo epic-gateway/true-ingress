@@ -27,10 +27,7 @@ int pfc_tx(struct __sk_buff *skb)
     // get config
     __u32 cfg_key = CFG_IDX_TX;
     struct config *cfg = bpf_map_lookup_elem(&map_config, &cfg_key);
-    if (!cfg) {
-        bpf_print("ERR: Config not found!\n");
-        return dump_action(TC_ACT_UNSPEC);
-    }
+    ASSERT(cfg != 0, dump_action(TC_ACT_UNSPEC), "ERROR: Config not found!\n");
 
     // log hello
     bpf_print("%s(%u) TX <<<< (cfg flags %x)\n", cfg->name, cfg->id, cfg->flags);
@@ -38,10 +35,7 @@ int pfc_tx(struct __sk_buff *skb)
 
     // parse packet
     struct headers hdr = { 0 };
-    if (parse_headers(skb, &hdr) == TC_ACT_SHOT) {
-        bpf_print("Uninteresting packet type, IGNORING\n");
-        return dump_action(TC_ACT_OK);
-    }
+    ASSERT(parse_headers(skb, &hdr) != TC_ACT_SHOT, dump_action(TC_ACT_OK), "Uninteresting packet type, IGNORING\n");
 
     // dump packet
     if (cfg->flags & CFG_TX_DUMP) {
@@ -64,10 +58,7 @@ int pfc_tx(struct __sk_buff *skb)
             bpf_print("GUE Encap: service-id %u, group-id %u, key %s\n", svc->identity.service_id, svc->identity.group_id, svc->key.value);
             bpf_print("GUE Encap: tunnel-id %u ", svc->tunnel_id);
             struct tunnel *tun = bpf_map_lookup_elem(&map_tunnel, &svc->tunnel_id);
-            if (!tun) {
-                bpf_print("NOT FOUND\n");
-                return dump_action(TC_ACT_UNSPEC);
-            }
+            ASSERT(tun, dump_action(TC_ACT_UNSPEC), "ERROR: tunnel-id %u not found\n", svc->tunnel_id);
 
             bpf_print("(%x:%u -> ", tun->ip_local, tun->port_local);
             bpf_print("%x:%u)\n", tun->ip_remote, tun->port_remote);
@@ -111,10 +102,7 @@ int pfc_tx(struct __sk_buff *skb)
                 bpf_print("GUE Encap: service-id %u, group-id %u, key %s\n", svc->identity.service_id, svc->identity.group_id, svc->key.value);
                 bpf_print("GUE Encap: tunnel-id %u ", svc->tunnel_id);
                 struct tunnel *tun = bpf_map_lookup_elem(&map_tunnel, &svc->tunnel_id);
-                if (!tun) {
-                    bpf_print("NOT FOUND\n");
-                    return dump_action(TC_ACT_UNSPEC);
-                }
+                ASSERT(tun, dump_action(TC_ACT_UNSPEC), "ERROR: tunnel-id %u not found\n", svc->tunnel_id);
 
                 bpf_print("(%x:%u -> ", tun->ip_local, tun->port_local);
                 bpf_print("%x:%u)\n", tun->ip_remote, tun->port_remote);

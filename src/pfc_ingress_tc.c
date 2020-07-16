@@ -42,10 +42,7 @@ int pfc_rx(struct __sk_buff *skb)
     // get config
     __u32 cfg_key = CFG_IDX_RX;
     struct config *cfg = bpf_map_lookup_elem(&map_config, &cfg_key);
-    if (!cfg) {
-        bpf_print("ERR: Config not found!\n");
-        return dump_action(TC_ACT_UNSPEC);
-    }
+    ASSERT(cfg != 0, dump_action(TC_ACT_UNSPEC), "ERROR: Config not found!\n");
 
     // log hello
     bpf_print("%s(%u) RX <<<< (cfg flags %x)\n", cfg->name, cfg->id, cfg->flags);
@@ -53,10 +50,7 @@ int pfc_rx(struct __sk_buff *skb)
 
     // parse packet
     struct headers hdr = { 0 };
-    if (parse_headers(skb, &hdr) == TC_ACT_SHOT) {
-        bpf_print("Uninteresting packet type, IGNORING\n");
-        return dump_action(TC_ACT_OK);
-    }
+    ASSERT(parse_headers(skb, &hdr) != TC_ACT_SHOT, dump_action(TC_ACT_OK), "Uninteresting packet type, IGNORING\n");
 
     // dump packet
     if (cfg->flags & CFG_RX_DUMP) {
@@ -64,8 +58,8 @@ int pfc_rx(struct __sk_buff *skb)
     }
 
     // start processing
-    // get Destination EP
     struct endpoint ep = { 0 };
+    // get Destination EP
     parse_dest_ep(&ep, &hdr);
 
     // check packet for DECAP
@@ -77,41 +71,24 @@ int pfc_rx(struct __sk_buff *skb)
             // control or data
             struct guehdr *gue = hdr.payload;
 
-            if ((void*)&gue[1] > data_end)
-            {
-                bpf_print("ERROR: (GUE) Invalid packet size\n");
-                return dump_action(TC_ACT_SHOT);
-            }
+            ASSERT((void*)&gue[1] <= data_end, dump_action(TC_ACT_SHOT), "ERROR: (GUE) Invalid packet size\n");
 
             bpf_print("  gue->version = %u\n", gue->version);
-            if (gue->version != 0) {
-                bpf_print("ERROR: Unsupported GUE version %u\n", gue->version);
-                return dump_action(TC_ACT_SHOT);
-            }
+            ASSERT(gue->version == 0, dump_action(TC_ACT_SHOT), "ERROR: Unsupported GUE version %u\n", gue->version);
 
             bpf_print("  gue->control = %u\n", gue->control);
             if (gue->control) {
                 bpf_print("  gue->hlen = %u\n", gue->hlen);
-                if (gue->hlen != 1) {
-                    bpf_print("ERROR: Unexpected GUE control HLEN %u\n", gue->hlen);
-                    return dump_action(TC_ACT_SHOT);
-                }
+                ASSERT(gue->hlen == 1, dump_action(TC_ACT_SHOT), "ERROR: Unexpected GUE control HLEN %u\n", gue->hlen);
 
                 __u32 *tunnel_id_ptr = (__u32 *)&gue[1];
-                if ((void*)&tunnel_id_ptr[1] > data_end)
-                {
-                    bpf_print("ERROR: (GUE) Invalid packet size\n");
-                    return dump_action(TC_ACT_SHOT);
-                }
+                ASSERT((void*)&tunnel_id_ptr[1] <= data_end, dump_action(TC_ACT_SHOT), "ERROR: (GUE) Invalid packet size\n");
                 __u32 tunnel_id = bpf_ntohl(*tunnel_id_ptr);
                 bpf_print("  tunnel_id = %u\n", tunnel_id);
 
                 // update map
                 struct tunnel *tun = bpf_map_lookup_elem(&map_tunnel, &tunnel_id);
-                if (!tun) {
-                    bpf_print("ERROR: Failed to update tunnel-id %u\n", tunnel_id);
-                    return dump_action(TC_ACT_SHOT);
-                }
+                ASSERT(tun, dump_action(TC_ACT_SHOT), "ERROR: Failed to update tunnel-id %u\n", tunnel_id);
 
                 parse_src_ep(&ep, &hdr);
                 bpf_print("GUE Control: Updating tunnel-id %u remote to %x:%u\n", tunnel_id, ep.ip, bpf_ntohs(ep.port));
@@ -120,16 +97,10 @@ int pfc_rx(struct __sk_buff *skb)
 
                 return dump_action(TC_ACT_SHOT);
             } else {
-                if (gue->hlen != 5) {
-                    bpf_print("Unexpected GUE data HLEN %u\n", gue->hlen);
-                    return dump_action(TC_ACT_UNSPEC);
-                }
+                ASSERT(gue->hlen == 5, dump_action(TC_ACT_SHOT), "Unexpected GUE data HLEN %u\n", gue->hlen);
 
                 bpf_print("GUE Data: service-id %u, group-id %u\n", 0, 0);
-                if (0) {
-                    bpf_print("ERROR: GUE service verification failed\n");
-                    return dump_action(TC_ACT_SHOT);
-                }
+                ASSERT(1, dump_action(TC_ACT_SHOT), "ERROR: GUE service verification failed\n");
 
                 bpf_print("GUE Decap\n");
                 // decap

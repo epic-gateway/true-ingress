@@ -7,6 +7,14 @@
         bpf_trace_printk(____fmt, sizeof(____fmt), ##__VA_ARGS__);  \
 })
 
+#define ASSERT(_expr, _retval, _fmt, ...)   \
+({                                          \
+    if (!(_expr)) {                         \
+        bpf_print(_fmt, ##__VA_ARGS__);     \
+        return _retval;                     \
+    }                                       \
+})
+
 struct headers {
     struct ethhdr *eth;
     struct iphdr *iph;
