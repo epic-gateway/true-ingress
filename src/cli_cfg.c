@@ -79,6 +79,7 @@ void usage(char *prog) {
     fprintf(stderr,"Usage:\n");
     fprintf(stderr,"    %s get <idx|all>\n", prog);
     fprintf(stderr,"    %s set <idx> <id> <flags> <name>\n", prog);
+    fprintf(stderr,"    <idx> - 0 for ingress, 1 for egress\n");
 }
 
 // cli cfg [get|set] [key] ...
