@@ -120,13 +120,13 @@ make_service(struct service  *ref,
 ////////////////////////////////
 // Configuration
 
-#define CFG_RX_GUE      1
-#define CFG_RX_DNAT     2
-#define CFG_RX_DUMP     8
+#define CFG_RX_GUE      1       /* check TABLE_DECAP to match and decapsulate decapsulate GUE */
+#define CFG_RX_DNAT     2       /* check TABLE-NAT to match and perform DNAT */
+#define CFG_RX_DUMP     8       /* DUMP intercepted packet */
 
-#define CFG_TX_PROXY    1
-#define CFG_TX_SNAT     2
-#define CFG_TX_DUMP     8
+#define CFG_TX_PROXY    1       /* set in case of EGW (do not set for NODE) */
+#define CFG_TX_SNAT     2       /* check TABLE-NAT to match and perform DNAT */
+#define CFG_TX_DUMP     8       /* DUMP intercepted packet */
 
 #define CFG_NAME_SIZE   16
 
