@@ -43,11 +43,16 @@ otherwise:
 
     git clone https://gitlab.com/acnodal/packet-forwarding-component.git
 
+### First run
+
 Once you clone project locally, run following command from main folder:
 
     make init
     
-And it will get all dependencies for you. Now you are ready to proceed with building sources.
+And it will downoad and install all dependencies for you. Once initialized, your system should be ready (unless new dependency is added).
+Now you are ready to proceed with building sources.
+
+> Note: `make init` creates also [system docker image](test/docker/README.md#system-image)
 
 ### Build
 
