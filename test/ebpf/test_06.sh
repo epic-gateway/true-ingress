@@ -1,9 +1,7 @@
 #!/bin/bash
-# Setup HTTP service on NODE on same network as EGW, expose it on EGW and send request from CLIENT.
+# Setup HTTP service on NODE behind NAT, expose it on EGW and send request from CLIENT.
 # Attach and configure PFC on NODE and EGW.
 # Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*.
-# Setup HTTP service and forwarding.
-# Send HTTP request from client to *proxy ip:port*.
 # usage: $0
 
 cd ..
@@ -12,14 +10,14 @@ cd ..
 ./topo_setup.sh basic.cfg
 
 CLIENT="client"
-NODE="node1"
+NODE="node2"
 PROXY="egw"
 SERVICE="http"
-SERVICE_ID="100"
-SERVICE_IP="1.1.1.1"
+SERVICE_ID="200"
+SERVICE_IP="2.2.2.2"
 SERVICE_PORT="4000"
 PROXY_IP="5.5.5.5"
-PROXY_PORT="3100"
+PROXY_PORT="3200"
 
 echo "#######################################################"
 echo "# Topology up'n'runnin. Hit <ENTER> to setup service. #"
@@ -49,7 +47,7 @@ echo "######################################################"
 
 # create config
 # set <idx> <id> <flags> <name>
-docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set 0 1 9 'NODE1' && ./cli_cfg set 1 1 8 'NODE1' && ./cli_cfg get all"
+docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set 0 1 9 'NODE2' && ./cli_cfg set 1 1 8 'NODE2' && ./cli_cfg get all"
 docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set 0 5 11 'EGW' && ./cli_cfg set 1 5 11 'EGW' && ./cli_cfg get all"
 
 # setup tunnel
@@ -68,19 +66,17 @@ echo "############################################"
 
 #read
 
-# wait for GUE ping resolved
-sleep 5
+# check TABLE_TUNNEL
 docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get all"
+echo -e "\n\n"
 
-# check traces before
-tail -n60 /sys/kernel/debug/tracing/trace
-
-# generate ICMP ECHO REQUEST + RESPONSE packets
-# syntax: $0     <docker>  <ip>        <port>
-./${SERVICE}_check.sh ${CLIENT} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_ID}
-
-# check traces after
-tail -n60 /sys/kernel/debug/tracing/trace
+for i in {1..1}
+do
+    sleep 10
+    docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get all"
+#    tail -n20 /sys/kernel/debug/tracing/trace
+    echo -e "\n\n"
+done
 
 #echo "########################################"
 #echo "# Test done. Hit <ENTER> to detach TC. #"

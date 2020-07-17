@@ -1,6 +1,7 @@
 #!/bin/bash
 # Setup HTTP service on NODE on same network as EGW, expose it on EGW and send request from CLIENT.
-# Load eBPF on NODE and EGW and check tracefile.
+# Attach and configure PFC on NODE and EGW.
+# Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*.
 # usage: $0
 
 cd ..
@@ -51,13 +52,13 @@ docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set 0 5 11 '
 
 # setup tunnel
 # set <id> <ip-local> <port-local> <ip-remote> <port-remote>
-docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_tunnel set 1 172.1.0.4 6080 172.1.0.3 6080 && ./cli_tunnel get all"
-docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_tunnel set 1 172.1.0.3 6080 172.1.0.4 6080 && ./cli_tunnel get all"
+docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_tunnel set ${SERVICE_ID} 172.1.0.4 6080 172.1.0.3 6080 && ./cli_tunnel get all"
+docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_tunnel set ${SERVICE_ID} 172.1.0.3 6080 0 0 && ./cli_tunnel get all"
 
 # setup service
 # set <service-id> <group-id> <proto> <ip-proxy> <port-proxy> <ip-ep> <port-ep> <tunnel-id> <key>
-docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_service set 2 2 tcp ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} 1 'Pa55w0rd1234567' && ./cli_service get all"
-docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_service set 2 2 tcp ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} 1 'Pa55w0rd1234567' && ./cli_service get all"
+docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_service set 2 2 tcp ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_ID} 'Pa55w0rd1234567' && ./cli_service get all"
+docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_service set 2 2 tcp ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_ID} 'Pa55w0rd1234567' && ./cli_service get all"
 
 echo "############################################"
 echo "# PFC configured. Hit <ENTER> to run test. #"
@@ -65,15 +66,17 @@ echo "############################################"
 
 #read
 
-# check traces before
-tail -n60 /sys/kernel/debug/tracing/trace
+# check TABLE_TUNNEL
+docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get all"
+echo -e "\n\n"
 
-# generate ICMP ECHO REQUEST + RESPONSE packets
-# syntax: $0     <docker>  <ip>        <port>
-./${SERVICE}_check.sh ${CLIENT} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_ID}
-
-# check traces after
-tail -n60 /sys/kernel/debug/tracing/trace
+for i in {1..1}
+do
+    sleep 10
+    docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get all"
+#    tail -n20 /sys/kernel/debug/tracing/trace
+    echo -e "\n\n"
+done
 
 #echo "########################################"
 #echo "# Test done. Hit <ENTER> to detach TC. #"

@@ -1,6 +1,9 @@
 #!/bin/bash
 # Setup HTTP service on NODE behind NAT, expose it on EGW and send request from CLIENT.
-# Load eBPF on NODE and EGW and check tracefile.
+# Attach and configure PFC on NODE and EGW.
+# Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*.
+# Setup HTTP service and forwarding.
+# Send HTTP request from client to *proxy ip:port*.
 # usage: $0
 
 cd ..
@@ -65,14 +68,19 @@ echo "############################################"
 
 #read
 
-# check TABLE_TUNNEL
-for i in {1..2}
-do
-    docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get all"
-#    tail -n20 /sys/kernel/debug/tracing/trace
-    echo -e "\n\n"
-    sleep 5
-done
+# wait for GUE ping resolved
+sleep 5
+docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get all"
+
+# check traces before
+tail -n60 /sys/kernel/debug/tracing/trace
+
+# generate ICMP ECHO REQUEST + RESPONSE packets
+# syntax: $0     <docker>  <ip>        <port>
+./${SERVICE}_check.sh ${CLIENT} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_ID}
+
+# check traces after
+tail -n60 /sys/kernel/debug/tracing/trace
 
 #echo "########################################"
 #echo "# Test done. Hit <ENTER> to detach TC. #"
