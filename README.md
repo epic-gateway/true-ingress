@@ -4,7 +4,10 @@ The Packet Forwarding Component (PFC) is the eBPF program and associated infrast
 
 ## Description
 
-    TBD
+PFC consists of 2 binaries, one attached to ingress queue and one attached to egress queue of network interface.
+Both can be configured to perform certain tasks.
+They use shared maps to allow configuration from control plane.
+There is set if userspace CLIs to read and write data into maps. 
 
 ### Limitations
 
@@ -16,8 +19,8 @@ The Packet Forwarding Component (PFC) is the eBPF program and associated infrast
 | Directory name         | Description                                                       |
 | ---------------------- | ----------------------------------------------------------------- |
 |      docs              | Additional documentation and pictures                             |
-|      common            | Common files (from https://github.com/xdp-project/xdp-tutorial)   |
-|      header            | Linux heades (from https://github.com/xdp-project/xdp-tutorial)   |
+|      common            | Common files (from [xdp-tutorial](https://github.com/xdp-project/xdp-tutorial))   |
+|      header            | Linux headers (from [xdp-tutorial](https://github.com/xdp-project/xdp-tutorial))  |
 |      libbpf            | Libbpf submdule. It is required for linking BFP programs          |
 |      src               | Sources of eBPF and helpers                                       |
 |      test              | Tests and scripts to setup test topology                          |
@@ -28,17 +31,23 @@ The Packet Forwarding Component (PFC) is the eBPF program and associated infrast
 
 PFC was developed and tested on Ubuntu 18.04 LTS.
 
-For starting you need only:
-
-    git make
+For starting you need only `git` and `make`.
 
 ### Clone repository
+
+If you have setup [ssh access](https://gitlab.com/help/ssh/README#locating-an-existing-ssh-key-pair) to gitlab:
+
+    git clone git@gitlab.com:acnodal/packet-forwarding-component.git
+
+otherwise:
+
+    git clone https://gitlab.com/acnodal/packet-forwarding-component.git
 
 Once you clone project locally, run following command from main folder:
 
     make init
     
-And it will get all dependencies for you. Now you are ready to procees with building sources.
+And it will get all dependencies for you. Now you are ready to proceed with building sources.
 
 ### Build
 
@@ -57,8 +66,12 @@ First let's put compiled binaries into docker image:
 
     make prod-img
 
+> Note: `make [all]` will build sources including update of prod-image in single step.
+
 And then you can build testing topology and run basic test:
 
     make test
 
 For detailed information about testing topology and additional test cases proceed to [test](test/) folder. 
+
+> Note: type `make help` to get list of allowed operations.
