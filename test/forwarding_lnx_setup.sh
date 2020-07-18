@@ -37,7 +37,7 @@ echo "FOO_IP        : [${FOO_IP}]"
 echo -e "\n==============================================="
 echo "# FORWARDING.LNX.ADD [1/${STEPS}] : Docker check"
 
-CHECK=`sudo docker ps | awk '{print $NF}' | grep "${NODE}"`
+CHECK=`docker ps | awk '{print $NF}' | grep "${NODE}"`
 if [ "${CHECK}" ] ; then
     echo "'${NODE}' : running"
 else
@@ -45,7 +45,7 @@ else
     exit 1
 fi
 
-CHECK=`sudo docker ps | awk '{print $NF}' | grep "${PROXY}"`
+CHECK=`docker ps | awk '{print $NF}' | grep "${PROXY}"`
 if [ "${CHECK}" ] ; then
     echo "'${PROXY}' : running"
 else
@@ -68,7 +68,7 @@ echo "# FORWARDING.LNX.ADD [3/${STEPS}] : (OUT OF ORDER) Start tunnel ping (in b
 
 echo -e "\n==============================================="
 echo "# FORWARDING.LNX.ADD [4/${STEPS}] (FAKE) Early NAT address resolution (instead of GUE ping)"
-CHECK=`sudo docker exec -it egw bash -c "tcpdump -ns 0 -c1 -i eth1 'udp and host ${PROXY_IFIP} and port ${TUNNEL_PORT}'" | grep "UDP" | awk '{print $3}' | sed -e 's/.\([^.]*\)$/ \1/'`
+CHECK=`docker exec -it egw bash -c "tcpdump -ns 0 -c1 -i eth1 'udp and host ${PROXY_IFIP} and port ${TUNNEL_PORT}'" | grep "UDP" | awk '{print $3}' | sed -e 's/.\([^.]*\)$/ \1/'`
 echo "${CHECK}"
 REAL_IP=`echo "${CHECK}" | awk '{print $1}'`
 REAL_PORT=`echo "${CHECK}" | awk '{print $2}'`
@@ -94,7 +94,7 @@ echo -e "\n### ping '${PROXY}' -> ${SERVICE_IP}"
 docker exec -it ${PROXY} bash -c "ping -c3 ${SERVICE_IP}"
 
 if [ "${CLIENT}" ] ; then
-    CHECK=`sudo docker ps | awk '{print $NF}' | grep "${CLIENT}"`
+    CHECK=`docker ps | awk '{print $NF}' | grep "${CLIENT}"`
     if [ "${CHECK}" ] ; then
         echo "'${CLIENT}' : running"
     else

@@ -31,7 +31,7 @@ if [ "$2" ] ; then
 fi
 
 # docker image
-CHECK=`sudo docker images | awk '{print $1":"$2}' | grep ${PRODUCTION_IMG}`
+CHECK=`docker images | awk '{print $1":"$2}' | grep ${PRODUCTION_IMG}`
 if [ ! "${CHECK}" ]; then
     echo "Docker image '${PRODUCTION_IMG}' : Not found! You need to build it first."
     exit 1
@@ -59,8 +59,8 @@ echo "==========================================="
 for NODE in ${NODES}
 do
     echo "### Starting '${NODE}' container ###"
-#    sudo docker run --rm -itd --cap-add=NET_ADMIN --name ${NODE} -e MICROSERVICE_LABEL=${NODE} ${PRODUCTION_IMG}
-    sudo docker run --rm -itd  --privileged --name ${NODE} -e MICROSERVICE_LABEL=${NODE} ${PRODUCTION_IMG}
+#    docker run --rm -itd --cap-add=NET_ADMIN --name ${NODE} -e MICROSERVICE_LABEL=${NODE} ${PRODUCTION_IMG}
+    docker run --rm -itd  --privileged --name ${NODE} -e MICROSERVICE_LABEL=${NODE} ${PRODUCTION_IMG}
 done
 
 if [ "${VERBOSE}" ]; then
@@ -74,7 +74,7 @@ echo "==========================================="
 for (( i=1; i<${#NETWORK_NAME[@]}; i++ ))
 do
     echo "### Creating (bridge) network '${NETWORK_NAME[$i]}' subnet '${NETWORK_SUBNET[$i]}' ###"
-    sudo docker network create --driver bridge --opt com.docker.network.bridge.name=br_$i --subnet "${NETWORK_SUBNET[$i]}" "${NETWORK_NAME[$i]}"
+    docker network create --driver bridge --opt com.docker.network.bridge.name=br_$i --subnet "${NETWORK_SUBNET[$i]}" "${NETWORK_NAME[$i]}"
 done
 
 if [ "${VERBOSE}" ]; then

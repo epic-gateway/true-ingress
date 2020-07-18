@@ -4,20 +4,20 @@
 
 . ../common.cfg
 
-CHECK=`sudo docker images | awk '{print $1":"$2}' | grep ${SYSTEM_IMG}`
+CHECK=`docker images | awk '{print $1":"$2}' | grep ${SYSTEM_IMG}`
 if [ "${CHECK}" ]; then
     echo "# Removing old docker image..."
-    sudo docker rmi ${SYSTEM_IMG}
+    docker rmi ${SYSTEM_IMG}
     if [ ! "$?"=="0" ] ; then
         exit 1
     fi
-    sudo docker images
+    docker images
 fi
 
 echo "### Building '${SYSTEM_IMG}'..."
-sudo docker build --tag ${SYSTEM_IMG} -f system.Dockerfile .
+docker build --tag ${SYSTEM_IMG} -f system.Dockerfile .
 
 #check
-sudo docker images
+docker images
 
 echo "### Done ###"

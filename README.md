@@ -35,6 +35,8 @@ You need only `docker`, `git` and `make`.  We recommend the docker-ce distributi
 
 https://docs.docker.com/get-docker/
 
+Ensure that you can run docker commands without using `sudo`. You might need to add your login to the `docker` group and log out and back in.
+
 ### Clone repository
 
 If you have setup [ssh access](https://gitlab.com/help/ssh/README#locating-an-existing-ssh-key-pair) to gitlab:
