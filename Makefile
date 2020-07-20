@@ -23,7 +23,7 @@ init-submodules:
 	git submodule update --init
 
 init-dependencies:
-	sudo apt install -y clang llvm gcc-multilib build-essential docker.io python3 python3-pip linux-headers-$(uname -r) libelf-dev zlib1g-dev
+	sudo apt install -y clang llvm gcc-multilib build-essential python3 python3-pip linux-headers-$(uname -r) libelf-dev zlib1g-dev
 
 init: init-submodules init-dependencies system-img
 

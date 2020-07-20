@@ -25,12 +25,12 @@ else
     nic="eth1"
 fi
 
-echo "sudo docker exec -it $1 tcpdump ${VERBOSITY} -i $nic \"$3\""
-sudo docker exec -it $1 tcpdump ${VERBOSITY} -i $nic "$3"
+echo "docker exec -it $1 tcpdump ${VERBOSITY} -i $nic \"$3\""
+docker exec -it $1 tcpdump ${VERBOSITY} -i $nic "$3"
 
 # using tshark instead
 #VERBOSITY="-nxV"
 #VERBOSITY="-nx"
-#echo "sudo docker exec -it $1 tshark ${VERBOSITY} -i $nic \"$3\""
-#sudo docker exec -it $1 tshark ${VERBOSITY} -i $nic "$3"
+#echo "docker exec -it $1 tshark ${VERBOSITY} -i $nic \"$3\""
+#docker exec -it $1 tshark ${VERBOSITY} -i $nic "$3"
 

@@ -23,7 +23,7 @@ STEPS=5
 echo -e "\n==============================================="
 echo "# SERVICE(${SERVICE_ID}).START[1/${STEPS}] : Check input"
 
-CHECK=`sudo docker ps | awk '{print $NF}' | grep "${NODE}"`
+CHECK=`docker ps | awk '{print $NF}' | grep "${NODE}"`
 if [ ! "${CHECK}" ] ; then
     echo "Docker '${NODE}' : NOT running!"
     exit 1
