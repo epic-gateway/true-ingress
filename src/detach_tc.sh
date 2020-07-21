@@ -5,6 +5,10 @@
 NIC=$1
 DIRECTION=$2
 
+if [ ! "${NIC}" ] ; then
+    NIC=$(ip route | grep default | awk '{print $5}')
+fi
+
 if [ "${DIRECTION}" ] ; then
     sudo tc filter del dev ${NIC} ${DIRECTION}
 else

@@ -18,7 +18,7 @@ echo "########################################################"
 
 read
 
-docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin ; ./attach_tc.sh eth1 egw"
+docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin ; ./attach_tc.sh egw eth1"
 
 echo "#########################################"
 echo "# TC attached. Hit <ENTER> to run test. #"

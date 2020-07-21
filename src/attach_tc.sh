@@ -1,12 +1,16 @@
 #!/bin/bash
 #
-# usage: $0 <interface> <ebpf-program> [<direction>]
+# usage: $0  <ebpf-program> [<interface>] [<direction>]
 
-NIC=$1
-BINARY=$2
+BINARY=$1
+NIC=$2
 DIRECTION=$3
 
 sudo mount -t bpf bpf /sys/fs/bpf/
+
+if [ ! "${NIC}" ] ; then
+    NIC=$(ip route | grep default | awk '{print $5}')
+fi
 
 echo "Loading PFC(TC) to ${NIC}..."
 CHECK=`tc qdisc show | grep clsact | grep ${NIC}`

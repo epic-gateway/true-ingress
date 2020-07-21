@@ -73,7 +73,7 @@ fi
 echo -e "\n==============================================="
 echo "# PFC.ADD [4/${STEPS}] : Attach TC to ${IFNAME}"
 
-docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./attach_tc.sh eth1 pfc"
+docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./attach_tc.sh pfc eth1"
 
 # check
 #if [ "${VERBOSE}" ]; then

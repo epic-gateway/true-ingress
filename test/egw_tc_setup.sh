@@ -107,7 +107,7 @@ fi
 echo -e "\n==============================================="
 echo "# EGW.TC.ADD [7/${STEPS}] : Attach TC to ${IFNAME}"
 
-docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./attach_tc.sh eth1 pfc"
+docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./attach_tc.sh pfc eth1"
 
 # check
 #if [ "${VERBOSE}" ]; then

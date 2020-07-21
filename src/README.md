@@ -212,6 +212,8 @@ It will build also dependencies (e.g. libbpf)
 
     make check
 
+Performs attach and detach on primary (where default GW is) network interface.
+
 > Note: There are additional options, for more details check `make help`.
 
 ### Attach/Detach
@@ -220,17 +222,17 @@ It will build also dependencies (e.g. libbpf)
 
 There is a script for attaching TC program to ingress or egress queue of network interface.
 
-    ./attach_tc.sh <interface> <ebpf-program> [ingress|egress]
+    ./attach_tc.sh <ebpf-program> [<interface>] [ingress|egress]
 
 Example:
 
-    ./attach_tc.sh eth0 pfc
+    ./attach_tc.sh pfc eth0
 
 To attach pfc program to both ingress and egress of eth0 or:
 
-    ./attach_tc.sh eth0 egw ingress
+    ./attach_tc.sh pfc eth0 ingress
 
-To attach egw program to ingress of eth0.
+To attach pfc program to ingress of eth0.
 
 Attached eBPF programm uses kernel trace to log information.
 Logged messages can be found:
@@ -243,11 +245,11 @@ However this looks unreliable, some information seems to be missing occasionaly.
 
 Removes attached TC program from ingress or egress queue of network interface.
 
-    ./detach_tc.sh <interface> [ingress|egress]
+    ./detach_tc.sh [<interface>] [ingress|egress]
 
 Example:
 
-    ./detach_tc.sh eth0 pfc
+    ./detach_tc.sh eth0
 
 Detaches TC program from both ingress and egress of eth0 or:
 
@@ -259,7 +261,7 @@ To detach TC program from ingress of eth0.
 
 Show what is attached to network interface.
 
-    ./attach_tc.sh <interface> [ingress|egress]
+    ./show_tc.sh [<interface>] [ingress|egress]
 
 Example:
 
@@ -273,17 +275,17 @@ or:
 
 Reattach first detaches existing TC program and then attaches new to network interface.
 
-    ./reattach_tc.sh <interface> <ebpf-program> [ingress|egress]
+    ./reattach_tc.sh <ebpf-program> [<interface>] [ingress|egress]
 
 Example:
 
-    ./reattach_tc.sh eth0 pfc
+    ./reattach_tc.sh pfc eth0
 
 To remove current and attach pfc program to both ingress and egress of eth0 or:
 
-    ./reattach_tc.sh eth0 egw ingress
+    ./reattach_tc.sh pfc eth0 ingress
 
-To remove current and attach egw program to ingress of eth0.
+To remove current and attach pfc program to ingress of eth0.
 
 ### Configuration
  
