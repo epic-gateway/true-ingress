@@ -20,6 +20,7 @@ PACKAGES="git build-essential"
 echo "============================="
 echo "# Install minimal dependencies"
 echo "============================="
+sudo apt -y update
 sudo apt install -y ${PACKAGES}
 
 if [ ! -d "${WORKDIR}" ]; then
