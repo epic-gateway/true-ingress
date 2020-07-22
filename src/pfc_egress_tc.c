@@ -76,6 +76,12 @@ int pfc_tx(struct __sk_buff *skb)
             struct endpoint *snat = bpf_map_lookup_elem(&map_nat, &ep);
             if (snat) {
                 bpf_print("SNAT to %x:%u\n", snat->ip, bpf_ntohs(snat->port));
+
+                snat4(skb, &hdr, snat->ip, snat->port);
+                if (cfg->flags & CFG_TX_DUMP) {
+                    dump_pkt(skb);
+                }
+
                 return dump_action(TC_ACT_OK);
             }
         }
@@ -92,6 +98,12 @@ int pfc_tx(struct __sk_buff *skb)
             struct endpoint *snat = bpf_map_lookup_elem(&map_nat, &ep);
             if (snat) {
                 bpf_print("SNAT to %x:%u\n", snat->ip, bpf_ntohs(snat->port));
+
+                snat4(skb, &hdr, snat->ip, snat->port);
+                if (cfg->flags & CFG_TX_DUMP) {
+                    dump_pkt(skb);
+                }
+
                 return dump_action(TC_ACT_OK);
             }
         } else {

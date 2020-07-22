@@ -21,6 +21,8 @@ SERVICE_PORT="4000"
 PROXY_IP="5.5.5.5"
 PROXY_PORT="3200"
 
+#export VERBOSE="1"
+
 echo "#######################################################"
 echo "# Topology up'n'runnin. Hit <ENTER> to setup service. #"
 echo "#######################################################"
@@ -50,7 +52,7 @@ echo "######################################################"
 # create config
 # set <idx> <id> <flags> <name>
 docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set 0 1 9 'NODE2' && ./cli_cfg set 1 1 8 'NODE2' && ./cli_cfg get all"
-docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set 0 5 11 'EGW' && ./cli_cfg set 1 5 11 'EGW' && ./cli_cfg get all"
+docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set 0 5 9 'EGW' && ./cli_cfg set 1 5 9 'EGW' && ./cli_cfg get all"
 
 # setup tunnel
 # set <id> <ip-local> <port-local> <ip-remote> <port-remote>

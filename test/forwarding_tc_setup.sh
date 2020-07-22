@@ -12,6 +12,7 @@ SERVICE_PORT=$6
 PROXY_IP=$7
 PROXY_PORT=$8
 CLIENT=$9
+NAT=${10}
 
 #VERBOSE="1"
 
@@ -78,7 +79,7 @@ echo "REAL_PORT     : [${REAL_PORT}]"
 echo -e "\n==============================================="
 echo "# FORWARDING.TC.ADD [5/${STEPS}] : Configure EGW on '${PROXY}'"
 # syntax:  $0  <node>   <service-id>  <proto>  <service-ip>  <service-port>  <real-ip>  <real-port>  <proxy-ip>  <proxy-port>  <foo-ip>
-./egw_tc_setup.sh ${PROXY} ${SERVICE_ID} ${PROTO} ${SERVICE_IP} ${SERVICE_PORT} ${REAL_IP} ${REAL_PORT} ${PROXY_IP} ${PROXY_PORT} ${FOO_IP}
+./egw_tc_setup.sh ${PROXY} ${SERVICE_ID} ${PROTO} ${SERVICE_IP} ${SERVICE_PORT} ${REAL_IP} ${REAL_PORT} ${PROXY_IP} ${PROXY_PORT} ${FOO_IP} ${NAT}
 # here should we receive EGW response
 #PROXY_IP=$7
 #PROXY_PORT=$8

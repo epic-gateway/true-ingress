@@ -19,6 +19,7 @@ TUNNEL_REMOTE_PORT=$7
 PROXY_IP=$8
 PROXY_PORT=$9
 FOO_IP=${10}
+NAT=${11}
 
 #VERBOSE="1"
 
@@ -71,23 +72,25 @@ if [ "${VERBOSE}" ]; then
     docker exec -it ${NODE} bash -c "ip route"
 fi
 
-echo -e "\n==============================================="
-echo "# EGW.TC.ADD [4/${STEPS}] : Set DNAT (PROXY ${PROXY_IP}:${PROXY_PORT} -> SERVICE ${SERVICE_IP}:${SERVICE_PORT})"
+if [ ! ${NAT} ] ; then
+    echo -e "\n==============================================="
+    echo "# EGW.TC.ADD [4/${STEPS}] : Set DNAT (PROXY ${PROXY_IP}:${PROXY_PORT} -> SERVICE ${SERVICE_IP}:${SERVICE_PORT})"
 
-# add icmp entry for ping check (remove later)
-docker exec -it ${NODE} bash -c "iptables -t nat -A PREROUTING -p icmp -i eth1 --destination ${PROXY_IP} -j DNAT --to-destination ${SERVICE_IP}"
-# add real entry (do we care about interfaces??? whitelist/blacklist)
-docker exec -it ${NODE} bash -c "iptables -t nat -A PREROUTING -p ${PROTO} -i eth1 --destination ${PROXY_IP} --dport ${PROXY_PORT} -j DNAT --to-destination ${SERVICE_IP}:${SERVICE_PORT}"
-# check
-docker exec -it ${NODE} bash -c "iptables -t nat -L PREROUTING -n --line-numbers"
+    # add icmp entry for ping check (remove later)
+    docker exec -it ${NODE} bash -c "iptables -t nat -A PREROUTING -p icmp -i eth1 --destination ${PROXY_IP} -j DNAT --to-destination ${SERVICE_IP}"
+    # add real entry (do we care about interfaces??? whitelist/blacklist)
+    docker exec -it ${NODE} bash -c "iptables -t nat -A PREROUTING -p ${PROTO} -i eth1 --destination ${PROXY_IP} --dport ${PROXY_PORT} -j DNAT --to-destination ${SERVICE_IP}:${SERVICE_PORT}"
+    # check
+    docker exec -it ${NODE} bash -c "iptables -t nat -L PREROUTING -n --line-numbers"
 
-echo -e "\n==============================================="
-echo "# EGW.TC.ADD [5/${STEPS}] : Set SNAT (SERVICE ${SERVICE_IP}:${SERVICE_PORT} -> PROXY ${PROXY_IP}:${PROXY_PORT})"
+    echo -e "\n==============================================="
+    echo "# EGW.TC.ADD [5/${STEPS}] : Set SNAT (SERVICE ${SERVICE_IP}:${SERVICE_PORT} -> PROXY ${PROXY_IP}:${PROXY_PORT})"
 
-# add icmp entry for ping check (remove later)
-docker exec -it ${NODE} bash -c "iptables -t nat -A POSTROUTING -p icmp -o eth1 -s ${SERVICE_IP} -j SNAT --to-source ${PROXY_IP}"
-# add real entry (do we care about interfaces??? whitelist/blacklist)
-docker exec -it ${NODE} bash -c "iptables -t nat -A POSTROUTING -p ${PROTO} -o eth1 -s ${SERVICE_IP} --sport ${SERVICE_PORT} -j SNAT --to-source ${PROXY_IP}:${PROXY_PORT}"
+    # add icmp entry for ping check (remove later)
+    docker exec -it ${NODE} bash -c "iptables -t nat -A POSTROUTING -p icmp -o eth1 -s ${SERVICE_IP} -j SNAT --to-source ${PROXY_IP}"
+    # add real entry (do we care about interfaces??? whitelist/blacklist)
+    docker exec -it ${NODE} bash -c "iptables -t nat -A POSTROUTING -p ${PROTO} -o eth1 -s ${SERVICE_IP} --sport ${SERVICE_PORT} -j SNAT --to-source ${PROXY_IP}:${PROXY_PORT}"
+fi
 
 echo -e "\n==============================================="
 echo "# EGW.TC.ADD [6/${STEPS}] : (FAKE) Set MASQUERADE on tunnel entry (required for routing on NODE side)"

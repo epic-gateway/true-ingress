@@ -146,6 +146,12 @@ int pfc_rx(struct __sk_buff *skb)
         struct endpoint *dnat = bpf_map_lookup_elem(&map_nat, &ep);
         if (dnat) {
             bpf_print("DNAT to %x:%u\n", dnat->ip, bpf_ntohs(dnat->port));
+
+            dnat4(skb, &hdr, dnat->ip, dnat->port);
+            if (cfg->flags & CFG_RX_DUMP) {
+                dump_pkt(skb);
+            }
+
             return dump_action(TC_ACT_OK);
         }
     }
