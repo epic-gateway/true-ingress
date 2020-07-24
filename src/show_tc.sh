@@ -2,17 +2,35 @@
 #
 # usage: $0 <interface> [<direction>]
 
-NIC=$1
 DIRECTION=$2
 
-if [ "${DIRECTION}" ] ; then
-    echo "${NIC} [${DIRECTION}]:"
-    tc filter show dev ${NIC} ${DIRECTION}
+if [ ! "$1" ] ; then
+#    NICS=$(ip route | grep default | awk '{print $5}')
+    NICS=$(ip link | grep "mtu" | sed 's/@/ /' | awk '{print $2}' | sed 's/:/ /')
 else
-    echo "${NIC} [ingress]:"
-    tc filter show dev ${NIC} ingress
-    echo "${NIC} [egress]:"
-    tc filter show dev ${NIC} egress
+    NICS=$1
 fi
+
+for NIC in $NICS
+do
+    if [ "${DIRECTION}" ] ; then
+        echo "${NIC}"
+        OUT=$(tc filter show dev ${NIC} ${DIRECTION} | grep "pfc_${DIRECTION}_tc.o")
+        if [ "${OUT}" ] ; then
+            echo -e "    ${DIRECTION} : ${OUT}"
+        fi
+    else
+        echo "${NIC}"
+        OUT=$(tc filter show dev ${NIC} ingress | grep "pfc_ingress_tc.o")
+        if [ "${OUT}" ] ; then
+            echo -e "    ingress : ${OUT}"
+        fi
+
+        OUT=$(tc filter show dev ${NIC} egress | grep "pfc_egress_tc.o")
+        if [ "${OUT}" ] ; then
+            echo -e "    egress  : ${OUT}"
+        fi
+    fi
+done
 
 #bpftool prog show
