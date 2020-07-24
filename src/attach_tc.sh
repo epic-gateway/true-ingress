@@ -3,8 +3,8 @@
 # usage: $0  [<interface>] [<direction>]
 
 BINARY="pfc"
-NIC=$2
-DIRECTION=$3
+NIC=$1
+DIRECTION=$2
 
 sudo mount -t bpf bpf /sys/fs/bpf/
 
