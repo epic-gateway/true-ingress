@@ -18,7 +18,7 @@ echo "########################################################"
 
 read
 
-docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin ; ./attach_tc.sh egw eth1"
+docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin ; ./attach_tc.sh pfc eth1"
 
 echo "#########################################"
 echo "# TC attached. Hit <ENTER> to run test. #"
@@ -30,7 +30,7 @@ read
 tail -n60 /sys/kernel/debug/tracing/trace
 
 # generate ICMP ECHO REQUEST + RESPONSE packets
-./test_icmp.sh ${PROXY_IP} "${CLIENT}"
+./test_icmp.sh ${PROXY_IP} "${NODE}"
 
 # check traces after
 tail -n60 /sys/kernel/debug/tracing/trace
@@ -41,7 +41,7 @@ echo "#################################################"
 
 read
 
-docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin ; ./detach_tc.sh eth1"
+docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin ; ./detach_tc.sh eth1"
 
 echo "#################################################"
 echo "# TC detached. Hit <ENTER> to cleanup topology. #"

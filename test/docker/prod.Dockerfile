@@ -26,7 +26,7 @@ COPY cli_* /tmp/.acnodal/bin/
 COPY server.py /tmp/.acnodal/bin/
 
 # for GUE Ping
-COPY gue_ping_tun.py /tmp/.acnodal/bin/
+COPY gue_ping*.py /tmp/.acnodal/bin/
 
 
 # Shell on attach

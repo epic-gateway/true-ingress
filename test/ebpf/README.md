@@ -6,7 +6,7 @@ Check kernel trace */sys/kernel/debug/tracing/trace* for output.
 ## test_01.sh
 
 Setup basic topology.
-Attaches *egw_ingress_tc.o* and *egw_egress_tc.o* to **EGW** and run ping from **Client** to *PROXY IP* :
+Attaches *pfc_ingress_tc.o* and *pfc_egress_tc.o* to **NODE** and run ping from **Client** to *PROXY IP* :
 
     ./test_01.sh
 
@@ -15,13 +15,7 @@ Status: PASS
 
 ## test_02.sh
 
-Setup basic topology.
-Attaches *pfc_ingress_tc.o* and *pfc_egress_tc.o* to **NODE** and run ping from **Client** to *PROXY IP* :
-
-    ./test_02.sh
-
-Expected: PASS
-Status: PASS
+    **OBSOLETE -> REMOVED**
 
 ## test_03.sh
 

@@ -2,9 +2,7 @@
 
 BPF_TARGETS := \
     pfc_ingress_tc \
-    pfc_egress_tc \
-    egw_ingress_tc \
-    egw_egress_tc
+    pfc_egress_tc
 
 USER_TARGETS := \
     cli_cfg \
