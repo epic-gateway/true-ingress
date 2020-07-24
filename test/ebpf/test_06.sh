@@ -47,8 +47,8 @@ echo "######################################################"
 
 # create config
 # set <idx> <id> <flags> <name>
-docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set 0 1 9 'NODE2' && ./cli_cfg set 1 1 8 'NODE2' && ./cli_cfg get all"
-docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set 0 5 9 'EGW' && ./cli_cfg set 1 5 9 'EGW' && ./cli_cfg get all"
+docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set eth1 0 2 9 'NODE2' && ./cli_cfg set eth1 1 2 8 'NODE2' && ./cli_cfg get all"
+docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set eth1 0 5 9 'EGW' && ./cli_cfg set eth1 1 5 9 'EGW' && ./cli_cfg get all"
 
 # setup tunnel
 # set <id> <ip-local> <port-local> <ip-remote> <port-remote>

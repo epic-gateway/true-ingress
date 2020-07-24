@@ -24,14 +24,16 @@
 //__section("egress")
 int pfc_tx(struct __sk_buff *skb)
 {
+    bpf_print("PFC TX <<<< # %u, ifindex %u, len %u\n", stats_update(skb->ifindex, STAT_IDX_TX, skb), skb->ifindex, skb->len);
+
     // get config
-    __u32 cfg_key = CFG_IDX_TX;
-    struct config *cfg = bpf_map_lookup_elem(&map_config, &cfg_key);
-    ASSERT(cfg != 0, dump_action(TC_ACT_UNSPEC), "ERROR: Config not found!\n");
+    __u32 key = skb->ifindex;
+    struct cfg_if *iface = bpf_map_lookup_elem(&map_config, &key);
+    ASSERT(iface != 0, dump_action(TC_ACT_UNSPEC), "ERROR: Config not found!\n");
+    struct config *cfg = &iface->queue[CFG_IDX_TX];
 
     // log hello
-    bpf_print("%s(%u) TX <<<< (cfg flags %x)\n", cfg->name, cfg->id, cfg->flags);
-    bpf_print("PKT #%u, ifindex %u, len %u\n", stats_update(skb->ifindex, STAT_IDX_TX, skb), skb->ifindex, skb->len);
+    bpf_print("ID %s(%u) Flags %x\n", cfg->name, cfg->id, cfg->flags);
 
     // parse packet
     struct headers hdr = { 0 };

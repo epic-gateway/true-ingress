@@ -150,6 +150,10 @@ make_config(struct config  *ref,
     return ref;
 }
 
+struct cfg_if {
+    struct config queue[CFG_IDX_MAX];
+};
+
 ////////////////////////////////
 // Statistics
 

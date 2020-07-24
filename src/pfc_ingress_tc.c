@@ -64,14 +64,16 @@ int update_tunnel_from_guec(__u32 tunnel_id, struct headers *hdr)
 //__section("ingress")
 int pfc_rx(struct __sk_buff *skb)
 {
+    bpf_print("PFC RX <<<< # %u, ifindex %u, len %u\n", stats_update(skb->ifindex, STAT_IDX_RX, skb), skb->ifindex, skb->len);
+
     // get config
-    __u32 cfg_key = CFG_IDX_RX;
-    struct config *cfg = bpf_map_lookup_elem(&map_config, &cfg_key);
-    ASSERT(cfg != 0, dump_action(TC_ACT_UNSPEC), "ERROR: Config not found!\n");
+    __u32 key = skb->ifindex;
+    struct cfg_if *iface = bpf_map_lookup_elem(&map_config, &key);
+    ASSERT(iface != 0, dump_action(TC_ACT_UNSPEC), "ERROR: Config not found!\n");
+    struct config *cfg = &iface->queue[CFG_IDX_RX];
 
     // log hello
-    bpf_print("%s(%u) RX <<<< (cfg flags %x)\n", cfg->name, cfg->id, cfg->flags);
-    bpf_print("PKT #%u, ifindex %u, len %u\n", stats_update(skb->ifindex, STAT_IDX_RX, skb), skb->ifindex, skb->len);
+    bpf_print("ID %s(%u) Flags %x\n", cfg->name, cfg->id, cfg->flags);
 
     // parse packet
     struct headers hdr = { 0 };
