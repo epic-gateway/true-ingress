@@ -220,17 +220,17 @@ Performs attach and detach on primary (where default GW is) network interface.
 
 #### Attach
 
-There is a script for attaching TC program to ingress or egress queue of network interface.
+There is a script for attaching TC program to ingress or egress queue of network interface. If interface is not specified, default interface (where gefault GW is) will be used.
 
-    ./attach_tc.sh <ebpf-program> [<interface>] [ingress|egress]
+    ./attach_tc.sh [<interface>] [ingress|egress]
 
 Example:
 
-    ./attach_tc.sh pfc eth0
+    ./attach_tc.sh eth0
 
 To attach pfc program to both ingress and egress of eth0 or:
 
-    ./attach_tc.sh pfc eth0 ingress
+    ./attach_tc.sh eth0 ingress
 
 To attach pfc program to ingress of eth0.
 
@@ -243,7 +243,7 @@ However this looks unreliable, some information seems to be missing occasionaly.
 
 #### Detach
 
-Removes attached TC program from ingress or egress queue of network interface.
+Removes attached TC program from ingress or egress queue of network interface. If interface is not specified, default interface (where gefault GW is) will be used.
 
     ./detach_tc.sh [<interface>] [ingress|egress]
 
@@ -259,7 +259,7 @@ To detach TC program from ingress of eth0.
 
 #### Show
 
-Show what is attached to network interface.
+Show what is attached to network interface. If interface is not specified, default interface (where gefault GW is) will be used.
 
     ./show_tc.sh [<interface>] [ingress|egress]
 
@@ -273,17 +273,17 @@ or:
 
 #### Reattach
 
-Reattach first detaches existing TC program and then attaches new to network interface.
+Reattach first detaches existing TC program and then attaches new to network interface. If interface is not specified, default interface (where gefault GW is) will be used.
 
-    ./reattach_tc.sh <ebpf-program> [<interface>] [ingress|egress]
+    ./reattach_tc.sh [<interface>] [ingress|egress]
 
 Example:
 
-    ./reattach_tc.sh pfc eth0
+    ./reattach_tc.sh eth0
 
 To remove current and attach pfc program to both ingress and egress of eth0 or:
 
-    ./reattach_tc.sh pfc eth0 ingress
+    ./reattach_tc.sh eth0 ingress
 
 To remove current and attach pfc program to ingress of eth0.
 

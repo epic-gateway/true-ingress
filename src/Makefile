@@ -22,7 +22,7 @@ COMMON_DIR = ../common
 include $(COMMON_DIR)/common.mk
 
 attach:
-	./attach_tc.sh pfc
+	./attach_tc.sh
 	sudo ls -R /sys/fs/bpf/
 
 detach:

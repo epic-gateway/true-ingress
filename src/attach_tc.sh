@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# usage: $0  <ebpf-program> [<interface>] [<direction>]
+# usage: $0  [<interface>] [<direction>]
 
-BINARY=$1
+BINARY="pfc"
 NIC=$2
 DIRECTION=$3
 
