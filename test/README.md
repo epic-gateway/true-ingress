@@ -355,14 +355,24 @@ Optionally you can specify filter, what kind of packets you are insterested in.
 
 This is wrapper send ICMP ping to given _< ip >_ from all _< node-list >_:
 
-    ./test_icmp.sh <ip> "<node-list>"
+    ./test_icmp.sh <ip> ["<node-list>"]
 
-Where _< node-list >_ can be one or more docker containers.
+Where _< node-list >_ can be none or more docker containers.
+In case no container specified, ping will be sent from host.
 
 Example:
 
     ./test_icmp.sh 5.5.5.5 client
+
+To send ping from _client_
+
     ./test_icmp.sh 5.5.5.5 "client node1 node2"
+
+To send ping from multiple containers
+
+    ./test_icmp.sh 5.5.5.5
+
+To send ping from host
 
 ### test_tcp.sh
 
