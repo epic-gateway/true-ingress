@@ -5,8 +5,12 @@ Check kernel trace */sys/kernel/debug/tracing/trace* for output.
 
 ## test_01.sh
 
-Setup basic topology.
-Attaches *pfc_ingress_tc.o* and *pfc_egress_tc.o* to **NODE** and run ping from **Client** to *PROXY IP* :
+Simple attach PFC test
+
+- Setup basic topology
+- Attaches *pfc_ingress_tc.o* and *pfc_egress_tc.o* to **NODE** and run ping from **Client** to *PROXY IP* :
+
+Run:
 
     ./test_01.sh
 
@@ -22,6 +26,8 @@ Run PFC on multiple interfaces in parallel with different configuration.
 - Run ping from **Client** (via eth1) to *PROXY IP*
 - Run ping from *host* (via eth0) to *eth0 ip*
 
+Run:
+
     ./test_02.sh
 
 Expected: PASS
@@ -30,8 +36,10 @@ Status: PASS
 ## test_03.sh
 
 Variation of `basic/test_01.sh` which setup service on *Node1* (same network).
-TC attached on both **EGW** and **Node1**.
-TC not configured :
+PFC attached on both **EGW** and **Node1**.
+PFC not configured.
+
+Run:
 
     ./test_03.sh
 
@@ -42,7 +50,9 @@ Status: PASS
 
 Variation of `basic/test_02.sh` which setup service on *Node2* (behind NAT).
 TC attached on both **EGW** and **Node2**.
-TC not configured :
+TC not configured.
+
+Run:
 
     ./test_04.sh
 
@@ -53,7 +63,10 @@ Status: PASS
 
 Variation of `basic/test_01.sh` which setup service on *Node1* (same network).
 TC attached and configured on both **EGW** and **Node1**.
-Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port* :
+
+- Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*.
+
+Run:
 
     ./test_05.sh
 
@@ -64,7 +77,10 @@ Status: PASS
 
 Variation of `basic/test_02.sh` which setup service on *Node2* (behind NAT).
 TC attached and configured on both **EGW** and **Node2**.
-Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port* :
+
+- Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*.
+
+Run:
 
     ./test_06.sh
 
@@ -75,9 +91,12 @@ Status: PASS
 
 Variation of `basic/test_01.sh` which setup service on *Node1* (same network).
 TC attached and configured on both **EGW** and **Node1**.
-Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*.
-Setup HTTP service and forwarding.
-Send HTTP request from client to *proxy ip:port*: 
+
+- Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*.
+- Setup HTTP service and forwarding.
+- Send HTTP request from client to *proxy ip:port*: 
+
+Run:
 
     ./test_07.sh
 
@@ -88,9 +107,12 @@ Status: PASS
 
 Variation of `basic/test_02.sh` which setup service on *Node2* (behind NAT).
 TC attached and configured on both **EGW** and **Node2**.
-Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*.
-Setup HTTP service and forwarding.
-Send HTTP request from client to *proxy ip:port*: 
+
+- Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*.
+- Setup HTTP service and forwarding.
+- Send HTTP request from client to *proxy ip:port*: 
+
+Run:
 
     ./test_08.sh
 
