@@ -15,7 +15,17 @@ Status: PASS
 
 ## test_02.sh
 
-    **OBSOLETE -> REMOVED**
+Run PFC on multiple interfaces in parallel with different configuration.
+
+- Setup basic topology.
+- Attaches *pfc_ingress_tc.o* and *pfc_egress_tc.o* to **NODE's** eth0 and eth1
+- Run ping from **Client** (via eth1) to *PROXY IP*
+- Run ping from *host* (via eth0) to *eth0 ip*
+
+    ./test_02.sh
+
+Expected: PASS
+Status: PASS
 
 ## test_03.sh
 
