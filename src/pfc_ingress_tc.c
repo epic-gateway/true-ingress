@@ -69,7 +69,7 @@ int pfc_rx(struct __sk_buff *skb)
     // get config
     __u32 key = skb->ifindex;
     struct cfg_if *iface = bpf_map_lookup_elem(&map_config, &key);
-    ASSERT(iface != 0, dump_action(TC_ACT_UNSPEC), "ERROR: Config not found!\n");
+    ASSERT(iface != 0, dump_action(TC_ACT_UNSPEC), "ERROR: Config not found!\n", dump_pkt(skb));
     struct config *cfg = &iface->queue[CFG_IDX_RX];
 
     // log hello
@@ -77,7 +77,7 @@ int pfc_rx(struct __sk_buff *skb)
 
     // parse packet
     struct headers hdr = { 0 };
-    ASSERT(parse_headers(skb, &hdr) != TC_ACT_SHOT, dump_action(TC_ACT_OK), "Uninteresting packet type, IGNORING\n");
+    ASSERT(parse_headers(skb, &hdr) != TC_ACT_SHOT, dump_action(TC_ACT_OK), "Uninteresting packet type, IGNORING\n", dump_pkt(skb));
 
     // dump packet
     if (cfg->flags & CFG_RX_DUMP) {
