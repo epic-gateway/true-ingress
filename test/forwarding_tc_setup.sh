@@ -1,7 +1,15 @@
 #!/bin/bash
-# syntax: $0 <service-id> <node> <proxy> <proto> <service-ip> <service-port> <proxy-ip> <proxy-port> <tunnel> [<client>]
+# syntax: $0 <service-id> <node> <proxy> <proto> <service-ip> <service-port> <proxy-ip> <proxy-port> <tunnel> [<client>] [<passwd>]
 # 1) setup EGW on $PROXY
 # 2) setup PFC on $NODE
+
+while getopts "n" opt; do
+    case "$opt" in
+    n)  NAT="nat"
+        shift
+        ;;
+    esac
+done
 
 SERVICE_ID=$1
 NODE=$2
@@ -12,12 +20,12 @@ SERVICE_PORT=$6
 PROXY_IP=$7
 PROXY_PORT=$8
 CLIENT=$9
-NAT=${10}
+PASSWD=${10}
 
 #VERBOSE="1"
 
 if [ "${VERBOSE}" ]; then
-    echo -e "\nFORWARDING.TC.ADD : SERVICE_ID='${SERVICE_ID}' NODE='${NODE}' PROXY='${PROXY}' PROTO='${PROTO}' SERVICE_IP='${SERVICE_IP}' SERVICE_PORT='${SERVICE_PORT}' PROXY_IP='${PROXY_IP}' PROXY_PORT='${PROXY_PORT}' CLIENT='${CLIENT}'"
+    echo -e "\nFORWARDING.TC.ADD : SERVICE_ID='${SERVICE_ID}' NODE='${NODE}' PROXY='${PROXY}' PROTO='${PROTO}' SERVICE_IP='${SERVICE_IP}' SERVICE_PORT='${SERVICE_PORT}' PROXY_IP='${PROXY_IP}' PROXY_PORT='${PROXY_PORT}' CLIENT='${CLIENT}' PASSWD='${PASSWD}'"
 fi
 
 STEPS=7
@@ -65,10 +73,17 @@ docker exec -it ${PROXY} bash -c "ping -c3 ${NODE_IP}"
 echo -e "\n==============================================="
 echo "# FORWARDING.TC.ADD [3/${STEPS}] : (OUT OF ORDER) Start tunnel ping (in background) for service ID ${SERVICE_ID} every ${DELAY} seconds"
 # syntax:  $0  <node>  <service-id>  <remote-ip>   <remote-port>  <local-ip>     <delay>
-./gue_ping.sh ${NODE} ${SERVICE_ID} ${PROXY_IFIP} ${TUNNEL_PORT} ${TUNNEL_PORT} ${DELAY}
+#./gue_ping.sh ${NODE} ${SERVICE_ID} ${PROXY_IFIP} ${TUNNEL_PORT} ${TUNNEL_PORT} ${DELAY}
+if [ ! "${PASSWD}" ] ; then
+    echo "Starting gue_ping_tun.py ..."
+    docker exec -itd ${NODE} bash -c "python3 /tmp/.acnodal/bin/gue_ping_tun.py eth1 ${DELAY} ${PROXY_IFIP} ${TUNNEL_PORT} ${TUNNEL_PORT} ${SERVICE_ID}"
+else
+    echo "Starting gue_ping_svc.py ..."
+    docker exec -itd ${NODE} bash -c "python3 /tmp/.acnodal/bin/gue_ping_svc.py eth1 ${DELAY} ${PROXY_IFIP} ${TUNNEL_PORT} ${TUNNEL_PORT} ${SERVICE_ID} ${PASSWD}"
+fi
 
 echo -e "\n==============================================="
-echo "# FORWARDING.TC.ADD [4/${STEPS}] (FAKE) Early NAT address resolution (instead of GUE ping)"
+echo "# FORWARDING.TC.ADD [4/${STEPS}] (FAKE) Early NAT address resolution (Waiting for GUE ping)"
 CHECK=`docker exec -it egw bash -c "tcpdump -ns 0 -c1 -i eth1 'udp and host ${PROXY_IFIP} and port ${TUNNEL_PORT}'" | grep "UDP" | awk '{print $3}' | sed -e 's/.\([^.]*\)$/ \1/'`
 echo "${CHECK}"
 REAL_IP=`echo "${CHECK}" | awk '{print $1}'`
