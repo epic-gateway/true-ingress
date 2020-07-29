@@ -41,8 +41,8 @@ echo "#########################################################"
 #read
 
 # setup TC forwarding
-#                           <service-id>  <node>  <proxy> <proto>  <service-ip>  <service-port>  <proxy-ip>  <proxy-port> [<client>]
-./forwarding_tc_setup.sh -n ${SERVICE_ID} ${NODE} ${PROXY} tcp     ${SERVICE_IP} ${SERVICE_PORT} ${PROXY_IP} ${PROXY_PORT} ${CLIENT}
+#                         <service-id>  <node>  <proxy> <proto>  <service-ip>  <service-port>  <proxy-ip>  <proxy-port> [<client>]
+./forwarding_tc_setup.sh ${SERVICE_ID} ${NODE} ${PROXY} tcp     ${SERVICE_IP} ${SERVICE_PORT} ${PROXY_IP} ${PROXY_PORT} ${CLIENT}
 
 echo "######################################################"
 echo "# Service up'n'runnin. Hit <ENTER> to configure PFC. #"
@@ -53,7 +53,7 @@ echo "######################################################"
 # configure PFC instances operation mode
 # cli_cfg set <idx> <id> <flags> <name>
 docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set eth1 0 2 9 'NODE2 RX' && ./cli_cfg set eth1 1 2 8 'NODE2 TX' && ./cli_cfg get all"
-docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set eth1 0 5 11 'EGW RX' && ./cli_cfg set eth1 1 5 11 'EGW TX' && ./cli_cfg get all"
+docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set eth1 0 5 9 'EGW RX' && ./cli_cfg set eth1 1 5 9 'EGW TX' && ./cli_cfg get all"
 
 # configure GUE tunnel from ${NODE} to ${PROXY}
 # cli_tunnel set <id> <ip-local> <port-local> <ip-remote> <port-remote>
