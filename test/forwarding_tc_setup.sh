@@ -3,9 +3,12 @@
 # 1) setup EGW on $PROXY
 # 2) setup PFC on $NODE
 
-while getopts "n" opt; do
+while getopts "nr" opt; do
     case "$opt" in
-    n)  NAT="nat"
+    n)  NAT="x"
+        shift
+        ;;
+    r)  RESOLVE=1
         shift
         ;;
     esac
@@ -71,7 +74,7 @@ echo -e "\n### Ping '${PROXY}' -> '${NODE_IP}'"
 docker exec -it ${PROXY} bash -c "ping -c3 ${NODE_IP}"
 
 echo -e "\n==============================================="
-echo "# FORWARDING.TC.ADD [3/${STEPS}] : (OUT OF ORDER) Start tunnel ping (in background) for service ID ${SERVICE_ID} every ${DELAY} seconds"
+echo "# FORWARDING.TC.ADD [3/${STEPS}] : Start GUE ping (in background) for service ID ${SERVICE_ID} every ${DELAY} seconds"
 # syntax:  $0  <node>  <service-id>  <remote-ip>   <remote-port>  <local-ip>     <delay>
 #./gue_ping.sh ${NODE} ${SERVICE_ID} ${PROXY_IFIP} ${TUNNEL_PORT} ${TUNNEL_PORT} ${DELAY}
 if [ ! "${PASSWD}" ] ; then
@@ -82,14 +85,16 @@ else
     docker exec -itd ${NODE} bash -c "python3 /tmp/.acnodal/bin/gue_ping_svc.py eth1 ${DELAY} ${PROXY_IFIP} ${TUNNEL_PORT} ${TUNNEL_PORT} ${SERVICE_ID} ${PASSWD}"
 fi
 
-echo -e "\n==============================================="
-echo "# FORWARDING.TC.ADD [4/${STEPS}] (FAKE) Early NAT address resolution (Waiting for GUE ping)"
-CHECK=`docker exec -it egw bash -c "tcpdump -ns 0 -c1 -i eth1 'udp and host ${PROXY_IFIP} and port ${TUNNEL_PORT}'" | grep "UDP" | awk '{print $3}' | sed -e 's/.\([^.]*\)$/ \1/'`
-echo "${CHECK}"
-REAL_IP=`echo "${CHECK}" | awk '{print $1}'`
-REAL_PORT=`echo "${CHECK}" | awk '{print $2}'`
-echo "REAL_IP       : [${REAL_IP}]"
-echo "REAL_PORT     : [${REAL_PORT}]"
+if [ ! ${RESOLVE} ] ; then
+    echo -e "\n==============================================="
+    echo "# FORWARDING.TC.ADD [4/${STEPS}] (FAKE) Early NAT address resolution (Waiting for GUE ping)"
+    CHECK=`docker exec -it egw bash -c "tcpdump -ns 0 -c1 -i eth1 'udp and host ${PROXY_IFIP} and port ${TUNNEL_PORT}'" | grep "UDP" | awk '{print $3}' | sed -e 's/.\([^.]*\)$/ \1/'`
+    echo "${CHECK}"
+    REAL_IP=`echo "${CHECK}" | awk '{print $1}'`
+    REAL_PORT=`echo "${CHECK}" | awk '{print $2}'`
+    echo "REAL_IP       : [${REAL_IP}]"
+    echo "REAL_PORT     : [${REAL_PORT}]"
+fi
 
 echo -e "\n==============================================="
 echo "# FORWARDING.TC.ADD [5/${STEPS}] : Configure EGW on '${PROXY}'"
