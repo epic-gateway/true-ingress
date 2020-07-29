@@ -15,6 +15,9 @@ SERVICE_IP="1.1.1.1"
 SERVICE_PORT="4000"
 PROXY_IP="5.5.5.5"
 PROXY_PORT="3100"
+PASSWD='5erv1ceP@55w0rd!'
+
+#export VERBOSE="1"
 
 # setup topology
 ./topo_setup.sh basic.cfg
@@ -26,7 +29,7 @@ echo "#######################################################"
 #read
 
 # setup HTTP service on ${NODE}
-#                <node>  <ip>          <port>          <service-id>    <service>
+#                  <node>  <ip>          <port>          <service-id>  <service>
 ./service_start.sh ${NODE} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_ID} ${SERVICE_TYPE}
 
 echo "#########################################################"
@@ -47,18 +50,18 @@ echo "######################################################"
 
 # configure PFC instances operation mode
 # cli_cfg set <idx> <id> <flags> <name>
-docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set eth1 0 1 9 'NODE1' && ./cli_cfg set eth1 1 1 8 'NODE1' && ./cli_cfg get all"
-docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set eth1 0 5 9 'EGW' && ./cli_cfg set eth1 1 5 9 'EGW' && ./cli_cfg get all"
+docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set eth1 0 1 9 'NODE1 RX' && ./cli_cfg set eth1 1 1 8 'NODE1 TX' && ./cli_cfg get all"
+docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set eth1 0 5 9 'EGW RX' && ./cli_cfg set eth1 1 5 9 'EGW TX' && ./cli_cfg get all"
 
 # configure GUE tunnel from ${NODE} to ${PROXY}
 # cli_tunnel set <id> <ip-local> <port-local> <ip-remote> <port-remote>
 docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_tunnel set ${SERVICE_ID} 172.1.0.4 6080 172.1.0.3 6080 && ./cli_tunnel get all"
 docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_tunnel set ${SERVICE_ID} 172.1.0.3 6080 0 0 && ./cli_tunnel get all"
 
-# configure service forwarding 
+# configure service forwarding
 # cli_service set <service-id> <group-id> <proto> <ip-proxy> <port-proxy> <ip-ep> <port-ep> <tunnel-id> <key>
-docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_service set 2 2 tcp ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_ID} 'Pa55w0rd1234567' && ./cli_service get all"
-docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_service set 2 2 tcp ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_ID} 'Pa55w0rd1234567' && ./cli_service get all"
+docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_service set 2 2 tcp ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_ID} ${PASSWD} && ./cli_service get all"
+docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_service set 2 2 tcp ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_ID} ${PASSWD} && ./cli_service get all"
 
 echo "############################################"
 echo "# PFC configured. Hit <ENTER> to run test. #"
