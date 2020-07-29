@@ -60,6 +60,26 @@ int update_tunnel_from_guec(__u32 tunnel_id, struct headers *hdr)
 
     return TC_ACT_SHOT;
 }
+
+static inline
+int verify_service_key(struct gueext5hdr *gueext)
+{
+    struct verify *vrf = bpf_map_lookup_elem(&map_verify, (struct identity *)&gueext->id);
+    ASSERT(vrf != 0, dump_action(TC_ACT_UNSPEC), "ERROR: Service id %x not found!\n", bpf_ntohl(gueext->id));
+
+    __u64 *ref_key = (__u64 *)vrf->value;
+    __u64 *pkt_key = (__u64 *)gueext->key;
+
+    if ((pkt_key[0] != ref_key[0]) || (pkt_key[1] != ref_key[1])) {
+        bpf_print("ERROR: Service id %x key mismatch!\n", bpf_ntohl(gueext->id));
+        bpf_print("    Expected : %lx%lx\n", ref_key[0], ref_key[1]);
+        bpf_print("    Received : %lx%lx\n", pkt_key[0], pkt_key[1]);
+        return 1;
+    }
+
+    bpf_print("Service id %x key verified\n", bpf_ntohl(gueext->id));
+    return 0;
+}
 //////////////////////////////
 //__section("ingress")
 int pfc_rx(struct __sk_buff *skb)
@@ -100,22 +120,21 @@ int pfc_rx(struct __sk_buff *skb)
 
             ASSERT((void*)&gue[1] <= data_end, dump_action(TC_ACT_SHOT), "ERROR: (GUE) Invalid packet size\n");
 
-            bpf_print("  gue->version = %u\n", gue->version);
-            ASSERT(gue->version == 0, dump_action(TC_ACT_SHOT), "ERROR: Unsupported GUE version %u\n", gue->version);
+            ASSERT1(gue->version == 0, dump_action(TC_ACT_SHOT), bpf_print("ERROR: Unsupported GUE version %u\n", gue->version));
 
-            bpf_print("  gue->control = %u\n", gue->control);
             if (gue->control) {
-                bpf_print("  gue->hlen = %u\n", gue->hlen);
                 if (gue->hlen == 1) {
-                    bpf_print("GUE ext: ID\n");
+                    bpf_print("GUE Control: ID\n");
                     struct gueext1hdr *gueext = (struct gueext1hdr *)&gue[1];
                     ASSERT((void*)&gueext[1] <= data_end, dump_action(TC_ACT_SHOT), "ERROR: (GUEext) Invalid packet size\n");
 
                     return dump_action(update_tunnel_from_guec(bpf_ntohl(gueext->id), &hdr));
                 } else if (gue->hlen == 5) {
-                    bpf_print("GUE ext: ID + KEY\n");
+                    bpf_print("GUE Control: ID + KEY\n");
                     struct gueext5hdr *gueext = (struct gueext5hdr *)&gue[1];
-                    ASSERT((void*)&gueext[1] <= data_end, dump_action(TC_ACT_SHOT), "ERROR: (GUEext) Invalid packet size\n");
+                    ASSERT1((void*)&gueext[1] <= data_end, dump_action(TC_ACT_SHOT), bpf_print("ERROR: (GUEext) Invalid packet size\n"));
+
+                    ASSERT1(verify_service_key(gueext) == 0, dump_action(TC_ACT_SHOT), );
 
                     return dump_action(update_tunnel_from_guec(bpf_ntohl(gueext->id), &hdr));
                 } else {
@@ -127,12 +146,14 @@ int pfc_rx(struct __sk_buff *skb)
                 ASSERT(gue->hlen != 0, dump_action(TC_ACT_UNSPEC), "Linux GUE (no ext fields)\n");              // FIXME: remove when linux infra not used anymore
                 ASSERT(gue->hlen == 5, dump_action(TC_ACT_SHOT), "Unexpected GUE data HLEN %u\n", gue->hlen);
 
-                bpf_print("GUE ext: ID + KEY\n");
+                bpf_print("GUE Data: ID + KEY\n");
                 struct gueext5hdr *gueext = (struct gueext5hdr *)&gue[1];
                 ASSERT((void*)&gueext[1] <= data_end, dump_action(TC_ACT_SHOT), "ERROR: (GUEext) Invalid packet size\n");
 
-                bpf_print("GUE Data: service-id %u, group-id %u\n", gueext->id & 0xFFFF, (gueext->id >> 16) & 0xFFFF);
-                ASSERT(1, dump_action(TC_ACT_SHOT), "ERROR: GUE service verification failed\n");
+                __u32 id = bpf_ntohl(gueext->id);
+                bpf_print("GUE Data: id %x (service-id %u, group-id %u)\n", id, id & 0xFFFF, (id >> 16) & 0xFFFF);
+
+                ASSERT1(verify_service_key(gueext) == 0, dump_action(TC_ACT_SHOT), );
 
                 bpf_print("GUE Decap\n");
                 // decap

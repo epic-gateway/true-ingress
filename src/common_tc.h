@@ -20,6 +20,14 @@
     }                                       \
 })
 
+#define ASSERT1(_expr, _retval, _cmd)       \
+({                                          \
+    if (!(_expr)) {                         \
+        _cmd;                               \
+        return _retval;                     \
+    }                                       \
+})
+
 struct headers {
     struct ethhdr *eth;
     struct iphdr *iph;
