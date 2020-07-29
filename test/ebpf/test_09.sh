@@ -80,7 +80,7 @@ tail -n60 /sys/kernel/debug/tracing/trace
 
 # generate ICMP ECHO REQUEST + RESPONSE packets
 # syntax: $0     <docker>  <ip>        <port>
-./${SERVICE}_check.sh ${CLIENT} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_ID}
+./${SERVICE_TYPE}_check.sh ${CLIENT} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_ID}
 
 # check traces after
 tail -n60 /sys/kernel/debug/tracing/trace
