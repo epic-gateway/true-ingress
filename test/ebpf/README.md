@@ -65,6 +65,7 @@ Variation of `basic/test_01.sh` which setup service on *Node1* (same network).
 TC attached and configured on both **EGW** and **Node1**.
 
 - Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*.
+- Uses GUE ping with tunnel-id
 
 Run:
 
@@ -79,6 +80,7 @@ Variation of `basic/test_02.sh` which setup service on *Node2* (behind NAT).
 TC attached and configured on both **EGW** and **Node2**.
 
 - Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*.
+- Uses GUE ping with tunnel-id
 
 Run:
 
@@ -93,8 +95,7 @@ Variation of `basic/test_01.sh` which setup service on *Node1* (same network).
 TC attached and configured on both **EGW** and **Node1**.
 
 - Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*.
-- Setup HTTP service and forwarding.
-- Send HTTP request from client to *proxy ip:port*: 
+- Uses GUE ping with service-id + group-id + security key
 
 Run:
 
@@ -109,12 +110,74 @@ Variation of `basic/test_02.sh` which setup service on *Node2* (behind NAT).
 TC attached and configured on both **EGW** and **Node2**.
 
 - Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*.
-- Setup HTTP service and forwarding.
-- Send HTTP request from client to *proxy ip:port*: 
+- Uses GUE ping with service-id + group-id + security key
 
 Run:
 
     ./test_08.sh
+
+Expected: PASS
+Status: PASS
+
+
+
+
+## test_09.sh
+
+Variation of `basic/test_01.sh` which setup service on *Node1* (same network).
+TC attached and configured on both **EGW** and **Node1**.
+
+- Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*.
+- Setup HTTP service and forwarding.
+- Send HTTP request from client to *proxy ip:port*
+
+Run:
+
+    ./test_09.sh
+
+Expected: PASS
+Status: PASS
+
+## test_10.sh
+
+Variation of `basic/test_02.sh` which setup service on *Node2* (behind NAT).
+TC attached and configured on both **EGW** and **Node2**.
+
+- Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*.
+- Setup HTTP service and forwarding.
+- Send HTTP request from client to *proxy ip:port*
+
+Run:
+
+    ./test_10.sh
+
+Expected: PASS
+Status: PASS
+
+## test_11.sh
+
+Variation of `basic/test_01.sh` which setup service on *Node1* (same network).
+TC attached and configured on both **EGW** and **Node1**.
+
+- PFC configured for DNAT/SNAT. 
+
+Run:
+
+    ./test_11.sh
+
+Expected: PASS
+Status: PASS
+
+## test_12.sh
+
+Variation of `basic/test_02.sh` which setup service on *Node2* (behind NAT).
+TC attached and configured on both **EGW** and **Node2**.
+
+- PFC configured for DNAT/SNAT. 
+
+Run:
+
+    ./test_12.sh
 
 Expected: PASS
 Status: PASS
