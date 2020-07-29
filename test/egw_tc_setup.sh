@@ -72,7 +72,7 @@ if [ "${VERBOSE}" ]; then
     docker exec -it ${NODE} bash -c "ip route"
 fi
 
-if [ ! ${NAT} ] ; then
+if [ ! "${NAT}" ] ; then
     echo -e "\n==============================================="
     echo "# EGW.TC.ADD [4/${STEPS}] : Set DNAT (PROXY ${PROXY_IP}:${PROXY_PORT} -> SERVICE ${SERVICE_IP}:${SERVICE_PORT})"
 
