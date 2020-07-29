@@ -186,13 +186,14 @@ bool map_verify_get(int map_fd, struct identity *key, struct verify *value) {
         snat_ip.s_addr = ntohl(value->snat.ip);
 
         printf("VERIFY {%u, %u} -> ", ntohs(key->service_id), ntohs(key->group_id));
-        printf("{\'%s\'", value->value);
+        printf("{\'%16.16s\'", value->value);
         printf(" {%s, %s, %u}}",
                 get_proto_name(ntohs(value->dnat.proto)), inet_ntoa(dnat_ip), ntohs(value->dnat.port));
         printf(" {%s, %s, %u}}",
                 get_proto_name(ntohs(value->snat.proto)), inet_ntoa(snat_ip), ntohs(value->snat.port));
         printf("\t\t{%08x (%04x, %04x)} -> ", ntohl(*(__u32*)key), ntohs(key->service_id), ntohs(key->group_id));
-        printf("{\'%s\' {%04x, %08x, %04x} {%04x, %08x, %04x}}\n", value->value,
+        __u64 *ptr = (__u64 *)value->value;
+        printf("{\'%llx%llx\' {%04x, %08x, %04x} {%04x, %08x, %04x}}\n", ptr[0], ptr[1],
                 value->dnat.proto, value->dnat.ip, value->dnat.port,
                 value->snat.proto, value->snat.ip, value->snat.port);
     }
@@ -286,9 +287,10 @@ bool map_encap_get(int map_fd, struct endpoint *key, struct service *value) {
         return false;
     } else {
         printf("ENCAP {%s, %s, %u} -> ", get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port));
-        printf("{%u, {%u, %u}, %s}", ntohl(value->tunnel_id), ntohs(value->identity.service_id), ntohs(value->identity.group_id), (char*)value->key.value);
+        printf("{%u, {%u, %u}, \'%16.16s\'}", ntohl(value->tunnel_id), ntohs(value->identity.service_id), ntohs(value->identity.group_id), (char*)value->key.value);
         printf("\t\t{%04x, %08x, %04x} -> ", key->proto, key->ip, key->port);
-        printf("{%08x, {%04x, %04x}, %s}\n", value->tunnel_id, value->identity.service_id, value->identity.group_id, value->key.value);
+        __u64 *ptr = (__u64 *)value->key.value;
+        printf("{%08x, {%04x, %04x}, \'%llx%llx\'}\n", value->tunnel_id, value->identity.service_id, value->identity.group_id, ptr[0], ptr[1]);
     }
     return true;
 }
