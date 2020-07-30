@@ -28,6 +28,29 @@
     }                                       \
 })
 
+struct guehdr {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+    __u8    hlen : 5,
+            control : 1,
+            version : 2;
+#else
+    __u8    version : 2,
+            control : 1,
+            hlen : 5;
+#endif
+    __u8 proto_ctype;
+    __u16 flags;
+};
+
+struct gueext1hdr {
+    __u32   id;
+};
+
+struct gueext5hdr {
+    __u32   id;
+    __u8    key[16];
+};
+
 struct headers {
     struct ethhdr *eth;
     struct iphdr *iph;
