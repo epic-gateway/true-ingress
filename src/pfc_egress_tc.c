@@ -95,7 +95,7 @@ int pfc_tx(struct __sk_buff *skb)
 
         // check output mode
         if (cfg->flags & CFG_TX_SNAT) {
-            bpf_print("Output mode: DSO (SNAT)\n");
+            bpf_print("Output mode: DSR (SNAT)\n");
 
             struct endpoint *snat = bpf_map_lookup_elem(&map_nat, &ep);
             if (snat) {
