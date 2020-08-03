@@ -308,6 +308,8 @@ int dump_pkt(struct __sk_buff *skb)
 {
     char msg[] = "DUMP: =====================\n";
     bpf_trace_printk(msg, sizeof(msg));
+    char msg1[] = "  Size : %u B\n";
+    bpf_trace_printk(msg1, sizeof(msg1), skb->len);
 
     //dump_eth((void *)(long)skb->data, (void *)(long)skb->data_end);
     void *data = (void *)(long)skb->data;
