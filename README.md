@@ -29,7 +29,7 @@ There is set if userspace CLIs to read and write data into maps.
 
 ### Prerequisites
 
-PFC was developed and tested on Ubuntu 18.04 LTS.
+PFC was developed and tested on Ubuntu 20.04 LTS.
 
 You need only `docker`, `git` and `make`.  We recommend the docker-ce distribution (i.e., docker.com's distro) instead of the version packaged by Ubuntu as that's what Kubernetes recommends.
 

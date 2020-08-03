@@ -1,33 +1,49 @@
-# Base image
-#FROM ubuntu:18.04
-FROM ubuntu:18.04-recent
+FROM ubuntu:20.04 as system
 
-
-# Update system
-#RUN apt-get update && apt-get upgrade -y && apt-get dist-upgrade -y
-
+ENV DEBIAN_FRONTEND noninteractive
 
 # Install dependencies
-#RUN apt-get update && apt-get install -y sudo iputils-ping iptables iproute2 tcpdump wget curl net-tools nmap iperf3 python mtr vim tshark traceroute mtr netcat
-#RUN apt-get update && apt-get install -y sudo python3 python3-pip vim iputils-ping iptables iproute2 tcpdump wget curl net-tools traceroute nmap iperf3 mtr
-#RUN apt-get install -y sudo python3 python3-pip vim iputils-ping iptables iproute2 tcpdump wget curl net-tools traceroute nmap iperf3 mtr
+RUN apt-get update \
+    && apt-get install -y sudo python3 python3-pip vim iputils-ping iptables iproute2 tcpdump wget curl net-tools traceroute nmap iperf3 mtr \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install python modules
-#RUN pip3 install scapy
+RUN pip3 install scapy
+
+#
+# Compile the PFC
+#
+FROM system as builder
+
+WORKDIR /usr/src/pfc
+
+RUN apt-get update \
+    && apt-get install -y clang llvm gcc-multilib build-essential libelf-dev zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY . ./
+
+RUN make build
+
+#
+# Assemble the prod image
+#
+FROM system as prod
+
+WORKDIR /tmp/.acnodal/bin
 
 # Copy eBPF
-COPY *.o /tmp/.acnodal/bin/
-COPY *.sh /tmp/.acnodal/bin/
+COPY --from=builder /usr/src/pfc/src/*.o ./
+COPY --from=builder /usr/src/pfc/test/docker/*.sh ./
 
 # Copy CLI
-COPY cli_* /tmp/.acnodal/bin/
+COPY --from=builder /usr/src/pfc/src/cli_cfg /usr/src/pfc/src/cli_service /usr/src/pfc/src/cli_tunnel ./
 
 # for WEB Server
-COPY server.py /tmp/.acnodal/bin/
+COPY --from=builder /usr/src/pfc/test/docker/server.py ./
 
 # for GUE Ping
-COPY gue_ping*.py /tmp/.acnodal/bin/
-
+COPY --from=builder /usr/src/pfc/test/docker/gue_ping*.py ./
 
 # Shell on attach
 CMD ["bash"]

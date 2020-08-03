@@ -1,9 +1,7 @@
-# SPDX-License-Identifier: (GPL-2.0 OR BSD-2-Clause)
-
 SOURCES = $(wildcard src)
 CLEAN = $(addsuffix _clean,$(SOURCES))
 
-.PHONY: clean $(SOURCES) $(CLEAN) check test
+.PHONY: clean $(SOURCES) $(CLEAN) check test prod-img
 
 all: build check prod-img
 
@@ -13,11 +11,11 @@ build: $(SOURCES)
 
 rebuild: clean build
 
-system-img:
-	$(MAKE) -C test/docker system
-
 prod-img:
-	$(MAKE) -C test/docker prod
+	test/docker/prod.sh ${TAG}
+
+push: prod-img
+	docker push ${TAG}
 
 init-submodules:
 	git submodule update --init
@@ -51,7 +49,7 @@ help:
 	@echo 'build            build content of scr folder'
 	@echo 'rebuild          clean + build'
 	@echo 'check            try to attach/detach TCs locally'
-	@echo 'system-img       (re)build docker system image'
-	@echo 'prod-img         (re)build docker production image'
+	@echo 'prod-img         (re)build docker production image (set TAG to override default tag)'
+	@echo 'push             push docker image (set TAG to override default tag)'
 	@echo 'init             submodule init + install dependencies + system-img'
 	@echo 'test             execute simple test scenario test/basic/test_01.sh'
