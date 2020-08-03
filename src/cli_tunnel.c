@@ -86,6 +86,7 @@ bool map_tunnel_get(int map_fd, __u32 id, struct tunnel *value) {
         printf("%8u\t%16s:%-5u -> ", id,
                inet_ntoa(local), ntohs(value->port_local));
         printf("%16s:%-5u", inet_ntoa(remote), ntohs(value->port_remote));
+        printf("\t\t%02x:%02x:%02x:%02x:%02x:%02x", value->mac_remote[0], value->mac_remote[1], value->mac_remote[2], value->mac_remote[3], value->mac_remote[4], value->mac_remote[5]);
         printf("\t\t(%08x:%04x -> %08x:%04x)\n",
                value->ip_local, ntohs(value->port_local),
                value->ip_remote, ntohs(value->port_remote));

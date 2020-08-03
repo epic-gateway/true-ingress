@@ -33,6 +33,7 @@ struct tunnel {
     __u16  port_local;            /* outer: sender port  (configured)*/
     __u32  ip_remote;             /* outer: target IP address */          // can be NAT, filled from GUE control packet
     __u16  port_remote;           /* outer: target port */                // can be NAT, filled from GUE control packet
+    __u8   mac_remote[6];         // discovered MAC address
 };
 
 static inline struct tunnel *
@@ -46,6 +47,12 @@ make_tunnel(struct tunnel *ref,
     ref->port_local    = bpf_htons(port_local);
     ref->ip_remote     = bpf_htonl(ip_remote);
     ref->port_remote   = bpf_htons(port_remote);
+    ref->mac_remote[0] = 0;
+    ref->mac_remote[1] = 0;
+    ref->mac_remote[2] = 0;
+    ref->mac_remote[3] = 0;
+    ref->mac_remote[4] = 0;
+    ref->mac_remote[5] = 0;
     return ref;
 }
 ////////////////////////////////
