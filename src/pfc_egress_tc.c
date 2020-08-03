@@ -57,13 +57,16 @@ int pfc_tx(struct __sk_buff *skb)
         // is Service endpoint?
         struct service *svc = bpf_map_lookup_elem(&map_encap, &ep);
         if (svc) {
-            bpf_print("GUE Encap: service-id %u, group-id %u, key %s\n", svc->identity.service_id, svc->identity.group_id, svc->key.value);
-            bpf_print("GUE Encap: tunnel-id %u ", svc->tunnel_id);
-            struct tunnel *tun = bpf_map_lookup_elem(&map_tunnel, &svc->tunnel_id);
-            ASSERT(tun, dump_action(TC_ACT_UNSPEC), "ERROR: tunnel-id %u not found\n", svc->tunnel_id);
+            bpf_print("GUE Encap: service-id %x, group-id %x, tunnel-id %x\n", bpf_ntohs(svc->identity.service_id), bpf_ntohs(svc->identity.group_id), bpf_ntohl(svc->tunnel_id));
+            __u64 *ptr = (__u64 *)svc->key.value;
+            bpf_print("    key %lx%lx\n", ptr[0], ptr[1]);
+            __u32 key = bpf_ntohl(svc->tunnel_id);
+            struct tunnel *tun = bpf_map_lookup_elem(&map_tunnel, &key);
+            ASSERT(tun, dump_action(TC_ACT_UNSPEC), "ERROR: tunnel-id %x not found\n", key);
 
-            bpf_print("(%x:%u -> ", tun->ip_local, tun->port_local);
-            bpf_print("%x:%u)\n", tun->ip_remote, tun->port_remote);
+            bpf_print("GUE Encap: tunnel-id %x\n", key);
+            bpf_print("    FROM %x:%u\n", tun->ip_local, bpf_ntohs(tun->port_local));
+            bpf_print("    TO   %x:%u\n", tun->ip_remote, bpf_ntohs(tun->port_remote));
 
             return dump_action(TC_ACT_OK);
         }
@@ -113,13 +116,16 @@ int pfc_tx(struct __sk_buff *skb)
 
             struct service *svc = bpf_map_lookup_elem(&map_encap, &ep);
             if (svc) {
-                bpf_print("GUE Encap: service-id %u, group-id %u, key %s\n", svc->identity.service_id, svc->identity.group_id, svc->key.value);
-                bpf_print("GUE Encap: tunnel-id %u ", svc->tunnel_id);
-                struct tunnel *tun = bpf_map_lookup_elem(&map_tunnel, &svc->tunnel_id);
-                ASSERT(tun, dump_action(TC_ACT_UNSPEC), "ERROR: tunnel-id %u not found\n", svc->tunnel_id);
+                bpf_print("GUE Encap: service-id %x, group-id %x, tunnel-id %x\n", bpf_ntohs(svc->identity.service_id), bpf_ntohs(svc->identity.group_id), bpf_ntohl(svc->tunnel_id));
+                __u64 *ptr = (__u64 *)svc->key.value;
+                bpf_print("    key %lx%lx\n", ptr[0], ptr[1]);
+                __u32 key = bpf_ntohl(svc->tunnel_id);
+                struct tunnel *tun = bpf_map_lookup_elem(&map_tunnel, &key);
+                ASSERT(tun, dump_action(TC_ACT_UNSPEC), "ERROR: tunnel-id %x not found\n", key);
 
-                bpf_print("(%x:%u -> ", tun->ip_local, tun->port_local);
-                bpf_print("%x:%u)\n", tun->ip_remote, tun->port_remote);
+                bpf_print("GUE Encap: tunnel-id %x\n", key);
+                bpf_print("    FROM %x:%u\n", tun->ip_local, bpf_ntohs(tun->port_local));
+                bpf_print("    TO   %x:%u\n", tun->ip_remote, bpf_ntohs(tun->port_remote));
 
                 return dump_action(TC_ACT_OK);
             }
