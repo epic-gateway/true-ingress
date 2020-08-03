@@ -57,7 +57,7 @@ docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set eth1 0 5
 
 # configure GUE tunnel from ${NODE} to ${PROXY}
 # cli_tunnel set <id> <ip-local> <port-local> <ip-remote> <port-remote>
-docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_tunnel set ${SERVICE_ID} 172.1.0.4 6080 172.1.0.3 6080 && ./cli_tunnel get all"
+docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_tunnel set ${SERVICE_ID} 172.2.0.3 6080 172.1.0.3 6080 && ./cli_tunnel get all"
 docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_tunnel set ${SERVICE_ID} 172.1.0.3 6080 0 0 && ./cli_tunnel get all"
 
 # configure service forwarding
