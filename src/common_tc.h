@@ -257,4 +257,48 @@ int snat4(struct __sk_buff *skb, struct headers *hdr, __u32 new_ip, __u16 new_po
     return TC_ACT_OK;
 }
 
+//////////////////////////////
+// GUE
+static inline
+int update_tunnel_from_guec(__u32 tunnel_id, struct headers *hdr)
+{
+    // update map
+    struct tunnel *tun = bpf_map_lookup_elem(&map_tunnel, &tunnel_id);
+    ASSERT(tun, TC_ACT_SHOT, "ERROR: Failed to update tunnel-id %u\n", tunnel_id);
+
+    struct endpoint ep = { 0 };
+    parse_src_ep(&ep, hdr);
+    bpf_print("GUE Control: Updating tunnel-id %u remote to %x:%u\n", tunnel_id, ep.ip, bpf_ntohs(ep.port));
+    tun->ip_remote = ep.ip;
+    tun->port_remote = ep.port;
+    tun->mac_remote[0] = hdr->eth->h_source[0];
+    tun->mac_remote[1] = hdr->eth->h_source[1];
+    tun->mac_remote[2] = hdr->eth->h_source[2];
+    tun->mac_remote[3] = hdr->eth->h_source[3];
+    tun->mac_remote[4] = hdr->eth->h_source[4];
+    tun->mac_remote[5] = hdr->eth->h_source[5];
+
+    return TC_ACT_SHOT;
+}
+
+static inline
+int service_verify(struct gueext5hdr *gueext)
+{
+    struct verify *vrf = bpf_map_lookup_elem(&map_verify, (struct identity *)&gueext->id);
+    ASSERT(vrf != 0, dump_action(TC_ACT_UNSPEC), "ERROR: Service id %x not found!\n", bpf_ntohl(gueext->id));
+
+    __u64 *ref_key = (__u64 *)vrf->value;
+    __u64 *pkt_key = (__u64 *)gueext->key;
+
+    if ((pkt_key[0] != ref_key[0]) || (pkt_key[1] != ref_key[1])) {
+        bpf_print("ERROR: Service id %x key mismatch!\n", bpf_ntohl(gueext->id));
+        bpf_print("    Expected : %lx%lx\n", ref_key[0], ref_key[1]);
+        bpf_print("    Received : %lx%lx\n", pkt_key[0], pkt_key[1]);
+        return 1;
+    }
+
+    bpf_print("Service id %x key verified\n", bpf_ntohl(gueext->id));
+    return 0;
+}
+
 #endif /* TC_COMMON_H_ */

@@ -21,44 +21,6 @@
 
 #include "common_tc.h"
 
-//////////////////////////////
-
-static inline
-int update_tunnel_from_guec(__u32 tunnel_id, struct headers *hdr)
-{
-    // update map
-    struct tunnel *tun = bpf_map_lookup_elem(&map_tunnel, &tunnel_id);
-    ASSERT(tun, TC_ACT_SHOT, "ERROR: Failed to update tunnel-id %u\n", tunnel_id);
-
-    struct endpoint ep = { 0 };
-    parse_src_ep(&ep, hdr);
-    bpf_print("GUE Control: Updating tunnel-id %u remote to %x:%u\n", tunnel_id, ep.ip, bpf_ntohs(ep.port));
-    tun->ip_remote = ep.ip;
-    tun->port_remote = ep.port;
-
-    return TC_ACT_SHOT;
-}
-
-static inline
-int verify_service_key(struct gueext5hdr *gueext)
-{
-    struct verify *vrf = bpf_map_lookup_elem(&map_verify, (struct identity *)&gueext->id);
-    ASSERT(vrf != 0, dump_action(TC_ACT_UNSPEC), "ERROR: Service id %x not found!\n", bpf_ntohl(gueext->id));
-
-    __u64 *ref_key = (__u64 *)vrf->value;
-    __u64 *pkt_key = (__u64 *)gueext->key;
-
-    if ((pkt_key[0] != ref_key[0]) || (pkt_key[1] != ref_key[1])) {
-        bpf_print("ERROR: Service id %x key mismatch!\n", bpf_ntohl(gueext->id));
-        bpf_print("    Expected : %lx%lx\n", ref_key[0], ref_key[1]);
-        bpf_print("    Received : %lx%lx\n", pkt_key[0], pkt_key[1]);
-        return 1;
-    }
-
-    bpf_print("Service id %x key verified\n", bpf_ntohl(gueext->id));
-    return 0;
-}
-//////////////////////////////
 //__section("ingress")
 int pfc_rx(struct __sk_buff *skb)
 {
@@ -112,7 +74,7 @@ int pfc_rx(struct __sk_buff *skb)
                     struct gueext5hdr *gueext = (struct gueext5hdr *)&gue[1];
                     ASSERT1((void*)&gueext[1] <= data_end, dump_action(TC_ACT_SHOT), bpf_print("ERROR: (GUEext) Invalid packet size\n"));
 
-                    ASSERT1(verify_service_key(gueext) == 0, dump_action(TC_ACT_SHOT), );
+                    ASSERT1(service_verify(gueext) == 0, dump_action(TC_ACT_SHOT), );
 
                     return dump_action(update_tunnel_from_guec(bpf_ntohl(gueext->id), &hdr));
                 } else {
@@ -131,7 +93,7 @@ int pfc_rx(struct __sk_buff *skb)
                 __u32 id = bpf_ntohl(gueext->id);
                 bpf_print("GUE Data: id %x (service-id %u, group-id %u)\n", id, id & 0xFFFF, (id >> 16) & 0xFFFF);
 
-                ASSERT1(verify_service_key(gueext) == 0, dump_action(TC_ACT_SHOT), );
+                ASSERT1(service_verify(gueext) == 0, dump_action(TC_ACT_SHOT), );
 
                 bpf_print("GUE Decap\n");
                 // decap
