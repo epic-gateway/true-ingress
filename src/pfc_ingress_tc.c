@@ -96,7 +96,10 @@ int pfc_rx(struct __sk_buff *skb)
                 ASSERT1(service_verify(gueext) == 0, dump_action(TC_ACT_SHOT), );
 
                 bpf_print("GUE Decap\n");
-                // decap
+                ASSERT (TC_ACT_OK == gue_decap_v4(skb), dump_action(TC_ACT_SHOT), "GUE Decap Failed!\n");
+                if (cfg->flags & CFG_TX_DUMP) {
+                    dump_pkt(skb);
+                }
 
                 return dump_action(TC_ACT_OK);
             }

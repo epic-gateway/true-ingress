@@ -301,4 +301,16 @@ int service_verify(struct gueext5hdr *gueext)
     return 0;
 }
 
+static __always_inline
+int gue_encap_v4(struct __sk_buff *skb, struct tunnel *tun, struct service *svc)
+{
+    return TC_ACT_OK;
+}
+
+static __always_inline
+int gue_decap_v4(struct __sk_buff *skb)
+{
+    return TC_ACT_OK;
+}
+
 #endif /* TC_COMMON_H_ */

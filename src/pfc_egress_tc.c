@@ -68,6 +68,11 @@ int pfc_tx(struct __sk_buff *skb)
             bpf_print("    FROM %x:%u\n", tun->ip_local, bpf_ntohs(tun->port_local));
             bpf_print("    TO   %x:%u\n", tun->ip_remote, bpf_ntohs(tun->port_remote));
 
+            ASSERT (TC_ACT_OK == gue_encap_v4(skb, tun, svc), dump_action(TC_ACT_SHOT), "GUE Encap Failed!\n");
+            if (cfg->flags & CFG_TX_DUMP) {
+                dump_pkt(skb);
+            }
+
             return dump_action(TC_ACT_OK);
         }
 
@@ -126,6 +131,11 @@ int pfc_tx(struct __sk_buff *skb)
                 bpf_print("GUE Encap: tunnel-id %x\n", key);
                 bpf_print("    FROM %x:%u\n", tun->ip_local, bpf_ntohs(tun->port_local));
                 bpf_print("    TO   %x:%u\n", tun->ip_remote, bpf_ntohs(tun->port_remote));
+
+                ASSERT (TC_ACT_OK == gue_encap_v4(skb, tun, svc), dump_action(TC_ACT_SHOT), "GUE Encap Failed!\n");
+                if (cfg->flags & CFG_TX_DUMP) {
+                    dump_pkt(skb);
+                }
 
                 return dump_action(TC_ACT_OK);
             }
