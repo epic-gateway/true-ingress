@@ -136,6 +136,11 @@ do
     # enable packet forwarding
     docker exec -it ${NODE} bash -c "echo 1 > /proc/sys/net/ipv4/ip_forward"
 
+    echo "Disabling ICMP redirects..."
+    docker exec -it ${NODE} bash -c "echo 'net.ipv4.conf.all.send_redirects=0' >> /etc/sysctl.conf"
+    docker exec -it ${NODE} bash -c "echo 'net.ipv4.conf.default.send_redirects=0' >> /etc/sysctl.conf"
+    docker exec -it ${NODE} bash -c "echo 'net.ipv4.conf.eth0.send_redirects=0' >> /etc/sysctl.conf"
+
     docker exec -it ${NODE} bash -c "ip addr add ${PROXY_IP} dev lo"        # need different ip per proxy
 
     if [ "${VERBOSE}" ]; then
