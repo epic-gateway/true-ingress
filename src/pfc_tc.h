@@ -272,8 +272,8 @@ int service_verify(struct gueext5hdr *gueext)
 
     if ((pkt_key[0] != ref_key[0]) || (pkt_key[1] != ref_key[1])) {
         bpf_print("ERROR: Service id %x key mismatch!\n", bpf_ntohl(gueext->id));
-        bpf_print("    Expected : %lx%lx\n", ref_key[0], ref_key[1]);
-        bpf_print("    Received : %lx%lx\n", pkt_key[0], pkt_key[1]);
+        bpf_print("    Expected : %lx%lx\n", bpf_ntohll(ref_key[0]), bpf_ntohll(ref_key[1]));
+        bpf_print("    Received : %lx%lx\n", bpf_ntohll(pkt_key[0]), bpf_ntohll(pkt_key[1]));
         return 1;
     }
 
