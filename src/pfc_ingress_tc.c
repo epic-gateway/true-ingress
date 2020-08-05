@@ -53,7 +53,7 @@ int pfc_rx(struct __sk_buff *skb)
     if (cfg->flags & CFG_RX_GUE) {
         // is GUE endpoint?
         if (bpf_map_lookup_elem(&map_decap, &ep)) {
-            bpf_print("Parsing GUE header\n");
+            //bpf_print("Parsing GUE header\n");
             void *data_end = (void *)(long)skb->data_end;
             // control or data
             struct guehdr *gue = hdr.payload;
@@ -86,16 +86,15 @@ int pfc_rx(struct __sk_buff *skb)
                 ASSERT(gue->hlen != 0, dump_action(TC_ACT_UNSPEC), "Linux GUE (no ext fields)\n");              // FIXME: remove when linux infra not used anymore
                 ASSERT(gue->hlen == 5, dump_action(TC_ACT_SHOT), "Unexpected GUE data HLEN %u\n", gue->hlen);
 
-                bpf_print("GUE Data: ID + KEY\n");
+                bpf_print("GUE Data: Decap\n");
                 struct gueext5hdr *gueext = (struct gueext5hdr *)&gue[1];
                 ASSERT((void*)&gueext[1] <= data_end, dump_action(TC_ACT_SHOT), "ERROR: (GUEext) Invalid packet size\n");
 
-                __u32 id = bpf_ntohl(gueext->id);
-                bpf_print("GUE Data: id %x (service-id %u, group-id %u)\n", id, id & 0xFFFF, (id >> 16) & 0xFFFF);
+                //__u32 id = bpf_ntohl(gueext->id);
+                //bpf_print("GUE Data: id %x (service-id %u, group-id %u)\n", id, id & 0xFFFF, (id >> 16) & 0xFFFF);
 
                 ASSERT1(service_verify(gueext) == 0, dump_action(TC_ACT_SHOT), );
 
-                bpf_print("GUE Decap\n");
                 ASSERT (TC_ACT_OK == gue_decap_v4(skb), dump_action(TC_ACT_SHOT), "GUE Decap Failed!\n");
                 if (cfg->flags & CFG_TX_DUMP) {
                     dump_pkt(skb);

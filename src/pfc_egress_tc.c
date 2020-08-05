@@ -49,7 +49,7 @@ int pfc_tx(struct __sk_buff *skb)
 
     // check ROLE
     if (cfg->flags & CFG_TX_PROXY) {
-        bpf_print("Is PROXY\n");
+        //bpf_print("Is PROXY\n");
 
         // get Destination EP
         parse_dest_ep(&ep, &hdr);
@@ -57,15 +57,15 @@ int pfc_tx(struct __sk_buff *skb)
         // is Service endpoint?
         struct service *svc = bpf_map_lookup_elem(&map_encap, &ep);
         if (svc) {
-            bpf_print("GUE Encap: service-id %x, group-id %x, tunnel-id %x\n", bpf_ntohs(svc->identity.service_id), bpf_ntohs(svc->identity.group_id), bpf_ntohl(svc->tunnel_id));
+            bpf_print("GUE Encap: service-id %u, group-id %u, tunnel-id %u\n", bpf_ntohs(svc->identity.service_id), bpf_ntohs(svc->identity.group_id), bpf_ntohl(svc->tunnel_id));
             __u64 *ptr = (__u64 *)svc->key.value;
             bpf_print("    key %lx%lx\n", ptr[0], ptr[1]);
             __u32 key = bpf_ntohl(svc->tunnel_id);
             struct tunnel *tun = bpf_map_lookup_elem(&map_tunnel, &key);
-            ASSERT(tun, dump_action(TC_ACT_UNSPEC), "ERROR: tunnel-id %x not found\n", key);
+            ASSERT(tun, dump_action(TC_ACT_UNSPEC), "ERROR: tunnel-id %u not found\n", key);
             ASSERT(tun->ip_remote, dump_action(TC_ACT_SHOT), "ERROR: tunnel remote endpoint not resolved\n");
 
-            bpf_print("GUE Encap: tunnel-id %x\n", key);
+            bpf_print("GUE Encap: tunnel-id %u\n", key);
             bpf_print("    FROM %x:%u\n", tun->ip_local, bpf_ntohs(tun->port_local));
             bpf_print("    TO   %x:%u\n", tun->ip_remote, bpf_ntohs(tun->port_remote));
 
@@ -79,7 +79,7 @@ int pfc_tx(struct __sk_buff *skb)
 
         // check output mode
         if (cfg->flags & CFG_TX_SNAT) {
-            bpf_print("Checking SNAT\n");
+            //bpf_print("Checking SNAT\n");
 
             // get Source EP
             parse_src_ep(&ep, &hdr);
@@ -97,14 +97,14 @@ int pfc_tx(struct __sk_buff *skb)
             }
         }
     } else {
-        bpf_print("Is NODE\n");
+        //bpf_print("Is NODE\n");
 
         // get SEP
         parse_src_ep(&ep, &hdr);
 
         // check output mode
         if (cfg->flags & CFG_TX_SNAT) {
-            bpf_print("Output mode: DSR (SNAT)\n");
+            //bpf_print("Output mode: DSR (SNAT)\n");
 
             struct endpoint *snat = bpf_map_lookup_elem(&map_nat, &ep);
             if (snat) {
@@ -118,19 +118,19 @@ int pfc_tx(struct __sk_buff *skb)
                 return dump_action(TC_ACT_OK);
             }
         } else {
-            bpf_print("Output mode: Regular (GUE Encap)\n");
+            //bpf_print("Output mode: Regular (GUE Encap)\n");
 
             struct service *svc = bpf_map_lookup_elem(&map_encap, &ep);
             if (svc) {
-                bpf_print("GUE Encap: service-id %x, group-id %x, tunnel-id %x\n", bpf_ntohs(svc->identity.service_id), bpf_ntohs(svc->identity.group_id), bpf_ntohl(svc->tunnel_id));
+                bpf_print("GUE Encap: service-id %u, group-id %u, tunnel-id %u\n", bpf_ntohs(svc->identity.service_id), bpf_ntohs(svc->identity.group_id), bpf_ntohl(svc->tunnel_id));
                 __u64 *ptr = (__u64 *)svc->key.value;
                 bpf_print("    key %lx%lx\n", ptr[0], ptr[1]);
                 __u32 key = bpf_ntohl(svc->tunnel_id);
                 struct tunnel *tun = bpf_map_lookup_elem(&map_tunnel, &key);
-                ASSERT(tun, dump_action(TC_ACT_UNSPEC), "ERROR: tunnel-id %x not found\n", key);
+                ASSERT(tun, dump_action(TC_ACT_UNSPEC), "ERROR: tunnel-id %u not found\n", key);
                 ASSERT(tun->ip_remote, dump_action(TC_ACT_SHOT), "ERROR: tunnel remote endpoint not resolved\n");
 
-                bpf_print("GUE Encap: tunnel-id %x\n", key);
+                bpf_print("GUE Encap: tunnel-id %u\n", key);
                 bpf_print("    FROM %x:%u\n", tun->ip_local, bpf_ntohs(tun->port_local));
                 bpf_print("    TO   %x:%u\n", tun->ip_remote, bpf_ntohs(tun->port_remote));
 
