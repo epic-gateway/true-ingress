@@ -47,9 +47,9 @@ struct vlan_hdr {
 
 
 static inline
-int dump_icmp(void *data, __u64 nh_off, void *data_end)
+int dump_icmp(void *data, void *data_end)
 {
-    struct icmphdr *icmph = data + nh_off;
+    struct icmphdr *icmph = data;
     if ((void*)&icmph[1] > data_end)
     {
         char msg1[] = "ERROR: (ICMP) Invalid packet size\n";
@@ -87,9 +87,9 @@ int dump_icmp(void *data, __u64 nh_off, void *data_end)
 }
 
 static inline
-int dump_tcp(void *data, __u64 nh_off, void *data_end)
+int dump_tcp(void *data, void *data_end)
 {
-    struct tcphdr *tcph = data + nh_off;
+    struct tcphdr *tcph = data;
     if ((void*)&tcph[1] > data_end)
     {
         char msg1[] = "ERROR: (TCP) Invalid packet size\n";
@@ -128,9 +128,9 @@ int dump_tcp(void *data, __u64 nh_off, void *data_end)
 }
 
 static inline
-int dump_udp(void *data, __u64 nh_off, void *data_end)
+int dump_udp(void *data, void *data_end)
 {
-    struct udphdr *udph = data + nh_off;
+    struct udphdr *udph = data;
     if ((void*)&udph[1] > data_end)
     {
         char msg1[] = "ERROR: (UDP) Invalid packet size\n";
@@ -145,12 +145,11 @@ int dump_udp(void *data, __u64 nh_off, void *data_end)
 }
 
 static inline
-int dump_ipv4(void *data, __u64 nh_off, void *data_end)
+int dump_ipv4(void *data, void *data_end)
 {
-    struct iphdr *iph = data + nh_off;
+    struct iphdr *iph = data;
 
-    nh_off += sizeof(struct iphdr);
-    if (data + nh_off > data_end)
+    if ((void*)&iph[1] > data_end)
     {
         char msg1[] = "ERROR: (IPv4) Invalid packet size\n";
         bpf_trace_printk(msg1, sizeof(msg1));
@@ -165,11 +164,11 @@ int dump_ipv4(void *data, __u64 nh_off, void *data_end)
 //    bpf_trace_printk(msg2, sizeof(msg2), iph->saddr, iph->daddr, iph->protocol);
 
     if (iph->protocol == IPPROTO_ICMP)
-        dump_icmp(data, nh_off, data_end);
+        dump_icmp(&iph[1], data_end);
     else if (iph->protocol == IPPROTO_TCP)
-        dump_tcp(data, nh_off, data_end);
+        dump_tcp(&iph[1], data_end);
     else if (iph->protocol == IPPROTO_UDP)
-        dump_udp(data, nh_off, data_end);
+        dump_udp(&iph[1], data_end);
     else {
         char msg3[] = "    proto %u\n";
         bpf_trace_printk(msg3, sizeof(msg3), iph->protocol);
@@ -179,7 +178,7 @@ int dump_ipv4(void *data, __u64 nh_off, void *data_end)
 }
 
 static inline
-int dump_ipv6(void *data, __u64 nh_off, void *data_end)
+int dump_ipv6(void *data, void *data_end)
 {
     char msg[] = "  IPv6  : NOT SUPPORTED\n";
     bpf_trace_printk(msg, sizeof(msg));
@@ -188,12 +187,11 @@ int dump_ipv6(void *data, __u64 nh_off, void *data_end)
 }
 
 static inline
-int dump_vlan(void *data, __u64 nh_off, void *data_end)
+int dump_vlan(void *data, void *data_end)
 {
-    struct vlan_hdr *vhdr = data + nh_off;
+    struct vlan_hdr *vhdr = data;
 
-    nh_off += sizeof(struct vlan_hdr);
-    if (data + nh_off > data_end)
+    if ((void*)&vhdr[1] > data_end)
     {
         char msg1[] = "ERROR: (VLAN) Invalid packet size\n";
         bpf_trace_printk(msg1, sizeof(msg1));
@@ -206,23 +204,22 @@ int dump_vlan(void *data, __u64 nh_off, void *data_end)
     bpf_trace_printk(msg2, sizeof(msg2), bpf_ntohs(vhdr->h_vlan_TCI), bpf_ntohs(h_proto));
 
     if (h_proto == bpf_htons(ETH_P_IP))
-        dump_ipv4(data, nh_off, data_end);
+        dump_ipv4(&vhdr[1], data_end);
     else if (h_proto == bpf_htons(ETH_P_IPV6))
-        dump_ipv6(data, nh_off, data_end);
+        dump_ipv6(&vhdr[1], data_end);
 //    else if (h_proto == bpf_htons(ETH_P_8021Q) || h_proto == bpf_htons(ETH_P_8021AD))
-//        dump_vlan(data, nh_off, data_end);
+//        dump_vlan2(&vhdr[1], data_end);
 
     return TC_ACT_OK;
 }
 
 static inline
-int dump_arp(void *data, __u64 nh_off, void *data_end)
+int dump_arp(void *data, void *data_end)
 {
-    struct arphdr *arph = data + nh_off;
+    struct arphdr *arph = data;
     char msg1[] = "ERROR: (ARP) Invalid packet size\n";
 
-    nh_off += sizeof(struct arphdr);
-    if (data + nh_off > data_end)
+    if ((void*)&arph[1] > data_end)
     {
         bpf_trace_printk(msg1, sizeof(msg1));
         return TC_ACT_SHOT;
@@ -232,8 +229,7 @@ int dump_arp(void *data, __u64 nh_off, void *data_end)
     {
         struct arpexthdr *arpexth = (struct arpexthdr *)&arph[1];
 
-        nh_off += sizeof(struct arpexthdr);
-        if (data + nh_off > data_end)
+        if ((void *)&arpexth[1] > data_end)
         {
             bpf_trace_printk(msg1, sizeof(msg1));
             return TC_ACT_SHOT;
@@ -248,8 +244,7 @@ int dump_arp(void *data, __u64 nh_off, void *data_end)
     {
         struct arpexthdr *arpexth = (struct arpexthdr *)&arph[1];
 
-        nh_off += sizeof(struct arpexthdr);
-        if (data + nh_off > data_end)
+        if ((void *)&arpexth[1] > data_end)
         {
             bpf_trace_printk(msg1, sizeof(msg1));
             return TC_ACT_SHOT;
@@ -276,8 +271,7 @@ int dump_eth(void *data, void *data_end)
     char msg1[] = "ERROR: (ETH) Invalid packet size\n";
     char msg2[] = "  ETH  : %x -> %x, proto %x\n";
 
-    __u64 nh_off = sizeof(*eth);
-    if (data + nh_off > data_end)
+    if ((void*)&eth[1] > data_end)
     {
         bpf_trace_printk(msg1, sizeof(msg1));
         return TC_ACT_SHOT;
@@ -292,13 +286,13 @@ int dump_eth(void *data, void *data_end)
 //    bpf_trace_printk(msg2, sizeof(msg2), *src, *dst, bpf_ntohs(h_proto));
 
     if (h_proto == bpf_htons(ETH_P_IP))
-        dump_ipv4(data, nh_off, data_end);
+        dump_ipv4(&eth[1], data_end);
     else if (h_proto == bpf_htons(ETH_P_IPV6))
-        dump_ipv6(data, nh_off, data_end);
+        dump_ipv6(&eth[1], data_end);
     else if (h_proto == bpf_htons(ETH_P_8021Q) || h_proto == bpf_htons(ETH_P_8021AD))
-        dump_vlan(data, nh_off, data_end);
+        dump_vlan(&eth[1], data_end);
     else if (h_proto == bpf_htons(ETH_P_ARP))
-        dump_arp(data, nh_off, data_end);
+        dump_arp(&eth[1], data_end);
 
     return TC_ACT_OK;
 }
