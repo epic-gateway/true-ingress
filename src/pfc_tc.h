@@ -169,7 +169,10 @@ int dnat4(struct __sk_buff *skb, struct headers *hdr, __u32 new_ip, __u16 new_po
         break;
     }
 
-    if (!off_port || !off_csum) {
+    ASSERT(off_port, TC_ACT_OK, "Couldn\'t determine port offset\n");
+    ASSERT(off_csum_l4, TC_ACT_OK, "Couldn\'t determine csum offset\n");
+
+    if (bpf_skb_load_bytes(skb, off_port, &old_port, sizeof(old_port)) < 0) {
         return TC_ACT_OK;
     }
 
@@ -213,7 +216,10 @@ int snat4(struct __sk_buff *skb, struct headers *hdr, __u32 new_ip, __u16 new_po
         break;
     }
 
-    if (!off_port || !off_csum) {
+    ASSERT(off_port, TC_ACT_OK, "Couldn\'t determine port offset\n");
+    ASSERT(off_csum_l4, TC_ACT_OK, "Couldn\'t determine csum offset\n");
+
+    if (bpf_skb_load_bytes(skb, off_port, &old_port, sizeof(old_port)) < 0) {
         return TC_ACT_OK;
     }
 
