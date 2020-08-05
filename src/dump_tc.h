@@ -20,6 +20,8 @@
 #include <linux/udp.h>
 #include <linux/if_arp.h>
 
+#include "common_tc.h"
+
 #ifndef __section
 # define __section(x)  __attribute__((section(x), used))
 #endif
@@ -50,12 +52,7 @@ static inline
 int dump_icmp(void *data, void *data_end)
 {
     struct icmphdr *icmph = data;
-    if ((void*)&icmph[1] > data_end)
-    {
-        char msg1[] = "ERROR: (ICMP) Invalid packet size\n";
-        bpf_trace_printk(msg1, sizeof(msg1));
-        return TC_ACT_SHOT;
-    }
+    ASSERT((void*)&icmph[1] <= data_end, TC_ACT_SHOT, "ERROR: (ICMP) Invalid packet size\n");
 
     if (icmph->type == ICMP_ECHO)
     {
@@ -90,12 +87,7 @@ static inline
 int dump_tcp(void *data, void *data_end)
 {
     struct tcphdr *tcph = data;
-    if ((void*)&tcph[1] > data_end)
-    {
-        char msg1[] = "ERROR: (TCP) Invalid packet size\n";
-        bpf_trace_printk(msg1, sizeof(msg1));
-        return TC_ACT_SHOT;
-    }
+    ASSERT((void*)&tcph[1] <= data_end, TC_ACT_SHOT, "ERROR: (TCP) Invalid packet size\n");
 
     char msg2[] = "  TCP  : %d -> %d, csum 0x%x\n";
     bpf_trace_printk(msg2, sizeof(msg2), bpf_ntohs(tcph->source), bpf_ntohs(tcph->dest), bpf_ntohs(tcph->check));
@@ -131,12 +123,7 @@ static inline
 int dump_udp(void *data, void *data_end)
 {
     struct udphdr *udph = data;
-    if ((void*)&udph[1] > data_end)
-    {
-        char msg1[] = "ERROR: (UDP) Invalid packet size\n";
-        bpf_trace_printk(msg1, sizeof(msg1));
-        return TC_ACT_SHOT;
-    }
+    ASSERT((void*)&udph[1] <= data_end, TC_ACT_SHOT, "ERROR: (UDP) Invalid packet size\n");
 
     char msg2[] = "  UDP  : %d -> %d, csum 0x%x\n";
     bpf_trace_printk(msg2, sizeof(msg2), bpf_ntohs(udph->source), bpf_ntohs(udph->dest), bpf_ntohs(udph->check));
@@ -148,13 +135,7 @@ static inline
 int dump_ipv4(void *data, void *data_end)
 {
     struct iphdr *iph = data;
-
-    if ((void*)&iph[1] > data_end)
-    {
-        char msg1[] = "ERROR: (IPv4) Invalid packet size\n";
-        bpf_trace_printk(msg1, sizeof(msg1));
-        return TC_ACT_SHOT;
-    }
+    ASSERT((void*)&iph[1] <= data_end, TC_ACT_SHOT, "ERROR: (IPv4) Invalid packet size\n");
 
     char msg2[] = "  IPv4 : %x -> %x, id %u\n";
     bpf_trace_printk(msg2, sizeof(msg2), bpf_ntohl(iph->saddr), bpf_ntohl(iph->daddr), bpf_ntohs(iph->id));
@@ -188,13 +169,7 @@ static inline
 int dump_vlan(void *data, void *data_end)
 {
     struct vlan_hdr *vhdr = data;
-
-    if ((void*)&vhdr[1] > data_end)
-    {
-        char msg1[] = "ERROR: (VLAN) Invalid packet size\n";
-        bpf_trace_printk(msg1, sizeof(msg1));
-        return TC_ACT_SHOT;
-    }
+    ASSERT((void*)&vhdr[1] <= data_end, TC_ACT_SHOT, "ERROR: (VLAN) Invalid packet size\n");
 
     __u16 h_proto = vhdr->h_vlan_encapsulated_proto;
 
@@ -215,23 +190,12 @@ static inline
 int dump_arp(void *data, void *data_end)
 {
     struct arphdr *arph = data;
-    char msg1[] = "ERROR: (ARP) Invalid packet size\n";
-
-    if ((void*)&arph[1] > data_end)
-    {
-        bpf_trace_printk(msg1, sizeof(msg1));
-        return TC_ACT_SHOT;
-    }
+    ASSERT((void*)&arph[1] <= data_end, TC_ACT_SHOT, "ERROR: (ARP) Invalid packet size\n");
 
     if (arph->ar_op == bpf_htons(ARPOP_REQUEST))
     {
         struct arpexthdr *arpexth = (struct arpexthdr *)&arph[1];
-
-        if ((void *)&arpexth[1] > data_end)
-        {
-            bpf_trace_printk(msg1, sizeof(msg1));
-            return TC_ACT_SHOT;
-        }
+        ASSERT((void *)&arpexth[1] <= data_end, TC_ACT_SHOT, "ERROR: (ARP) Invalid packet size\n");
 
         __u32 *src = (__u32 *)arpexth->ar_sip;
         __u32 *dst = (__u32 *)arpexth->ar_tip;
@@ -241,12 +205,7 @@ int dump_arp(void *data, void *data_end)
     else if (arph->ar_op == bpf_htons(ARPOP_REPLY))
     {
         struct arpexthdr *arpexth = (struct arpexthdr *)&arph[1];
-
-        if ((void *)&arpexth[1] > data_end)
-        {
-            bpf_trace_printk(msg1, sizeof(msg1));
-            return TC_ACT_SHOT;
-        }
+        ASSERT((void *)&arpexth[1] <= data_end, TC_ACT_SHOT, "ERROR: (ARP) Invalid packet size\n");
 
         __u32 *src = (__u32*)arpexth->ar_sip;
         __u32 *mac = (__u32*)&arpexth->ar_sha[2];
@@ -266,20 +225,14 @@ static inline
 int dump_eth(void *data, void *data_end)
 {
     struct ethhdr *eth = data;
-    char msg1[] = "ERROR: (ETH) Invalid packet size\n";
-    char msg2[] = "  ETH  : %x -> %x, proto %x\n";
-
-    if ((void*)&eth[1] > data_end)
-    {
-        bpf_trace_printk(msg1, sizeof(msg1));
-        return TC_ACT_SHOT;
-    }
+    ASSERT((void*)&eth[1] <= data_end, TC_ACT_SHOT, "ERROR: (ETH) Invalid packet size\n");
 
     __u16 h_proto = eth->h_proto;
 
     __u32 *src = (__u32*)&eth->h_source[2];
     __u32 *dst = (__u32*)&eth->h_dest[2];
 
+    char msg2[] = "  ETH  : %x -> %x, proto %x\n";
     bpf_trace_printk(msg2, sizeof(msg2), bpf_ntohl(*src), bpf_ntohl(*dst), bpf_ntohs(h_proto));
 //    bpf_trace_printk(msg2, sizeof(msg2), *src, *dst, bpf_ntohs(h_proto));
 
