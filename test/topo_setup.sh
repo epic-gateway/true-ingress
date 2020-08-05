@@ -53,6 +53,9 @@ do
     fi
 done
 
+# enable ip tables logging inside docker
+sudo bash -c "echo 1 > /proc/sys/net/netfilter/nf_log_all_netns"
+
 echo -e "\n==========================================="
 echo "# TOPO($1).START [3/${STEPS}] : Starting nodes"
 echo "==========================================="
@@ -194,6 +197,9 @@ do
     docker exec -it ${NODE} bash -c "ip route add ${PROXY_IP}/32 via ${DEFAULT_ROUTE} dev eth1"     # need one route per proxy
 
     # NAT eth2 (private) -> eth1 (public)
+    docker exec -it ${NODE} bash -c "iptables -t raw -A PREROUTING -j TRACE"
+    docker exec -it ${NODE} bash -c "iptables -t raw -A OUTPUT -j TRACE"
+
     docker exec -it ${NODE} bash -c "iptables -t nat -A POSTROUTING -o eth1 -j MASQUERADE"          # assuming eth1 facing to public and eth2 to private network
     docker exec -it ${NODE} bash -c "iptables -A FORWARD -i eth1 -o eth2 -m state --state RELATED,ESTABLISHED -j ACCEPT"
     docker exec -it ${NODE} bash -c "iptables -A FORWARD -i eth2 -o eth1 -j ACCEPT"
