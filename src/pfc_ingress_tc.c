@@ -19,7 +19,7 @@
 #include "stat_tc.h"
 #include "maps_tc.h"
 
-#include "common_tc.h"
+#include "pfc_tc.h"
 
 //__section("ingress")
 int pfc_rx(struct __sk_buff *skb)
