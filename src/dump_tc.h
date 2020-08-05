@@ -84,31 +84,19 @@ int dump_tcp(void *data, void *data_end)
     struct tcphdr *tcph = data;
     ASSERT((void*)&tcph[1] <= data_end, TC_ACT_SHOT, "ERROR: (TCP) Invalid packet size\n");
 
-    bpf_print("  TCP  : %d -> %d, csum 0x%x\n", bpf_ntohs(tcph->source), bpf_ntohs(tcph->dest), bpf_ntohs(tcph->check));
-    /*char msg4[] = "       (";
-    bpf_trace_printk(msg4, sizeof(msg4));
-    if (tcph->rst)
-    {
-        char msg[] = " RST";
-        bpf_trace_printk(msg, sizeof(msg));
-    }
+    char flags[5], *p = flags;
     if (tcph->syn)
-    {
-        char msg[] = " SYN";
-        bpf_trace_printk(msg, sizeof(msg));
-    }
+        *(p++) = 'S';
     if (tcph->fin)
-    {
-        char msg[] = " FIN";
-        bpf_trace_printk(msg, sizeof(msg));
-    }
+        *(p++) = 'F';
+    if (tcph->rst)
+        *(p++) = 'R';
     if (tcph->ack)
-    {
-        char msg[] = " ACK";
-        bpf_trace_printk(msg, sizeof(msg));
-    }
-    char msg3[] = " )\n";
-    bpf_trace_printk(msg3, sizeof(msg3));*/
+        *(p++) = 'A';
+    *(p) = 0;
+
+    bpf_print("  TCP  : %d -> %d, Flags [%s]\n", bpf_ntohs(tcph->source), bpf_ntohs(tcph->dest), flags);
+    bpf_print("    csum 0x%x\n", bpf_ntohs(tcph->check));
 
     return TC_ACT_OK;
 }
@@ -119,7 +107,8 @@ int dump_udp(void *data, void *data_end)
     struct udphdr *udph = data;
     ASSERT((void*)&udph[1] <= data_end, TC_ACT_SHOT, "ERROR: (UDP) Invalid packet size\n");
 
-    bpf_print("  UDP  : %d -> %d, csum 0x%x\n", bpf_ntohs(udph->source), bpf_ntohs(udph->dest), bpf_ntohs(udph->check));
+    bpf_print("  UDP  : %d -> %d\n", bpf_ntohs(udph->source), bpf_ntohs(udph->dest));
+    bpf_print("    csum 0x%x\n", bpf_ntohs(udph->check));
 
     return TC_ACT_OK;
 }
