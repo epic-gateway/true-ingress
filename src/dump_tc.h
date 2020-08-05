@@ -97,8 +97,8 @@ int dump_tcp(void *data, void *data_end)
         return TC_ACT_SHOT;
     }
 
-    char msg2[] = "  TCP  : %d -> %d\n";
-    bpf_trace_printk(msg2, sizeof(msg2), bpf_ntohs(tcph->source), bpf_ntohs(tcph->dest));
+    char msg2[] = "  TCP  : %d -> %d, csum 0x%x\n";
+    bpf_trace_printk(msg2, sizeof(msg2), bpf_ntohs(tcph->source), bpf_ntohs(tcph->dest), bpf_ntohs(tcph->check));
     /*char msg4[] = "       (";
     bpf_trace_printk(msg4, sizeof(msg4));
     if (tcph->rst)
@@ -138,8 +138,8 @@ int dump_udp(void *data, void *data_end)
         return TC_ACT_SHOT;
     }
 
-    char msg2[] = "  UDP  : %d -> %d\n";
-    bpf_trace_printk(msg2, sizeof(msg2), bpf_ntohs(udph->source), bpf_ntohs(udph->dest));
+    char msg2[] = "  UDP  : %d -> %d, csum 0x%x\n";
+    bpf_trace_printk(msg2, sizeof(msg2), bpf_ntohs(udph->source), bpf_ntohs(udph->dest), bpf_ntohs(udph->check));
 
     return TC_ACT_OK;
 }
@@ -156,12 +156,10 @@ int dump_ipv4(void *data, void *data_end)
         return TC_ACT_SHOT;
     }
 
-//    char msg2[] = "  IPv4 : %x -> %x, proto %u\n";
-//    bpf_trace_printk(msg2, sizeof(msg2), bpf_ntohl(iph->saddr), bpf_ntohl(iph->daddr), iph->protocol);
-
     char msg2[] = "  IPv4 : %x -> %x, id %u\n";
     bpf_trace_printk(msg2, sizeof(msg2), bpf_ntohl(iph->saddr), bpf_ntohl(iph->daddr), bpf_ntohs(iph->id));
-//    bpf_trace_printk(msg2, sizeof(msg2), iph->saddr, iph->daddr, iph->protocol);
+    char msg4[] = "    csum 0x%x\n";
+    bpf_trace_printk(msg4, sizeof(msg4), bpf_ntohs(iph->check));
 
     if (iph->protocol == IPPROTO_ICMP)
         dump_icmp(&iph[1], data_end);
