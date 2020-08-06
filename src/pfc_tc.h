@@ -371,6 +371,13 @@ int gue_encap_v4(struct __sk_buff *skb, struct tunnel *tun, struct service *svc)
 static __always_inline
 int gue_decap_v4(struct __sk_buff *skb)
 {
+    int olen = sizeof(struct tunhdr);
+    __u64 flags = 0; //BPF_F_ADJ_ROOM_FIXED_GSO | BPF_F_ADJ_ROOM_ENCAP_L3_IPV4 | BPF_F_ADJ_ROOM_ENCAP_L4_UDP;
+
+    /* shrink room between mac and network header */
+    if (bpf_skb_adjust_room(skb, -olen, BPF_ADJ_ROOM_MAC, flags))
+        return TC_ACT_SHOT;
+
     return TC_ACT_OK;
 }
 
