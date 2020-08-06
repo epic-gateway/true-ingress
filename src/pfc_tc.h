@@ -117,7 +117,7 @@ void parse_src_ep(struct endpoint *ep, struct headers *hdr)
     else if (hdr->udph)
         ep->port = hdr->udph->source;
 
-    bpf_print("Parsed Source EP: ip %x, port %u, proto %u\n", ep->ip, bpf_ntohs(ep->port), bpf_ntohs(ep->proto));
+//    bpf_print("Parsed Source EP: ip %x, port %u, proto %u\n", ep->ip, bpf_ntohs(ep->port), bpf_ntohs(ep->proto));
 //    bpf_print("Parsed Source EP: %lx\n", *(__u64*)ep);
 }
 
@@ -131,7 +131,7 @@ void parse_dest_ep(struct endpoint *ep, struct headers *hdr)
     else if (hdr->udph)
         ep->port = hdr->udph->dest;
 
-    bpf_print("Parsed Destination EP: ip %x, port %u, proto %u\n", ep->ip, bpf_ntohs(ep->port), bpf_ntohs(ep->proto));
+//    bpf_print("Parsed Destination EP: ip %x, port %u, proto %u\n", ep->ip, bpf_ntohs(ep->port), bpf_ntohs(ep->proto));
 //    bpf_print("Parsed Destination EP: %lx\n", *(__u64*)ep);
 }
 
@@ -270,20 +270,21 @@ int update_tunnel_from_guec(__u32 tunnel_id, struct headers *hdr)
 static inline
 int service_verify(struct gueext5hdr *gueext)
 {
+    __u32 id = bpf_ntohl(gueext->id);
     struct verify *vrf = bpf_map_lookup_elem(&map_verify, (struct identity *)&gueext->id);
-    ASSERT(vrf != 0, dump_action(TC_ACT_UNSPEC), "ERROR: Service id %x not found!\n", bpf_ntohl(gueext->id));
+    ASSERT(vrf != 0, dump_action(TC_ACT_UNSPEC), "ERROR: Service id %u not found!\n", id);
 
     __u64 *ref_key = (__u64 *)vrf->value;
     __u64 *pkt_key = (__u64 *)gueext->key;
 
     if ((pkt_key[0] != ref_key[0]) || (pkt_key[1] != ref_key[1])) {
-        bpf_print("ERROR: Service id %x key mismatch!\n", bpf_ntohl(gueext->id));
+        bpf_print("ERROR: Service id %u key mismatch!\n", id);
         bpf_print("    Expected : %lx%lx\n", bpf_ntohll(ref_key[0]), bpf_ntohll(ref_key[1]));
         bpf_print("    Received : %lx%lx\n", bpf_ntohll(pkt_key[0]), bpf_ntohll(pkt_key[1]));
         return 1;
     }
 
-    bpf_print("Service id %x key verified\n", bpf_ntohl(gueext->id));
+    bpf_print("Service id %u key verified\n", id);
     return 0;
 }
 
