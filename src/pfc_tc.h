@@ -31,6 +31,14 @@ struct gueext5hdr {
     __u8    key[16];
 };
 
+struct tunhdr {
+    struct iphdr        ip;
+    struct udphdr       udp;
+    __u32               gue;
+    __u32               gue_id;
+    __u64               gue_key[2];
+} __attribute__((packed));
+
 struct headers {
     struct ethhdr *eth;
     struct iphdr *iph;
@@ -289,8 +297,74 @@ int service_verify(struct gueext5hdr *gueext)
 }
 
 static __always_inline
+void set_ipv4_csum(struct iphdr *iph)
+{
+    __u16 *iph16 = (__u16 *)iph;
+    __u32 csum = 0;
+    int i;
+
+    iph->check = 0;
+
+#pragma clang loop unroll(full)
+    for (i = 0, csum = 0; i < sizeof(*iph) >> 1; i++)
+        csum += *iph16++;
+
+    iph->check = ~((csum & 0xffff) + (csum >> 16));
+}
+
+static __always_inline
 int gue_encap_v4(struct __sk_buff *skb, struct tunnel *tun, struct service *svc)
 {
+    struct iphdr iph_inner = { 0 };
+    struct tunhdr h_outer = {{0}, {0}, 0, 0, {0, 0}};
+    int olen = sizeof(h_outer);
+    __u64 flags = 0;
+    __u64 *from = (__u64 *)svc->key.value;
+
+    if (bpf_skb_load_bytes(skb, ETH_HLEN, &iph_inner, sizeof(iph_inner)) < 0)
+        return TC_ACT_OK;
+
+    flags = BPF_F_ADJ_ROOM_FIXED_GSO | BPF_F_ADJ_ROOM_ENCAP_L3_IPV4 | BPF_F_ADJ_ROOM_ENCAP_L4_UDP;
+
+    // prepare new outer network header
+    // fill GUE
+    h_outer.gue = 0xa00405;   //GUE data header: 0x0504a000
+    h_outer.gue_id = svc->identity.service_id + (svc->identity.group_id << 16);
+    h_outer.gue_key[0] = from[0];
+    h_outer.gue_key[1] = from[1];
+
+    // fill IP
+    h_outer.ip = iph_inner;
+    h_outer.ip.daddr = bpf_htonl(tun->ip_remote);
+    h_outer.ip.saddr = bpf_htonl(tun->ip_local);
+    h_outer.ip.tot_len = bpf_htons(olen + bpf_ntohs(h_outer.ip.tot_len));
+    h_outer.ip.protocol = IPPROTO_UDP;
+
+    set_ipv4_csum((void *)&h_outer.ip);
+
+    // fill UDP
+    int len = bpf_ntohs(iph_inner.tot_len) + sizeof(h_outer.udp) + sizeof(h_outer.gue) + 20 /*sizeof(h_outer.gueext*/;
+    h_outer.udp.dest    = tun->port_remote;
+    h_outer.udp.source  = tun->port_local;
+    h_outer.udp.len     = bpf_htons(len);
+    h_outer.udp.check   = 0;
+
+    // add room between mac and network header
+    if (bpf_skb_adjust_room(skb, olen, BPF_ADJ_ROOM_MAC, flags))
+        return TC_ACT_SHOT;
+
+    // store new outer network header
+    if (bpf_skb_store_bytes(skb, ETH_HLEN, &h_outer, olen, BPF_F_INVALIDATE_HASH) < 0)
+        return TC_ACT_SHOT;
+
+    // store new outer network header
+    __u32 *ptr = (__u32 *)&tun->mac_remote[2];
+    if (*ptr) {
+        //bpf_print("Setting D-MAC %x\n", bpf_ntohl(*ptr));
+        if (bpf_skb_store_bytes(skb, 0, tun->mac_remote, 6, BPF_F_INVALIDATE_HASH) < 0)
+            return TC_ACT_SHOT;
+    }
+
     return TC_ACT_OK;
 }
 
