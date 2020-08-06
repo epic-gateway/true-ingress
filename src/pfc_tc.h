@@ -357,13 +357,49 @@ int gue_encap_v4(struct __sk_buff *skb, struct tunnel *tun, struct service *svc)
     if (bpf_skb_store_bytes(skb, ETH_HLEN, &h_outer, olen, BPF_F_INVALIDATE_HASH) < 0)
         return TC_ACT_SHOT;
 
-    // store new outer network header
+    // Resolve destination MAC
     __u32 *ptr = (__u32 *)&tun->mac_remote[2];
-    if (*ptr) {
-        //bpf_print("Setting D-MAC %x\n", bpf_ntohl(*ptr));
-        if (bpf_skb_store_bytes(skb, 0, tun->mac_remote, 6, BPF_F_INVALIDATE_HASH) < 0)
-            return TC_ACT_SHOT;
+    if (*ptr == 0) {
+        bpf_print("Performing MAC lookup\n");
+        struct bpf_fib_lookup fib_params = { 0 };
+
+        fib_params.family       = AF_INET;
+        fib_params.tos          = h_outer.ip.tos;
+        fib_params.l4_protocol  = IPPROTO_UDP;
+        fib_params.sport        = 0;
+        fib_params.dport        = 0;
+        fib_params.tot_len      = bpf_ntohs(h_outer.ip.tot_len);
+        fib_params.ipv4_src     = bpf_htonl(tun->ip_local);
+        fib_params.ipv4_dst     = bpf_htonl(tun->ip_remote);
+        fib_params.ifindex      = skb->ifindex;
+
+        // flags: 0, BPF_FIB_LOOKUP_DIRECT 1, BPF_FIB_LOOKUP_OUTPUT 2
+        #define MY_BPF_FIB_LOOKUP_DIRECT  1
+        #define MY_BPF_FIB_LOOKUP_OUTPUT  2
+        int rc = bpf_fib_lookup(skb, &fib_params, sizeof(fib_params), MY_BPF_FIB_LOOKUP_DIRECT | MY_BPF_FIB_LOOKUP_OUTPUT);
+        switch (rc) {
+        case BPF_FIB_LKUP_RET_SUCCESS:
+            break;
+        case BPF_FIB_LKUP_RET_NO_NEIGH:
+            bpf_print("ERROR: FIB lookup failed: ARP entry missing\n", rc);
+            return TC_ACT_UNSPEC;
+        case BPF_FIB_LKUP_RET_FWD_DISABLED :
+            bpf_print("ERROR: FIB lookup failed: Forwaring disabled\n", rc);
+            return TC_ACT_UNSPEC;
+        default :
+            bpf_print("ERROR: FIB lookup failed: %d\n", rc);
+            return TC_ACT_UNSPEC;
+        }
+
+        __u32 *dst = (__u32 *)&fib_params.dmac[2];
+        bpf_print("  Updating MAC to %x\n", bpf_ntohl(*dst));
+        __builtin_memcpy(tun->mac_remote, fib_params.dmac, ETH_ALEN);
     }
+
+    // Update destination MAC
+    //bpf_print("Setting D-MAC %x\n", bpf_ntohl(*ptr));
+    if (bpf_skb_store_bytes(skb, 0, tun->mac_remote, 6, BPF_F_INVALIDATE_HASH) < 0)
+        return TC_ACT_SHOT;
 
     return TC_ACT_OK;
 }
