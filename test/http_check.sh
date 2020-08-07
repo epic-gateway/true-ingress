@@ -10,7 +10,10 @@ SERVICE_ID=$4
 #echo "CURL: NODE='${NODE}' IP='${IP}' PORT='${PORT}'"
 
 #CMD="docker exec -it ${NODE} bash -c \"curl ${IP}:${PORT}/tmp/hello\""
+echo ""
 echo "#####################################################"
+echo "From '${NODE}' exec 'curl http://${IP}:${PORT}/hello':"
+echo ""
 #echo "docker exec -it ${NODE} bash -c curl --connect-timeout 3 ${IP}:${PORT}/tmp/hello"
 docker exec -it ${NODE} bash -c "curl --connect-timeout 3 ${IP}:${PORT}/hello"
 echo "#####################################################"

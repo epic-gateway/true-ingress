@@ -11,7 +11,12 @@ cd ..
 #export VERBOSE="1"
 
 # setup topology
-./topo_setup.sh basic.cfg
+if [ "${VERBOSE}" ]; then
+    ./topo_setup.sh basic.cfg
+else
+    echo "Starting topology..."
+    ./topo_setup.sh basic.cfg > /dev/null
+fi
 
 CLIENT="client"
 PROXY="egw"
@@ -28,7 +33,12 @@ PASSWD='5erv1ceP@55w0rd!'
 
 # setup HTTP service on ${NODE}
 #                  <node>  <ip>          <port>          <service-id>  <service>
-./service_start.sh ${NODE} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_NAME} ${SERVICE_TYPE}
+if [ "${VERBOSE}" ]; then
+    ./service_start.sh ${NODE} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_NAME} ${SERVICE_TYPE}
+else
+    echo "Starting service(s)..."
+    ./service_start.sh ${NODE} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_NAME} ${SERVICE_TYPE} > /dev/null
+fi
 
 DELAY="10"
 PROXY_TUN_IP="172.1.0.3"
@@ -72,6 +82,7 @@ fi
 ######## CONFIGURE NODE ########
 ### Install & configure PFC (<node> <iface> <role> <mode> ...)
 NIC="eth1"
+
 docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin ; ./attach_tc.sh ${NIC}"
 # cli_cfg set <idx> <id> <flags> <name>
 docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set ${NIC} 0 2 9 '${NODE} RX' && ./cli_cfg set ${NIC} 1 2 8 '${NODE} TX'"
@@ -118,7 +129,6 @@ if [ "${TMP}" ] ; then
 
     # generate ICMP ECHO REQUEST + RESPONSE packets
     # syntax: $0     <docker>  <ip>        <port>
-    echo ""
     ./${SERVICE_TYPE}_check.sh ${CLIENT} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_ID}
 
     # check traces after
@@ -129,4 +139,9 @@ fi
 #docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin ; ./detach_tc.sh eth1"
 
 # cleanup topology
-./topo_cleanup.sh basic.cfg &> /dev/null
+if [ "${VERBOSE}" ]; then
+    ./topo_cleanup.sh basic.cfg
+else
+    echo "Topology cleanup..."
+    ./topo_cleanup.sh basic.cfg > /dev/null
+fi

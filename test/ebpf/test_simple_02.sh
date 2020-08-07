@@ -11,7 +11,12 @@ cd ..
 #export VERBOSE="1"
 
 # setup topology
-./topo_setup.sh basic.cfg
+if [ "${VERBOSE}" ]; then
+    ./topo_setup.sh basic.cfg
+else
+    echo "Starting topology..."
+    ./topo_setup.sh basic.cfg > /dev/null
+fi
 
 CLIENT="client"
 PROXY="egw"
@@ -19,6 +24,7 @@ PROXY_IP="5.5.5.5"
 
 NODE="node2"
 SERVICE_TYPE="http"
+SERVICE_PROTO="tcp"
 SERVICE_ID="200"
 SERVICE_NAME=${SERVICE_ID}
 SERVICE_IP="2.2.2.2"
@@ -28,7 +34,12 @@ PASSWD='5erv1ceP@55w0rd!'
 
 # setup HTTP service on ${NODE}
 #                  <node>  <ip>          <port>          <service-id>  <service>
-./service_start.sh ${NODE} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_NAME} ${SERVICE_TYPE}
+if [ "${VERBOSE}" ]; then
+    ./service_start.sh ${NODE} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_NAME} ${SERVICE_TYPE}
+else
+    echo "Starting service(s)..."
+    ./service_start.sh ${NODE} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_NAME} ${SERVICE_TYPE} > /dev/null
+fi
 
 DELAY="10"
 PROXY_TUN_IP="172.1.0.3"
@@ -43,8 +54,8 @@ EXPEXTED_IP="172.1.0.5"
 ### Install & configure PFC (<node> <iface> <role> <mode> ...) ... using $name, ignoring $id
 NIC="eth1"
 
-PROTO="tcp"
-docker exec -it ${PROXY} bash -c "iptables -t nat -A PREROUTING -p ${PROTO} -i ${NIC} --destination ${PROXY_IP} --dport ${PROXY_PORT} -j DNAT --to-destination ${SERVICE_IP}:${SERVICE_PORT}"
+docker exec -it ${PROXY} bash -c "iptables -t nat -A PREROUTING -p ${SERVICE_PROTO} -i ${NIC} --destination ${PROXY_IP} --dport ${PROXY_PORT} -j DNAT --to-destination ${SERVICE_IP}:${SERVICE_PORT}"
+docker exec -it ${PROXY} bash -c "iptables -t nat -A POSTROUTING -p ${SERVICE_PROTO} -o ${NIC} -s ${SERVICE_IP} --sport ${SERVICE_PORT} -j SNAT --to-source ${PROXY_IP}:${PROXY_PORT}"
 # check
 if [ "${VERBOSE}" ]; then
     echo ""
@@ -81,14 +92,6 @@ fi
 ######## CONFIGURE NODE ########
 ### Install & configure PFC (<node> <iface> <role> <mode> ...)
 NIC="eth1"
-
-PROTO="tcp"
-docker exec -it ${NODE} bash -c "iptables -t nat -A POSTROUTING -p ${PROTO} -o ${NIC} -s ${SERVICE_IP} --sport ${SERVICE_PORT} -j SNAT --to-source ${PROXY_IP}:${PROXY_PORT}"
-# check
-if [ "${VERBOSE}" ]; then
-    echo ""
-    docker exec -it ${NODE} bash -c "iptables -t nat -L POSTROUTING -vn --line-numbers"
-fi
 
 docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin ; ./attach_tc.sh ${NIC}"
 # cli_cfg set <idx> <id> <flags> <name>
@@ -136,7 +139,6 @@ if [ "${TMP}" ] ; then
 
     # generate ICMP ECHO REQUEST + RESPONSE packets
     # syntax: $0     <docker>  <ip>        <port>
-    echo ""
     ./${SERVICE_TYPE}_check.sh ${CLIENT} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_ID}
 
     # check traces after
@@ -147,4 +149,9 @@ fi
 #docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin ; ./detach_tc.sh eth1"
 
 # cleanup topology
-./topo_cleanup.sh basic.cfg &> /dev/null
+if [ "${VERBOSE}" ]; then
+    ./topo_cleanup.sh basic.cfg
+else
+    echo "Topology cleanup..."
+    ./topo_cleanup.sh basic.cfg > /dev/null
+fi
