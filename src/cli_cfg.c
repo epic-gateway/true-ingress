@@ -76,10 +76,13 @@ bool map_cfg_set(int map_fd, unsigned int ifindex, unsigned int qid, uint id, ui
         strncpy(cfg->name, name, 16);
 
         if (bpf_map_update_elem(map_fd, &ifindex, &value, 0)) {
-            fprintf(stderr, "CFG.SET {%u[%u]} (%s) -> ERR (%d) \'%s\'\n", ifindex, qid, if_indextoname(ifindex, ifname), errno, strerror(errno));
+            fprintf(stderr, "CFG.SET {%u[%u]} (%s[%s]) -> ERR (%d) \'%s\'\n",
+                    ifindex, qid, if_indextoname(ifindex, ifname),
+                    (qid) ? "TX" : "RX", errno, strerror(errno));
             return false;
         }
-        printf("CFG.SET {%u[%u]} (%s)\t\tCREATED\n", ifindex, qid, if_indextoname(ifindex, ifname));
+        printf("CFG.SET {%u[%u]} (%s[%s])\t\tCREATED\n", ifindex, qid,
+                    if_indextoname(ifindex, ifname), (qid) ? "TX" : "RX");
     } else {    // update existing
         struct config *cfg = &value.queue[qid];
 
@@ -88,10 +91,13 @@ bool map_cfg_set(int map_fd, unsigned int ifindex, unsigned int qid, uint id, ui
         strncpy(cfg->name, name, 16);
 
         if (bpf_map_update_elem(map_fd, &ifindex, &value, 0)) {
-            fprintf(stderr, "CFG.SET {%u[%u]} (%s) -> ERR (%d) \'%s\'\n", ifindex, qid, if_indextoname(ifindex, ifname), errno, strerror(errno));
+            fprintf(stderr, "CFG.SET {%u[%u]} (%s[%s]) -> ERR (%d) \'%s\'\n",
+                    ifindex, qid, if_indextoname(ifindex, ifname),
+                    (qid) ? "TX" : "RX", errno, strerror(errno));
             return false;
         }
-        printf("CFG.SET {%u[%u]} (%s)\t\tUPDATED\n", ifindex, qid, if_indextoname(ifindex, ifname));
+        printf("CFG.SET {%u[%u]} (%s[%s])\t\tUPDATED\n", ifindex, qid,
+                    if_indextoname(ifindex, ifname), (qid) ? "TX" : "RX");
     }
 
     return true;
