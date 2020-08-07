@@ -26,7 +26,7 @@ NODE="node2"
 SERVICE_TYPE="http"
 SERVICE_PROTO="tcp"
 SERVICE_ID="200"
-SERVICE_NAME=${SERVICE_ID}
+SERVICE_NAME="foo"
 SERVICE_IP="2.2.2.2"
 SERVICE_PORT="4000"
 PROXY_PORT="3200"
@@ -38,6 +38,8 @@ if [ "${VERBOSE}" ]; then
     ./service_start.sh ${NODE} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_NAME} ${SERVICE_TYPE}
 else
     echo "Starting service(s)..."
+    echo "  ${SERVICE_NAME}"
+    echo "    Location '${NODE}', Type '${SERVICE_TYPE}', Endpoint '${SERVICE_PROTO}:${SERVICE_IP}:${SERVICE_PORT}'"
     ./service_start.sh ${NODE} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_NAME} ${SERVICE_TYPE} > /dev/null
 fi
 
@@ -50,6 +52,11 @@ NODE_TUN_PORT="6080"
 NODE_TUN_IP="172.2.0.3"
 EXPEXTED_IP="172.1.0.5"
 
+echo "Setup forwarding..."
+echo "  ${SERVICE_NAME}"
+echo "    Proxy  : ${PROXY}  ${SERVICE_PROTO}:${PROXY_IP}:${PROXY_PORT} -> ${NODE}  ${SERVICE_PROTO}:${SERVICE_IP}:${SERVICE_PORT}"
+echo "    Id     : ${SERVICE_ID} -> '${PASSWD}'"
+echo "    Tunnel : ${PROXY_TUN_IP}:${PROXY_TUN_PORT} -> ${NODE_TUN_IP}:${NODE_TUN_PORT}"
 ######## CONFIGURE PROXY ########
 ### Install & configure PFC (<node> <iface> <role> <mode> ...) ... using $name, ignoring $id
 NIC="eth1"
@@ -82,7 +89,7 @@ fi
 
 ### Setup service forwarding (separate (shared tunnel) or combo (one tunnel per service))
 # cli_service set <service-id> <group-id> <proto> <ip-proxy> <port-proxy> <ip-ep> <port-ep> <tunnel-id> <key>
-docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_service set 0 ${SERVICE_ID} tcp ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${TUNNEL_ID} ${PASSWD}"
+docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_service set 0 ${SERVICE_ID} ${SERVICE_PROTO} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${TUNNEL_ID} ${PASSWD}"
 # check
 if [ "${VERBOSE}" ]; then
     echo ""
@@ -113,7 +120,7 @@ fi
 
 ### Setup service forwarding (separate (shared tunnel) or combo (one tunnel per service))
 # cli_service set <service-id> <group-id> <proto> <ip-proxy> <port-proxy> <ip-ep> <port-ep> <tunnel-id> <key>
-docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_service set 0 ${SERVICE_ID} tcp ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${TUNNEL_ID} ${PASSWD}"
+docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_service set 0 ${SERVICE_ID} ${SERVICE_PROTO} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${TUNNEL_ID} ${PASSWD}"
 # check
 if [ "${VERBOSE}" ]; then
     echo ""
