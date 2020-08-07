@@ -90,7 +90,7 @@ int pfc_tx(struct __sk_buff *skb)
             if (snat) {
                 bpf_print("SNAT to %x:%u\n", snat->ip, bpf_ntohs(snat->port));
 
-                snat4(skb, &hdr, snat->ip, snat->port);
+                snat4(skb, &hdr, bpf_htonl(snat->ip), snat->port);
                 if (cfg->flags & CFG_TX_DUMP) {
                     dump_pkt(skb);
                 }
@@ -112,7 +112,7 @@ int pfc_tx(struct __sk_buff *skb)
             if (snat) {
                 bpf_print("SNAT to %x:%u\n", snat->ip, bpf_ntohs(snat->port));
 
-                snat4(skb, &hdr, snat->ip, snat->port);
+                snat4(skb, &hdr, bpf_htonl(snat->ip), snat->port);
                 if (cfg->flags & CFG_TX_DUMP) {
                     dump_pkt(skb);
                 }
