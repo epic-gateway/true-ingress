@@ -26,7 +26,7 @@ struct bpf_elf_map SEC("maps") map_nat = {
 };
 
 ////////////////////////////////
-// TABLE-DECAP      EP -> EMPTY
+// TABLE-DECAP      EP -> REF count
 
 struct bpf_elf_map SEC("maps") map_decap = {
     .type           = BPF_MAP_TYPE_HASH,
