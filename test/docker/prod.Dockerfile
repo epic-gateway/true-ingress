@@ -34,6 +34,7 @@ WORKDIR /tmp/.acnodal/bin
 
 # Copy eBPF
 COPY --from=builder /usr/src/pfc/src/*.o ./
+COPY --from=builder /usr/src/pfc/src/*.sh ./
 COPY --from=builder /usr/src/pfc/test/docker/*.sh ./
 
 # Copy CLI
