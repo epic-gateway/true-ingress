@@ -74,34 +74,52 @@ void map_tunnel_print_footer() {
     printf("\n");
 }
 
-bool map_tunnel_get(int map_fd, __u32 id, struct tunnel *value) {
-    if (bpf_map_lookup_elem(map_fd, &id, value)) {
-        fprintf(stderr, "TUNNEL.GET\t%8u\t\tERR (%d) \'%s\'\n", id, errno, strerror(errno));
+void map_tunnel_print_record(__u32 id, struct tunnel *value) {
+    struct in_addr local, remote;
 
-        return false;
-    } else {
-        struct in_addr local, remote;
-        local.s_addr = ntohl(value->ip_local);
-        remote.s_addr = ntohl(value->ip_remote);
-        printf("%8u\t%16s:%-5u -> ", id,
-               inet_ntoa(local), ntohs(value->port_local));
-        printf("%16s:%-5u", inet_ntoa(remote), ntohs(value->port_remote));
-        printf("\t\t%02x:%02x:%02x:%02x:%02x:%02x", value->mac_remote[0], value->mac_remote[1], value->mac_remote[2], value->mac_remote[3], value->mac_remote[4], value->mac_remote[5]);
-        printf("\t\t(%08x:%04x -> %08x:%04x)\n",
-               value->ip_local, ntohs(value->port_local),
-               value->ip_remote, ntohs(value->port_remote));
+    local.s_addr = ntohl(value->ip_local);
+    remote.s_addr = ntohl(value->ip_remote);
+
+    printf("%8u\t%16s:%-5u -> ", id,
+            inet_ntoa(local), ntohs(value->port_local));
+    printf("%16s:%-5u", inet_ntoa(remote), ntohs(value->port_remote));
+    printf("\t\t%02x:%02x:%02x:%02x:%02x:%02x", value->mac_remote[0], value->mac_remote[1], value->mac_remote[2], value->mac_remote[3], value->mac_remote[4], value->mac_remote[5]);
+    printf("\t\t(%08x:%04x -> %08x:%04x)\n",
+            value->ip_local, ntohs(value->port_local),
+            value->ip_remote, ntohs(value->port_remote));
+}
+
+void map_tunnel_print_ok(__u32 id, const char *name) {
+    printf("TUNNEL.%s {%u}\t\tOK\n", name, id);
+}
+
+void map_tunnel_print_err(__u32 id, const char *name, int err) {
+    fprintf(stderr, "TUNNEL.%s {%u}\t\tERR (%d) \'%s\'\n", name, id, err, strerror(err));
+}
+
+int map_tunnel_get(int map_fd, __u32 id, struct tunnel *value) {
+    if (bpf_map_lookup_elem(map_fd, &id, value)) {
+        return errno;
     }
 
-    return true;
+    return 0;
 }
 
 bool map_tunnel_getall(int map_fd) {
     __u32 prev_key, key;
     struct tunnel value;
+    int ret;
 
     map_tunnel_print_header();
     while(bpf_map_get_next_key(map_fd, &prev_key, &key) == 0) {
-        map_tunnel_get(map_fd, key, &value);
+        ret = map_tunnel_get(map_fd, key, &value);
+        if (!ret) {
+            map_tunnel_print_record(key, &value);
+        } else {
+            map_tunnel_print_err(key, "GET", ret);
+            break;
+        }
+
         prev_key=key;
     }
     map_tunnel_print_footer();
@@ -110,24 +128,26 @@ bool map_tunnel_getall(int map_fd) {
 }
 
 bool map_tunnel_set(int map_fd, __u32 id, struct tunnel *value) {
-    if (bpf_map_update_elem(map_fd, &id, value, 0)) {
-        fprintf(stderr, "TUNNEL.SET {%u}\t\tERR (%d) \'%s\'\n", id, errno, strerror(errno));
+    int ret = bpf_map_update_elem(map_fd, &id, value, 0);
+    if (ret) {
+        map_tunnel_print_err(id, "SET", ret);
 
         return false;
     } else {
-        printf("TUNNEL.SET {%u}\t\tOK\n", id);
+        map_tunnel_print_ok(id, "SET");
     }
 
     return true;
 }
 
 bool map_tunnel_del(int map_fd, __u32 id) {
-    if (bpf_map_delete_elem(map_fd, &id)) {
-        fprintf(stderr, "TUNNEL.DEL {%u}\t\tERR (%d) \'%s\'\n", id, errno, strerror(errno));
+    int ret = bpf_map_delete_elem(map_fd, &id);
+    if (ret) {
+        map_tunnel_print_err(id, "SET", ret);
 
         return false;
     } else {
-        printf("TUNNEL.DEL {%u}\t\tOK\n", id);
+        map_tunnel_print_ok(id, "DEL");
     }
 
     return true;
@@ -157,30 +177,48 @@ void map_decap_print_footer() {
     printf("\n");
 }
 
-bool map_decap_get(int map_fd, struct endpoint *key, __u32 *value) {
+void map_decap_print_record(struct endpoint *key, __u32 *value) {
     struct in_addr from;
     from.s_addr = ntohl(key->ip);
 
+    printf(" %8s\t%16s\t%6u\t\t%u", get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port), *value);
+    printf("\t\t(%04x  %08x  %04x)\n", key->proto, key->ip, key->port);
+}
+
+void map_decap_print_ok(struct endpoint *key, const char *name) {
+    struct in_addr from;
+    from.s_addr = ntohl(key->ip);
+
+    printf("DECAP.%s {%s, %s, %u}\t%llx\tOK\n", name, get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port), *(__u64 *)key);
+}
+
+void map_decap_print_err(struct endpoint *key, const char *name, int err) {
+    struct in_addr from;
+    from.s_addr = ntohl(key->ip);
+
+    fprintf(stderr, "DECAP.%s {%s, %s, %u}\t\tERR (%d) \'%s\'\n", name,
+            get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port), err, strerror(err));
+}
+
+int map_decap_get(int map_fd, struct endpoint *key, __u32 *value) {
     if (bpf_map_lookup_elem(map_fd, key, value)) {
-        fprintf(stderr, "DECAP.GET {%s, %s, %u}\t\tERR (%d) \'%s\'\n",
-                get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port), errno, strerror(errno));
-
-        return false;
-    } else {
-        printf(" %8s\t%16s\t%6u\t\t%u", get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port), *value);
-        printf("\t\t(%04x  %08x  %04x)\n", key->proto, key->ip, key->port);
+        return errno;
     }
-
-    return true;
+    return 0;
 }
 
 bool map_decap_getall(int map_fd) {
     struct endpoint prev_key, key;
     __u32 value;
+    int ret;
 
     map_decap_print_header();
     while (bpf_map_get_next_key(map_fd, &prev_key, &key) == 0) {
-        if (!map_decap_get(map_fd, &key, &value)) {
+        ret = map_decap_get(map_fd, &key, &value);
+        if (!ret) {
+            map_decap_print_record(&key, &value);
+        } else {
+            map_decap_print_err(&key, "GET", ret);
             break;
         }
 
@@ -192,29 +230,21 @@ bool map_decap_getall(int map_fd) {
 }
 
 bool map_decap_inc(int map_fd, struct endpoint *key) {
-    struct in_addr from;
-    from.s_addr = ntohl(key->ip);
     __u32 value = 1;
-    __u8 ret = 0;
 
-    ret = map_decap_get(map_fd, key, &value);
-    if (!ret) {    // create
-        value = 1;
-    } else { // increase ref count
+    int ret = map_decap_get(map_fd, key, &value);
+    if (!ret) {
         ++value;
     }
-    printf("value = %u\n", value);
 
     if (bpf_map_update_elem(map_fd, key, &value, 0)) {
-        fprintf(stderr, "DECAP.INC {%s, %s, %u}\t\tERR (%d) \'%s\'\n",
-                get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port), errno, strerror(errno));
-
+        map_decap_print_err(key, "INC", errno);
         return false;
     } else {
-        if (!ret) {    // create
-            printf("DECAP.SET {%s, %s, %u}\t\tOK\n", get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port));
+        if (ret) {    // create
+            map_decap_print_ok(key, "SET");
         } else { // increase ref count
-            printf("DECAP.INC {%s, %s, %u}\t\tOK\n", get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port));
+            map_decap_print_ok(key, "INC");
         }
     }
 
@@ -222,27 +252,20 @@ bool map_decap_inc(int map_fd, struct endpoint *key) {
 }
 
 bool map_decap_del(int map_fd, struct endpoint *key) {
-    struct in_addr from;
-    from.s_addr = ntohl(key->ip);
-
     if (bpf_map_delete_elem(map_fd, key)) {
-        fprintf(stderr, "DECAP.DEL {%s, %s, %u}\t\tERR (%d) \'%s\'\n",
-                get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port), errno, strerror(errno));
-
+        map_decap_print_err(key, "DEL", errno);
         return false;
     } else {
-        printf("DECAP.DEL {%s, %s, %u}\t\tOK\n", get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port));
+        map_decap_print_ok(key, "DEL");
     }
 
     return true;
 }
 
 bool map_decap_dec(int map_fd, struct endpoint *key) {
-    struct in_addr from;
-    from.s_addr = ntohl(key->ip);
     __u32 value = 1;
 
-    if (!map_decap_get(map_fd, key, &value)) {    // create
+    if (map_decap_get(map_fd, key, &value)) {    // create
         return true;
     }
 
@@ -250,12 +273,10 @@ bool map_decap_dec(int map_fd, struct endpoint *key) {
         --value;
 
         if (bpf_map_update_elem(map_fd, key, &value, 0)) {
-            fprintf(stderr, "DECAP.DEC {%s, %s, %u}\t\tERR (%d) \'%s\'\n",
-                    get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port), errno, strerror(errno));
-
+            map_decap_print_err(key, "DEC", errno);
             return false;
         } else {
-            printf("DECAP.DEC {%s, %s, %u}\t\tOK\n", get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port));
+            map_decap_print_ok(key, "DEC");
         }
     } else {    // remove
         return map_decap_del(map_fd, key);
@@ -332,13 +353,31 @@ int main(int argc, char **argv)
             map_tunnel_getall(map_tunnel_fd);
             map_decap_getall(map_decap_fd);
         } else {
-            struct tunnel value;
-            if (!map_tunnel_get(map_tunnel_fd, atoi(argv[2]), &value)) {
+            __u32 id = atoi(argv[2]);
+            struct tunnel tun;
+            int ret;
+
+            ret = map_tunnel_get(map_tunnel_fd, id, &tun);
+            if (ret) {
                 return 1;
             }
+
+            map_tunnel_print_header();
+            map_tunnel_print_record(id, &tun);
+            map_tunnel_print_footer();
+
             struct endpoint ep;
             __u32 refcnt;
-            map_decap_get(map_decap_fd, make_endpoint(&ep, ntohl(value.ip_local), ntohs(value.port_local), get_proto_number("udp")), &refcnt);
+
+            make_endpoint(&ep, ntohl(tun.ip_local), ntohs(tun.port_local), get_proto_number("udp"));
+            ret = map_decap_get(map_decap_fd, &ep, &refcnt);
+            if (!ret) {
+                map_decap_print_header();
+                map_decap_print_record(&ep, &refcnt);
+                map_decap_print_footer();
+            } else {
+                map_decap_print_err(&ep, "GET", ret);
+            }
         }
     } else if (!strncmp(argv[1], "list", 5)) {
         map_tunnel_getall(map_tunnel_fd);
@@ -354,7 +393,7 @@ int main(int argc, char **argv)
             map_decap_delall(map_decap_fd);
         } else {
             struct tunnel value;
-            if (!map_tunnel_get(map_tunnel_fd, atoi(argv[2]), &value)) {
+            if (map_tunnel_get(map_tunnel_fd, atoi(argv[2]), &value)) {
                 return 1;
             }
             struct endpoint ep;
