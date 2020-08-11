@@ -338,11 +338,16 @@ int main(int argc, char **argv)
 
         struct tunnel tun;
         struct endpoint ep;
+        __u32 id = atoi(argv[2]);
+        int ret;
 
+        ret = map_tunnel_get(map_tunnel_fd, id, &tun);  // already exist?
         if (!map_tunnel_set(map_tunnel_fd, atoi(argv[2]), make_tunnel(&tun, local.s_addr, atoi(argv[4]), remote.s_addr, atoi(argv[6])))) {
             return 1;
         }
-        map_decap_inc(map_decap_fd, make_endpoint(&ep, local.s_addr, atoi(argv[4]), get_proto_number("udp")));
+        if (ret) {  // new tunnel, create decap entry
+            map_decap_inc(map_decap_fd, make_endpoint(&ep, local.s_addr, atoi(argv[4]), get_proto_number("udp")));
+        }
     } else if (!strncmp(argv[1], "get", 4)) {
         if (argc < 3) {
             usage(argv[0]);
