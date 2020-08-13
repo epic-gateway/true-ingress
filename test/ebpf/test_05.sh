@@ -48,7 +48,6 @@ TUNNEL_ID=${SERVICE_ID}
 PROXY_TUN_PORT="6080"
 NODE_TUN_PORT="6080"
 NODE_TUN_IP="172.1.0.4"
-EXPECTED_IP="172.1.0.4"
 
 echo "Setup forwarding..."
 echo "  ${SERVICE_NAME}"
@@ -59,6 +58,7 @@ echo "    Tunnel : ${PROXY_TUN_IP}:${PROXY_TUN_PORT} -> ${NODE_TUN_IP}:${NODE_TU
 ######## CONFIGURE PROXY ########
 ### Install & configure PFC (<node> <iface> <role> <mode> ...) ... using $name, ignoring $id
 NIC="eth1"
+
 docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin ; ./attach_tc.sh ${NIC}"
 # cli_cfg set <idx> <id> <flags> <name>
 docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set ${NIC} 0 5 11 '${PROXY} RX' && ./cli_cfg set ${NIC} 1 5 11 '${PROXY} TX'"
@@ -117,14 +117,12 @@ if [ "${VERBOSE}" ]; then
     docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/cli_service get all"
 fi
 
-#docker exec -itd ${NODE} bash -c "python3 /tmp/.acnodal/bin/gue_ping_svc.py ${NIC} ${DELAY} ${PROXY_TUN_IP} ${NODE_TUN_PORT} 5000 ${SERVICE_ID} ${PASSWD}"
 docker exec -itd ${NODE} bash -c "python3 /tmp/.acnodal/bin/gue_ping_svc.py ${NIC} ${DELAY} ${PROXY_TUN_IP} ${NODE_TUN_PORT} ${PROXY_TUN_PORT} ${SERVICE_ID} ${PASSWD}"
 
 echo "Waiting for GUE ping..."
 for (( i=1; i<10; i++ ))
 do
     TMP=$(docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get ${SERVICE_ID}" | grep "TUN" | grep ${SERVICE_ID} | grep -v "0.0.0.0:0")
-    #TMP=$(docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get ${SERVICE_ID}" | grep ${EXPECTED_IP})
     if [ "${TMP}" ] ; then
         break
     fi
@@ -133,15 +131,14 @@ do
 done
 
 TMP=$(docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get ${SERVICE_ID}" | grep "TUN" | grep ${SERVICE_ID} | grep -v "0.0.0.0:0")
-#TMP=$(docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get ${SERVICE_ID}" | grep ${EXPECTED_IP})
 if [ "${TMP}" ] ; then
     echo "GUE Ping RESOLVED: ${TMP}"
 else
-	echo "GUE Ping FAILED"
+    echo "GUE Ping FAILED"
 fi
 
-docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/detach_tc.sh eth1"
-docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/detach_tc.sh eth1"
+#docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/detach_tc.sh eth1"
+#docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/detach_tc.sh eth1"
 
 # cleanup topology
 if [ "${VERBOSE}" ]; then
