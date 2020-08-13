@@ -50,13 +50,13 @@ TUNNEL_ID=${SERVICE_ID}
 PROXY_TUN_PORT="6080"
 NODE_TUN_PORT="6080"
 NODE_TUN_IP="172.1.0.4"
-EXPEXTED_IP="172.1.0.4"
 
 echo "Setup forwarding..."
 echo "  ${SERVICE_NAME}"
 echo "    Proxy  : ${PROXY}  ${SERVICE_PROTO}:${PROXY_IP}:${PROXY_PORT} -> ${NODE}  ${SERVICE_PROTO}:${SERVICE_IP}:${SERVICE_PORT}"
 echo "    Id     : ${SERVICE_ID} -> '${PASSWD}'"
 echo "    Tunnel : ${PROXY_TUN_IP}:${PROXY_TUN_PORT} -> ${NODE_TUN_IP}:${NODE_TUN_PORT}"
+
 ######## CONFIGURE PROXY ########
 ### Install & configure PFC (<node> <iface> <role> <mode> ...) ... using $name, ignoring $id
 NIC="eth1"
@@ -129,17 +129,18 @@ fi
 
 docker exec -itd ${NODE} bash -c "python3 /tmp/.acnodal/bin/gue_ping_svc.py ${NIC} ${DELAY} ${PROXY_TUN_IP} ${NODE_TUN_PORT} ${PROXY_TUN_PORT} ${SERVICE_ID} ${PASSWD}"
 
-# wait for GUE ping resolved
-for (( i=1; i<4; i++ ))
+echo "Waiting for GUE ping..."
+for (( i=1; i<10; i++ ))
 do
-    TMP=$(docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get ${SERVICE_ID}" | grep ${EXPEXTED_IP})
+    TMP=$(docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get ${SERVICE_ID}" | grep "TUN" | grep ${SERVICE_ID} | grep -v "0.0.0.0:0")
     if [ "${TMP}" ] ; then
         break
     fi
+    echo "."
     sleep 1
 done
 
-TMP=$(docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get ${SERVICE_ID}" | grep ${EXPEXTED_IP})
+TMP=$(docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get ${SERVICE_ID}" | grep "TUN" | grep ${SERVICE_ID} | grep -v "0.0.0.0:0")
 if [ "${TMP}" ] ; then
     # check traces before
 #    tail -n60 /sys/kernel/debug/tracing/trace
@@ -150,10 +151,12 @@ if [ "${TMP}" ] ; then
 
     # check traces after
 #    tail -n60 /sys/kernel/debug/tracing/trace
+else
+    echo "GUE Ping FAILED"
 fi
 
-#docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin ; ./detach_tc.sh eth1"
-#docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin ; ./detach_tc.sh eth1"
+#docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/detach_tc.sh eth1"
+#docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/detach_tc.sh eth1"
 
 # cleanup topology
 if [ "${VERBOSE}" ]; then
