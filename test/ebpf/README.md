@@ -69,7 +69,7 @@ Variation of `basic/test_01.sh` which setup service on *Node1* (same network).
 TC attached and configured on both **EGW** and **Node1**.
 
 - Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*.
-- Uses GUE ping with tunnel-id
+- Uses GUE ping with service-id + group-id + security key
 
 Run:
 
@@ -84,7 +84,7 @@ Variation of `basic/test_02.sh` which setup service on *Node2* (behind NAT).
 TC attached and configured on both **EGW** and **Node2**.
 
 - Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*.
-- Uses GUE ping with tunnel-id
+- Uses GUE ping with service-id + group-id + security key
 
 Run:
 
@@ -99,7 +99,7 @@ Variation of `basic/test_01.sh` which setup service on *Node1* (same network).
 TC attached and configured on both **EGW** and **Node1**.
 
 - Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*.
-- Uses GUE ping with service-id + group-id + security key
+- Uses GUE ping with tunnel-id
 
 Run:
 
@@ -114,7 +114,7 @@ Variation of `basic/test_02.sh` which setup service on *Node2* (behind NAT).
 TC attached and configured on both **EGW** and **Node2**.
 
 - Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*.
-- Uses GUE ping with service-id + group-id + security key
+- Uses GUE ping with tunnel-id
 
 Run:
 

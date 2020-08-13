@@ -6,95 +6,147 @@
 
 cd ..
 
-CLIENT="client"
-NODE="node2"
-PROXY="egw"
-SERVICE_TYPE="http"
-SERVICE_ID="200"
-SERVICE_IP="2.2.2.2"
-SERVICE_PORT="4000"
-PROXY_IP="5.5.5.5"
-PROXY_PORT="3200"
-PASSWD='5erv1ceP@55w0rd!'
-
 #export VERBOSE="1"
 
 # setup topology
-./topo_setup.sh basic.cfg
+if [ "${VERBOSE}" ]; then
+    ./topo_setup.sh basic.cfg
+else
+    echo "Starting topology..."
+    ./topo_setup.sh basic.cfg > /dev/null
+fi
 
-echo "#######################################################"
-echo "# Topology up'n'runnin. Hit <ENTER> to setup service. #"
-echo "#######################################################"
+CLIENT="client"
+PROXY="egw"
+PROXY_IP="5.5.5.5"
 
-#read
+NODE="node2"
+SERVICE_TYPE="http"
+SERVICE_PROTO="tcp"
+SERVICE_ID="200"
+SERVICE_NAME="foo"
+SERVICE_IP="2.2.2.2"
+SERVICE_PORT="4000"
+PROXY_PORT="3200"
+PASSWD='5erv1ceP@55w0rd!'
 
 # setup HTTP service on ${NODE}
 #                  <node>  <ip>          <port>          <service-id>  <service>
-./service_start.sh ${NODE} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_ID} ${SERVICE_TYPE}
+if [ "${VERBOSE}" ]; then
+    ./service_start.sh ${NODE} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_NAME} ${SERVICE_TYPE}
+else
+    echo "Starting service(s)..."
+    echo "  ${SERVICE_NAME}"
+    echo "    Location '${NODE}', Type '${SERVICE_TYPE}', Endpoint '${SERVICE_PROTO}:${SERVICE_IP}:${SERVICE_PORT}'"
+    ./service_start.sh ${NODE} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_NAME} ${SERVICE_TYPE} > /dev/null
+fi
 
-echo "#########################################################"
-echo "# Service up'n'runnin. Hit <ENTER> to setup forwarding. #"
-echo "#########################################################"
+DELAY="10"
+PROXY_TUN_IP="172.1.0.3"
 
-#read
+TUNNEL_ID=${SERVICE_ID}
+PROXY_TUN_PORT="6080"
+NODE_TUN_PORT="6080"
+NODE_TUN_IP="172.1.0.4"
+EXPECTED_IP="172.1.0.4"
 
-# setup TC forwarding
-#                         <service-id>  <node>  <proxy> <proto>  <service-ip>  <service-port>  <proxy-ip>  <proxy-port> [<client>] [<passwd>]
-./forwarding_tc_setup.sh ${SERVICE_ID} ${NODE} ${PROXY} tcp     ${SERVICE_IP} ${SERVICE_PORT} ${PROXY_IP} ${PROXY_PORT} ${CLIENT}  ${PASSWD}
+echo "Setup forwarding..."
+echo "  ${SERVICE_NAME}"
+echo "    Proxy  : ${PROXY}  ${SERVICE_PROTO}:${PROXY_IP}:${PROXY_PORT} -> ${NODE}  ${SERVICE_PROTO}:${SERVICE_IP}:${SERVICE_PORT}"
+echo "    Id     : ${SERVICE_ID} -> '${PASSWD}'"
+echo "    Tunnel : ${PROXY_TUN_IP}:${PROXY_TUN_PORT} -> ${NODE_TUN_IP}:${NODE_TUN_PORT}"
 
-echo "######################################################"
-echo "# Service up'n'runnin. Hit <ENTER> to configure PFC. #"
-echo "######################################################"
-
-#read
-
-# configure PFC instances operation mode
+######## CONFIGURE PROXY ########
+### Install & configure PFC (<node> <iface> <role> <mode> ...) ... using $name, ignoring $id
+NIC="eth1"
+docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin ; ./attach_tc.sh ${NIC}"
 # cli_cfg set <idx> <id> <flags> <name>
-docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set eth1 0 2 9 'NODE2 RX' && ./cli_cfg set eth1 1 2 8 'NODE2 TX' && ./cli_cfg get all"
-docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set eth1 0 5 9 'EGW RX' && ./cli_cfg set eth1 1 5 9 'EGW TX' && ./cli_cfg get all"
+docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set ${NIC} 0 5 11 '${PROXY} RX' && ./cli_cfg set ${NIC} 1 5 11 '${PROXY} TX'"
+# check
+if [ "${VERBOSE}" ]; then
+    echo ""
+    docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_cfg get all"
+fi
 
-# configure GUE tunnel from ${NODE} to ${PROXY}
+### Setup GUE tunnel from ${NODE} to ${PROXY} (separate (shared tunnel) or combo (one tunnel per service))
 # cli_tunnel set <id> <ip-local> <port-local> <ip-remote> <port-remote>
-docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_tunnel set ${SERVICE_ID} 172.1.0.4 6080 172.1.0.3 6080 && ./cli_tunnel get all"
-docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_tunnel set ${SERVICE_ID} 172.1.0.3 6080 0 0 && ./cli_tunnel get all"
-
-# configure service forwarding
-# cli_service set <service-id> <group-id> <proto> <ip-proxy> <port-proxy> <ip-ep> <port-ep> <tunnel-id> <key>
-docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_service set 0 ${SERVICE_ID} tcp ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_ID} ${PASSWD} && ./cli_service get all"
-docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_service set 0 ${SERVICE_ID} tcp ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_ID} ${PASSWD} && ./cli_service get all"
-
-echo "############################################"
-echo "# PFC configured. Hit <ENTER> to run test. #"
-echo "############################################"
-
-#read
-
-# check TABLE_TUNNEL
-docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get all"
-echo -e "\n\n"
-
-for i in {1..1}
-do
-    sleep 10
+docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_tunnel set ${TUNNEL_ID} ${PROXY_TUN_IP} ${PROXY_TUN_PORT} 0 0"
+# check
+if [ "${VERBOSE}" ]; then
+    echo ""
     docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get all"
-#    tail -n20 /sys/kernel/debug/tracing/trace
-    echo -e "\n\n"
+fi
+
+### Setup service forwarding (separate (shared tunnel) or combo (one tunnel per service))
+# cli_service set <service-id> <group-id> <proto> <ip-proxy> <port-proxy> <ip-ep> <port-ep> <tunnel-id> <key>
+docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_service set 0 ${SERVICE_ID} ${SERVICE_PROTO} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${TUNNEL_ID} ${PASSWD}"
+# check
+if [ "${VERBOSE}" ]; then
+    echo ""
+    docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_service get all"
+fi
+
+######## CONFIGURE NODE ########
+### Install & configure PFC (<node> <iface> <role> <mode> ...)
+NIC="eth1"
+
+docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin ; ./attach_tc.sh ${NIC}"
+# cli_cfg set <idx> <id> <flags> <name>
+docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set ${NIC} 0 2 9 '${NODE} RX' && ./cli_cfg set ${NIC} 1 2 8 '${NODE} TX'"
+# check
+if [ "${VERBOSE}" ]; then
+    echo ""
+    docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/cli_cfg get all"
+fi
+
+### Setup GUE tunnel from ${NODE} to ${PROXY} (separate (shared tunnel) or combo (one tunnel per service))
+# cli_tunnel set <id> <ip-local> <port-local> <ip-remote> <port-remote>
+docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_tunnel set ${TUNNEL_ID} ${NODE_TUN_IP} ${NODE_TUN_PORT} ${PROXY_TUN_IP} ${PROXY_TUN_PORT}"
+# check
+if [ "${VERBOSE}" ]; then
+    echo ""
+    docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/cli_tunnel get all"
+fi
+
+### Setup service forwarding (separate (shared tunnel) or combo (one tunnel per service))
+# cli_service set <service-id> <group-id> <proto> <ip-proxy> <port-proxy> <ip-ep> <port-ep> <tunnel-id> <key>
+docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_service set 0 ${SERVICE_ID} ${SERVICE_PROTO} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${TUNNEL_ID} ${PASSWD}"
+# check
+if [ "${VERBOSE}" ]; then
+    echo ""
+    docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/cli_service get all"
+fi
+
+#docker exec -itd ${NODE} bash -c "python3 /tmp/.acnodal/bin/gue_ping_svc.py ${NIC} ${DELAY} ${PROXY_TUN_IP} ${NODE_TUN_PORT} 5000 ${SERVICE_ID} ${PASSWD}"
+docker exec -itd ${NODE} bash -c "python3 /tmp/.acnodal/bin/gue_ping_tun.py ${NIC} ${DELAY} ${PROXY_TUN_IP} ${NODE_TUN_PORT} ${PROXY_TUN_PORT} ${TUNNEL_ID}"
+
+echo "Waiting for GUE ping..."
+for (( i=1; i<10; i++ ))
+do
+    TMP=$(docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get ${SERVICE_ID}" | grep "TUN" | grep ${SERVICE_ID} | grep -v "0.0.0.0:0")
+    #TMP=$(docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get ${SERVICE_ID}" | grep ${EXPECTED_IP})
+    if [ "${TMP}" ] ; then
+        break
+    fi
+    echo "."
+    sleep 1
 done
 
-#echo "########################################"
-#echo "# Test done. Hit <ENTER> to detach TC. #"
-#echo "########################################"
+TMP=$(docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get ${SERVICE_ID}" | grep "TUN" | grep ${SERVICE_ID} | grep -v "0.0.0.0:0")
+#TMP=$(docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get ${SERVICE_ID}" | grep ${EXPECTED_IP})
+if [ "${TMP}" ] ; then
+    echo "GUE Ping RESOLVED: ${TMP}"
+else
+	echo "GUE Ping FAILED"
+fi
 
-#read
-
-docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin ; ./detach_tc.sh eth1"
-docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin ; ./detach_tc.sh eth1"
-
-echo "#################################################"
-echo "# TC detached. Hit <ENTER> to cleanup topology. #"
-echo "#################################################"
-
-#read
+docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/detach_tc.sh eth1"
+docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/detach_tc.sh eth1"
 
 # cleanup topology
-./topo_cleanup.sh basic.cfg
+if [ "${VERBOSE}" ]; then
+    ./topo_cleanup.sh basic.cfg
+else
+    echo "Topology cleanup..."
+    ./topo_cleanup.sh basic.cfg > /dev/null
+fi
