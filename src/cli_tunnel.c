@@ -65,7 +65,7 @@ void usage(char *prog) {
 // TABLE-TUNNEL
 ////////////////////
 void map_tunnel_print_header() {
-    printf("TABLE-TUNNEL:\ntunnel-id\t\tlocal-ip:port -> remote-ip:port\n");
+    printf("TABLE-TUNNEL:\n   \ttunnel-id\t\tlocal-ip:port -> \tremote-ip:port\n");
     printf("--------------------------------------------------------------------------\n");
 }
 
@@ -80,7 +80,7 @@ void map_tunnel_print_record(__u32 id, struct tunnel *value) {
     local.s_addr = ntohl(value->ip_local);
     remote.s_addr = ntohl(value->ip_remote);
 
-    printf("%8u\t%16s:%-5u -> ", id,
+    printf("TUN\t%8u\t%16s:%-5u -> ", id,
             inet_ntoa(local), ntohs(value->port_local));
     printf("%16s:%-5u", inet_ntoa(remote), ntohs(value->port_remote));
     printf("\t\t%02x:%02x:%02x:%02x:%02x:%02x", value->mac_remote[0], value->mac_remote[1], value->mac_remote[2], value->mac_remote[3], value->mac_remote[4], value->mac_remote[5]);
@@ -168,7 +168,7 @@ bool map_tunnel_delall(int map_fd) {
 // TABLE-DECAP
 ////////////////////
 void map_decap_print_header() {
-    printf("TABLE-DECAP:\n     proto\t\tip\t\t port\t\tref-count\n");
+    printf("TABLE-DECAP:\n           proto\t\tip\t\t port\t\tref-count\n");
     printf("--------------------------------------------------------------------------\n");
 }
 
@@ -181,7 +181,7 @@ void map_decap_print_record(struct endpoint *key, __u32 *value) {
     struct in_addr from;
     from.s_addr = ntohl(key->ip);
 
-    printf(" %8s\t%16s\t%6u\t\t%u", get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port), *value);
+    printf("DECAP\t%8s\t%16s\t%6u\t\t%u", get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port), *value);
     printf("\t\t(%04x  %08x  %04x)\n", key->proto, key->ip, key->port);
 }
 
