@@ -235,10 +235,199 @@ Working in regular mode.
 - Setup HTTP service
 - Configure PFC on EGW and NODE.
 - Send HTTP request from client to *proxy ip:port*
+- 
 
 Run:
 
     ./test_nat_02.sh
+
+Expected: PASS
+Status: PASS
+
+### test_multi_01.sh
+
+Variation of `basic/test_01.sh` which setup service on *Node1* (same network).
+TC attached and configured on both **EGW** and **Node1**.
+Iptables does DNAT/SNAT on EGW, TC does GUE encap/decap.
+Working in regular mode.
+
+- Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*
+- Setup 2 HTTP services on **Node1**
+- Configure PFC forwarding on EGW and NODE
+- Send HTTP request from client to both *proxy ip:port*
+- First GUE tunnel is runing from 172.1.0.3:6080 to 172.1.0.4:6080
+- Second GUE tunnel is runing from 172.1.0.3:6081 to 172.1.0.4:6081
+
+Run:
+
+    ./test_multi_01.sh
+
+Expected: PASS
+Status: PASS
+
+### test_multi_02.sh
+
+Variation of `basic/test_02.sh` which setup service on *Node2* (behind NAT).
+TC attached and configured on both **EGW** and **Node2**.
+Iptables does DNAT/SNAT on EGW, TC does GUE encap/decap.
+Working in regular mode.
+
+- Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*
+- Setup 2 HTTP services on **Node1**
+- Configure PFC forwarding on EGW and NODE
+- Send HTTP request from client to both *proxy ip:port*
+- First GUE tunnel is runing from 172.1.0.3:6080 to 172.1.0.4:6080
+- Second GUE tunnel is runing from 172.1.0.3:6081 to 172.1.0.4:6081
+
+Run:
+
+    ./test_multi_02.sh
+
+Expected: PASS
+Status: PASS
+
+### test_multi_03.sh
+
+Variation of `basic/test_01.sh` which setup service on *Node1* (same network).
+TC attached and configured on both **EGW** and **Node1**.
+Iptables does DNAT/SNAT on EGW, TC does GUE encap/decap.
+Working in regular mode.
+
+- Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*
+- Setup 2 HTTP services on **Node1**
+- Configure PFC forwarding on EGW and NODE
+- Send HTTP request from client to both *proxy ip:port*
+- First GUE tunnel is runing from 172.1.0.3:6080 to 172.2.0.3:6080
+- Second GUE tunnel is runing from 172.1.0.3:6080 to 172.2.0.3:6081
+
+Run:
+
+    ./test_multi_03.sh
+
+Expected: PASS
+Status: PASS
+
+### test_multi_04.sh
+
+Variation of `basic/test_02.sh` which setup service on *Node2* (behind NAT).
+TC attached and configured on both **EGW** and **Node2**.
+Iptables does DNAT/SNAT on EGW, TC does GUE encap/decap.
+Working in regular mode.
+
+- Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*
+- Setup 2 HTTP services on **Node1**
+- Configure PFC forwarding on EGW and NODE
+- Send HTTP request from client to both *proxy ip:port*
+- First GUE tunnel is runing from 172.1.0.3:6080 to 172.2.0.3:6080
+- Second GUE tunnel is runing from 172.1.0.3:6080 to 172.2.0.3:6081
+
+Run:
+
+    ./test_multi_04.sh
+
+Expected: PASS
+Status: PASS
+
+### test_multi_05.sh
+
+Variation of `basic/test_01.sh` which setup service on *Node1* (same network).
+TC attached and configured on both **EGW** and **Node1**.
+Iptables does DNAT/SNAT on EGW, TC does GUE encap/decap.
+Working in regular mode.
+
+- Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*
+- Setup 2 HTTP services on **Node1**
+- Configure PFC forwarding on EGW and NODE
+- Send HTTP request from client to both *proxy ip:port*
+- First GUE tunnel is runing from 172.1.0.3:6080 to 172.1.0.4:6080
+- Second GUE tunnel is runing from 172.1.0.3:6081 to 172.1.0.4:6080
+
+Run:
+
+    ./test_multi_05.sh
+
+Expected: PASS
+Status: PASS
+
+### test_multi_06.sh
+
+Variation of `basic/test_02.sh` which setup service on *Node2* (behind NAT).
+TC attached and configured on both **EGW** and **Node2**.
+Iptables does DNAT/SNAT on EGW, TC does GUE encap/decap.
+Working in regular mode.
+
+- Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*
+- Setup 2 HTTP services on **Node1**
+- Configure PFC forwarding on EGW and NODE
+- Send HTTP request from client to both *proxy ip:port*
+- First GUE tunnel is runing from 172.1.0.3:6080 to 172.2.0.3:6080
+- Second GUE tunnel is runing from 172.1.0.3:6081 to 172.2.0.3:6080
+
+Run:
+
+    ./test_multi_06.sh
+
+Expected: PASS
+Status: PASS
+
+### test_multi_07.sh
+
+Variation of `basic/test_01.sh` which setup service on *Node1* (same network).
+TC attached and configured on both **EGW** and **Node1**.
+Iptables does DNAT/SNAT on EGW, TC does GUE encap/decap.
+Working in regular mode.
+
+- Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*
+- Setup 2 HTTP services on **Node1**
+- Configure PFC forwarding on EGW and NODE
+- Send HTTP request from client to both *proxy ip:port*
+- First GUE tunnel is runing from 172.1.0.3:6080 to 172.1.0.4:6080
+- Second GUE tunnel is runing from 172.1.0.3:6080 to 172.1.0.4:6080
+
+Run:
+
+    ./test_multi_07.sh
+
+Expected: PASS
+Status: PASS
+
+### test_multi_08.sh
+
+Variation of `basic/test_02.sh` which setup service on *Node2* (behind NAT).
+TC attached and configured on both **EGW** and **Node2**.
+Iptables does DNAT/SNAT on EGW, TC does GUE encap/decap.
+Working in regular mode.
+
+- Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*
+- Setup 2 HTTP services on **Node1**
+- Configure PFC forwarding on EGW and NODE
+- Send HTTP request from client to both *proxy ip:port*
+- First GUE tunnel is runing from 172.1.0.3:6080 to 172.2.0.3:6080
+- Second GUE tunnel is runing from 172.1.0.3:6080 to 172.2.0.3:6080
+
+Run:
+
+    ./test_multi_08.sh
+
+Expected: PASS
+Status: PASS
+
+### test_multi_09.sh
+
+TC attached and configured on **EGW**, **Node1** and **Node2**.
+Iptables does DNAT/SNAT on EGW, TC does GUE encap/decap.
+Working in regular mode.
+
+- Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*
+- Setup 2 HTTP services, one on **Node1** and other on **Node2**
+- Configure PFC forwarding on each node
+- Send HTTP request from client to both *proxy ip:port*
+- First GUE tunnel is runing from 172.1.0.3:6080 to 172.1.0.4:6080
+- Second GUE tunnel is runing from 172.1.0.3:6080 to 172.2.0.3:6080
+
+Run:
+
+    ./test_multi_09.sh
 
 Expected: PASS
 Status: PASS
