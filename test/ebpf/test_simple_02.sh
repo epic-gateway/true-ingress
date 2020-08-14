@@ -9,6 +9,7 @@
 cd ..
 
 #export VERBOSE="1"
+RETURN=0
 
 # setup topology
 if [ "${VERBOSE}" ]; then
@@ -132,27 +133,31 @@ docker exec -itd ${NODE} bash -c "python3 /tmp/.acnodal/bin/gue_ping_svc.py ${NI
 echo "Waiting for GUE ping..."
 for (( i=1; i<10; i++ ))
 do
-    TMP=$(docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get ${SERVICE_ID}" | grep "TUN" | grep ${SERVICE_ID} | grep -v "0.0.0.0:0")
-    if [ "${TMP}" ] ; then
+    if [ "$(docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get ${SERVICE_ID}" | grep "TUN" | grep ${SERVICE_ID} | grep -v "0.0.0.0:0")" ] ; then
         break
     fi
     echo "."
     sleep 1
 done
 
-TMP=$(docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get ${SERVICE_ID}" | grep "TUN" | grep ${SERVICE_ID} | grep -v "0.0.0.0:0")
-if [ "${TMP}" ] ; then
+if [ ! "$(docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get ${SERVICE_ID}" | grep "TUN" | grep ${SERVICE_ID} | grep -v "0.0.0.0:0")" ] ; then
+    echo -e "\nGUE Ping for '${SERVICE_NAME}' \e[31mFAILED\e[0m\n"
+    RETURN=1
+else
     # check traces before
 #    tail -n60 /sys/kernel/debug/tracing/trace
 
     # generate ICMP ECHO REQUEST + RESPONSE packets
     # syntax: $0     <docker>  <ip>        <port>
-    ./${SERVICE_TYPE}_check.sh ${CLIENT} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_ID}
+    if [ "$(./${SERVICE_TYPE}_check.sh ${CLIENT} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_ID} | grep ${SERVICE_ID})" ] ; then
+        echo -e "\nService '${SERVICE_NAME}' : \e[32mPASS\e[0m\n"
+    else
+        echo -e "\nService '${SERVICE_NAME}' : \e[31mFAILED\e[0m\n"
+        RETURN=1
+    fi
 
     # check traces after
 #    tail -n60 /sys/kernel/debug/tracing/trace
-else
-    echo "GUE Ping FAILED"
 fi
 
 #docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/detach_tc.sh eth1"
@@ -165,3 +170,5 @@ else
     echo "Topology cleanup..."
     ./topo_cleanup.sh basic.cfg > /dev/null
 fi
+
+exit ${RETURN}
