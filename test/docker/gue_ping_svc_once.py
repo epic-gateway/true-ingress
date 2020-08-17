@@ -60,30 +60,31 @@ def get_if(if_name):
     print("Interface %s found" % (iface))
     return iface
 
+def usage():
+        print("Usage: %s <interface> <remote-ip> <remote-port> <local-port> <group-id> <service-id> <security-key>" % argv[0])
+        print("    <interface>      - outgoing interface")
+        print("    <remote-ip>      - IP destination")
+        print("    <remote-port>    - UDP port destination")
+        print("    <local-port>     - UDP port source")
+        print("    <group-id>       - group identifier")
+        print("    <service-id>     - service identifier")
+        print("    <security-key>   - tunnel key (128b)")
+        print("\nExample : %s eth0 5.5.5.5 6080 6080 1 1 'abcdefghijklmnop'" % argv[0])
+
 def main(argv):
     print(argv)
 
     if (len(argv) < 8):
-        print("Usage: %s <interface> <remote-ip> <remote-port> <local-port> <group-id> <service-id> <security-key>" % argv[0])
-        print("    <interface>      - outgoing interface")
-        print("    <destination-ip> - IP destination")
-        print("    <remote-port>    - UDP port destination")
-        print("    <local-port>     - UDP port source")
-        print("    <group-id>       - tunnel identifier")
-        print("    <service-id>     - tunnel identifier")
-        print("    <security-key>   - tunnel key (128b)")
-        print("\nExample : %s eth0 5.5.5.5 6080 6080 1 1 'abcdefghijklmnop'" % argv[0])
+        usage()
         return 1
 
     if (len(argv[7]) != 16):
         print("Security key must be 16 character (128b) long!")
         return 1
 
-    #gid = int(argv[6])
     gid = ((int(argv[5]) & 0xffff) << 16) + (int(argv[6]) & 0xffff)
-    #sevice_id = int(argv[6])
 
-    print("Sending GUE Control packet for group-id %d to %s:%s" % (gid, argv[2], argv[3]))
+    print("Sending GUE Control packet for group-id (%s,%s) to %s:%s" % (argv[5], argv[6], argv[2], argv[3]))
     packet = create_packet(argv[1], argv[2], int(argv[3]), int(argv[4]), gid, argv[7])
     sendp(packet, iface=argv[1])
 
