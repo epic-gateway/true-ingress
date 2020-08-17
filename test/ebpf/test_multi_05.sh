@@ -4,11 +4,22 @@
 # Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*.
 # Setup HTTP service and forwarding.
 # Send HTTP request from client to *proxy ip:port*.
-# usage: $0
+# usage: $0 [-v|-V]
+
+# parse args
+while getopts "vV" opt; do
+    case "$opt" in
+    v)  VERBOSE=1
+        shift
+        ;;
+    V)  export VERBOSE=1
+        shift
+        ;;
+    esac
+done
 
 cd ..
 
-#export VERBOSE=1
 RETURN=0
 
 # setup topology
