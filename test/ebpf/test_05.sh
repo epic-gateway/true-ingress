@@ -7,6 +7,7 @@
 cd ..
 
 #export VERBOSE="1"
+RETURN=0
 
 # setup topology
 if [ "${VERBOSE}" ]; then
@@ -19,6 +20,7 @@ fi
 CLIENT="client"
 PROXY="egw"
 PROXY_IP="5.5.5.5"
+GROUP_ID=1
 
 NODE="node1"
 SERVICE_TYPE="http"
@@ -44,16 +46,18 @@ fi
 DELAY="10"
 PROXY_TUN_IP="172.1.0.3"
 
-TUNNEL_ID=${SERVICE_ID}
+TUNNEL_ID=${GROUP_ID}
+((TUNNEL_ID <<= 16))
+((TUNNEL_ID += ${SERVICE_ID}))
 PROXY_TUN_PORT="6080"
-NODE_TUN_PORT="6080"
+NODE_TUN_PORT="6081"
 NODE_TUN_IP="172.1.0.4"
 
 echo "Setup forwarding..."
 echo "  ${SERVICE_NAME}"
-echo "    Proxy  : ${PROXY}  ${SERVICE_PROTO}:${PROXY_IP}:${PROXY_PORT} -> ${NODE}  ${SERVICE_PROTO}:${SERVICE_IP}:${SERVICE_PORT}"
-echo "    Id     : ${SERVICE_ID} -> '${PASSWD}'"
-echo "    Tunnel : ${PROXY_TUN_IP}:${PROXY_TUN_PORT} -> ${NODE_TUN_IP}:${NODE_TUN_PORT}"
+echo "    Proxy   : ${PROXY}  ${SERVICE_PROTO}:${PROXY_IP}:${PROXY_PORT} -> ${NODE}  ${SERVICE_PROTO}:${SERVICE_IP}:${SERVICE_PORT}"
+echo "    Service : (${GROUP_ID},${SERVICE_ID}) -> '${PASSWD}'"
+echo "    Tunnel  : ${TUNNEL_ID} (${PROXY_TUN_IP}:${PROXY_TUN_PORT} -> ${NODE_TUN_IP}:${NODE_TUN_PORT})"
 
 ######## CONFIGURE PROXY ########
 ### Install & configure PFC (<node> <iface> <role> <mode> ...) ... using $name, ignoring $id
@@ -79,7 +83,7 @@ fi
 
 ### Setup service forwarding (separate (shared tunnel) or combo (one tunnel per service))
 # cli_service set <service-id> <group-id> <proto> <ip-proxy> <port-proxy> <ip-ep> <port-ep> <tunnel-id> <key>
-docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_service set 0 ${SERVICE_ID} ${SERVICE_PROTO} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${TUNNEL_ID} ${PASSWD}"
+docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_service set ${GROUP_ID} ${SERVICE_ID} ${SERVICE_PROTO} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${TUNNEL_ID} ${PASSWD}"
 # check
 if [ "${VERBOSE}" ]; then
     echo ""
@@ -110,31 +114,30 @@ fi
 
 ### Setup service forwarding (separate (shared tunnel) or combo (one tunnel per service))
 # cli_service set <service-id> <group-id> <proto> <ip-proxy> <port-proxy> <ip-ep> <port-ep> <tunnel-id> <key>
-docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_service set 0 ${SERVICE_ID} ${SERVICE_PROTO} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${TUNNEL_ID} ${PASSWD}"
+docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_service set ${GROUP_ID} ${SERVICE_ID} ${SERVICE_PROTO} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${TUNNEL_ID} ${PASSWD}"
 # check
 if [ "${VERBOSE}" ]; then
     echo ""
     docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/cli_service get all"
 fi
 
-docker exec -itd ${NODE} bash -c "python3 /tmp/.acnodal/bin/gue_ping_svc.py ${NIC} ${DELAY} ${PROXY_TUN_IP} ${NODE_TUN_PORT} ${PROXY_TUN_PORT} ${SERVICE_ID} ${PASSWD}"
+docker exec -itd ${NODE} bash -c "python3 /tmp/.acnodal/bin/gue_ping_svc.py ${NIC} ${DELAY} ${PROXY_TUN_IP} ${PROXY_TUN_PORT} ${NODE_TUN_PORT} ${GROUP_ID} ${SERVICE_ID} ${PASSWD}"
 
 echo "Waiting for GUE ping..."
 for (( i=1; i<10; i++ ))
 do
-    TMP=$(docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get ${SERVICE_ID}" | grep "TUN" | grep ${SERVICE_ID} | grep -v "0.0.0.0:0")
-    if [ "${TMP}" ] ; then
+    if [ "$(docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get ${TUNNEL_ID}" | grep "TUN" | grep ${TUNNEL_ID} | grep -v "0.0.0.0:0")" ] ; then
         break
     fi
     echo "."
     sleep 1
 done
 
-TMP=$(docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get ${SERVICE_ID}" | grep "TUN" | grep ${SERVICE_ID} | grep -v "0.0.0.0:0")
-if [ "${TMP}" ] ; then
-    echo "GUE Ping RESOLVED: ${TMP}"
+if [ ! "$(docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get ${TUNNEL_ID}" | grep "TUN" | grep ${TUNNEL_ID} | grep -v "0.0.0.0:0")" ] ; then
+    echo -e "\nGUE Ping for '${SERVICE_NAME}' \e[31mFAILED\e[0m\n"
+    RETURN=1
 else
-    echo "GUE Ping FAILED"
+    echo -e "\nGUE Ping for '${SERVICE_NAME}' : \e[32mPASS\e[0m\n"
 fi
 
 #docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/detach_tc.sh eth1"
@@ -147,3 +150,5 @@ else
     echo "Topology cleanup..."
     ./topo_cleanup.sh basic.cfg > /dev/null
 fi
+
+exit ${RETURN}
