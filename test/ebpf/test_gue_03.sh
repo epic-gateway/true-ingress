@@ -1,5 +1,5 @@
 #!/bin/bash
-# Setup HTTP service on NODE behind NAT, expose it on EGW and send request from CLIENT.
+# Setup HTTP service on NODE on same network as EGW, expose it on EGW and send request from CLIENT.
 # Attach and configure PFC on NODE and EGW.
 # Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*.
 # usage: $0 [-v|-V]
@@ -33,14 +33,14 @@ PROXY="egw"
 PROXY_IP="5.5.5.5"
 GROUP_ID=1
 
-NODE="node2"
+NODE="node1"
 SERVICE_TYPE="http"
 SERVICE_PROTO="tcp"
-SERVICE_ID="200"
+SERVICE_ID="100"
 SERVICE_NAME="foo"
-SERVICE_IP="2.2.2.2"
+SERVICE_IP="1.1.1.1"
 SERVICE_PORT="4000"
-PROXY_PORT="3200"
+PROXY_PORT="3100"
 PASSWD='5erv1ceP@55w0rd!'
 
 # setup HTTP service on ${NODE}
@@ -63,7 +63,7 @@ TUNNEL_ID=${GROUP_ID}
 
 PROXY_TUN_PORT="6080"
 NODE_TUN_PORT="6081"
-NODE_TUN_IP="172.2.0.3"
+NODE_TUN_IP="172.1.0.4"
 
 echo "Setup forwarding..."
 echo "  ${SERVICE_NAME}"
@@ -108,7 +108,7 @@ NIC="eth1"
 
 docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin ; ./attach_tc.sh ${NIC}"
 # cli_cfg set <idx> <id> <flags> <name>
-docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set ${NIC} 0 2 9 '${NODE} RX' && ./cli_cfg set ${NIC} 1 2 8 '${NODE} TX'"
+docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set ${NIC} 0 1 9 '${NODE} RX' && ./cli_cfg set ${NIC} 1 1 8 '${NODE} TX'"
 # check
 if [ "${VERBOSE}" ]; then
     echo ""
@@ -134,6 +134,8 @@ if [ "${VERBOSE}" ]; then
     echo ""
     docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/cli_service get all"
 fi
+
+docker exec -itd ${NODE} bash -c "python3 /tmp/.acnodal/bin/gue_ping_svc_once.py ${NIC} ${PROXY_TUN_IP} ${PROXY_TUN_PORT} ${NODE_TUN_PORT} ${GROUP_ID} ${SERVICE_ID} ${PASSWD}"
 
 echo "Waiting for GUE ping..."
 for (( i=1; i<10; i++ ))

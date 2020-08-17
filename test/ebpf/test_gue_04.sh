@@ -135,6 +135,8 @@ if [ "${VERBOSE}" ]; then
     docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/cli_service get all"
 fi
 
+docker exec -itd ${NODE} bash -c "python3 /tmp/.acnodal/bin/gue_ping_svc_once.py ${NIC} ${PROXY_TUN_IP} ${PROXY_TUN_PORT} ${NODE_TUN_PORT} ${GROUP_ID} ${SERVICE_ID} ${PASSWD}"
+
 echo "Waiting for GUE ping..."
 for (( i=1; i<10; i++ ))
 do

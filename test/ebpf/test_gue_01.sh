@@ -2,11 +2,22 @@
 # Setup HTTP service on NODE on same network as EGW, expose it on EGW and send request from CLIENT.
 # Attach and configure PFC on NODE and EGW.
 # Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*.
-# usage: $0
+# usage: $0 [-v|-V]
+
+# parse args
+while getopts "vV" opt; do
+    case "$opt" in
+    v)  VERBOSE=1
+        shift
+        ;;
+    V)  export VERBOSE=1
+        shift
+        ;;
+    esac
+done
 
 cd ..
 
-#export VERBOSE="1"
 RETURN=0
 
 # setup topology
@@ -43,12 +54,13 @@ else
     ./service_start.sh ${NODE} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_NAME} ${SERVICE_TYPE} > /dev/null
 fi
 
-DELAY="10"
+DELAY=10
 PROXY_TUN_IP="172.1.0.3"
 
 TUNNEL_ID=${GROUP_ID}
 ((TUNNEL_ID <<= 16))
 ((TUNNEL_ID += ${SERVICE_ID}))
+
 PROXY_TUN_PORT="6080"
 NODE_TUN_PORT="6081"
 NODE_TUN_IP="172.1.0.4"
@@ -103,6 +115,8 @@ if [ "${VERBOSE}" ]; then
     docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/cli_cfg get all"
 fi
 
+docker exec -itd ${NODE} bash -c "python3 /tmp/.acnodal/bin/gue_ping_svc_auto.py ${DELAY} > /tmp/gue_ping.log"
+
 ### Setup GUE tunnel from ${NODE} to ${PROXY} (separate (shared tunnel) or combo (one tunnel per service))
 # cli_tunnel set <id> <ip-local> <port-local> <ip-remote> <port-remote>
 docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_tunnel set ${TUNNEL_ID} ${NODE_TUN_IP} ${NODE_TUN_PORT} ${PROXY_TUN_IP} ${PROXY_TUN_PORT}"
@@ -120,8 +134,6 @@ if [ "${VERBOSE}" ]; then
     echo ""
     docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/cli_service get all"
 fi
-
-docker exec -itd ${NODE} bash -c "python3 /tmp/.acnodal/bin/gue_ping_svc.py ${NIC} ${DELAY} ${PROXY_TUN_IP} ${PROXY_TUN_PORT} ${NODE_TUN_PORT} ${GROUP_ID} ${SERVICE_ID} ${PASSWD}"
 
 echo "Waiting for GUE ping..."
 for (( i=1; i<10; i++ ))
