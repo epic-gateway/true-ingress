@@ -8,7 +8,7 @@
 
 cd ..
 
-#export VERBOSE="1"
+#export VERBOSE=1
 RETURN=0
 
 # setup topology
@@ -22,6 +22,7 @@ fi
 CLIENT="client"
 PROXY="egw"
 PROXY_IP="5.5.5.5"
+GROUP_ID=1
 
 NODE="node2"
 SERVICE_TYPE="http"
@@ -58,28 +59,34 @@ else
     ./service_start.sh ${NODE2} ${SERVICE_IP2} ${SERVICE_PORT2} ${SERVICE_NAME2} ${SERVICE_TYPE2} > /dev/null
 fi
 
-DELAY="10"
+DELAY=10
 PROXY_TUN_IP="172.1.0.3"
 
-TUNNEL_ID=${SERVICE_ID}
+TUNNEL_ID=${GROUP_ID}
+((TUNNEL_ID <<= 16))
+((TUNNEL_ID += ${SERVICE_ID}))
+
 PROXY_TUN_PORT="6080"
 NODE_TUN_PORT="6080"
 NODE_TUN_IP="172.2.0.3"
 
-TUNNEL_ID2=${SERVICE_ID2}
+TUNNEL_ID2=${GROUP_ID}
+((TUNNEL_ID2 <<= 16))
+((TUNNEL_ID2 += ${SERVICE_ID2}))
+
 PROXY_TUN_PORT2="6080"
 NODE_TUN_PORT2="6080"
 NODE_TUN_IP2="172.2.0.3"
 
 echo "Setup forwarding..."
 echo "  ${SERVICE_NAME}"
-echo "    Proxy  : ${PROXY}  ${SERVICE_PROTO}:${PROXY_IP}:${PROXY_PORT} -> ${NODE}  ${SERVICE_PROTO}:${SERVICE_IP}:${SERVICE_PORT}"
-echo "    Id     : ${SERVICE_ID} -> '${PASSWD}'"
-echo "    Tunnel : ${PROXY_TUN_IP}:${PROXY_TUN_PORT} -> ${NODE_TUN_IP}:${NODE_TUN_PORT}"
+echo "    Proxy   : ${PROXY}  ${SERVICE_PROTO}:${PROXY_IP}:${PROXY_PORT} -> ${NODE}  ${SERVICE_PROTO}:${SERVICE_IP}:${SERVICE_PORT}"
+echo "    Service : (${GROUP_ID},${SERVICE_ID}) -> '${PASSWD}'"
+echo "    Tunnel  : ${TUNNEL_ID} ${PROXY_TUN_IP}:${PROXY_TUN_PORT} -> ${NODE_TUN_IP}:${NODE_TUN_PORT}"
 echo "  ${SERVICE_NAME2}"
-echo "    Proxy  : ${PROXY}  ${SERVICE_PROTO2}:${PROXY_IP}:${PROXY_PORT2} -> ${NODE2}  ${SERVICE_PROTO2}:${SERVICE_IP2}:${SERVICE_PORT2}"
-echo "    Id     : ${SERVICE_ID2} -> '${PASSWD2}'"
-echo "    Tunnel : ${PROXY_TUN_IP}:${PROXY_TUN_PORT2} -> ${NODE_TUN_IP2}:${NODE_TUN_PORT2}"
+echo "    Proxy   : ${PROXY}  ${SERVICE_PROTO2}:${PROXY_IP}:${PROXY_PORT2} -> ${NODE2}  ${SERVICE_PROTO2}:${SERVICE_IP2}:${SERVICE_PORT2}"
+echo "    Service : (${GROUP_ID},${SERVICE_ID2}) -> '${PASSWD2}'"
+echo "    Tunnel  : ${TUNNEL_ID2} ${PROXY_TUN_IP}:${PROXY_TUN_PORT2} -> ${NODE_TUN_IP2}:${NODE_TUN_PORT2}"
 
 ######## CONFIGURE PROXY ########
 ### Install & configure PFC (<node> <iface> <role> <mode> ...) ... using $name, ignoring $id
@@ -118,8 +125,8 @@ fi
 
 ### Setup service forwarding (separate (shared tunnel) or combo (one tunnel per service))
 # cli_service set <service-id> <group-id> <proto> <ip-proxy> <port-proxy> <ip-ep> <port-ep> <tunnel-id> <key>
-docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_service set 0 ${SERVICE_ID} ${SERVICE_PROTO} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${TUNNEL_ID} ${PASSWD}"
-docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_service set 0 ${SERVICE_ID2} ${SERVICE_PROTO2} ${PROXY_IP} ${PROXY_PORT2} ${SERVICE_IP2} ${SERVICE_PORT2} ${TUNNEL_ID2} ${PASSWD2}"
+docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_service set ${GROUP_ID} ${SERVICE_ID} ${SERVICE_PROTO} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${TUNNEL_ID} ${PASSWD}"
+docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_service set ${GROUP_ID} ${SERVICE_ID2} ${SERVICE_PROTO2} ${PROXY_IP} ${PROXY_PORT2} ${SERVICE_IP2} ${SERVICE_PORT2} ${TUNNEL_ID2} ${PASSWD2}"
 # check
 if [ "${VERBOSE}" ]; then
     echo ""
@@ -139,6 +146,8 @@ if [ "${VERBOSE}" ]; then
     docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/cli_cfg get all"
 fi
 
+docker exec -itd ${NODE} bash -c "python3 /tmp/.acnodal/bin/gue_ping_svc_auto.py ${DELAY} > /tmp/gue_ping.log"
+
 ### Setup GUE tunnel from ${NODE} to ${PROXY} (separate (shared tunnel) or combo (one tunnel per service))
 # cli_tunnel set <id> <ip-local> <port-local> <ip-remote> <port-remote>
 docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_tunnel set ${TUNNEL_ID} ${NODE_TUN_IP} ${NODE_TUN_PORT} ${PROXY_TUN_IP} ${PROXY_TUN_PORT}"
@@ -151,21 +160,22 @@ fi
 
 ### Setup service forwarding (separate (shared tunnel) or combo (one tunnel per service))
 # cli_service set <service-id> <group-id> <proto> <ip-proxy> <port-proxy> <ip-ep> <port-ep> <tunnel-id> <key>
-docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_service set 0 ${SERVICE_ID} ${SERVICE_PROTO} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${TUNNEL_ID} ${PASSWD}"
-docker exec -it ${NODE2} bash -c "cd /tmp/.acnodal/bin && ./cli_service set 0 ${SERVICE_ID2} ${SERVICE_PROTO2} ${PROXY_IP} ${PROXY_PORT2} ${SERVICE_IP2} ${SERVICE_PORT2} ${TUNNEL_ID2} ${PASSWD2}"
+docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_service set ${GROUP_ID} ${SERVICE_ID} ${SERVICE_PROTO} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${TUNNEL_ID} ${PASSWD}"
+docker exec -it ${NODE2} bash -c "cd /tmp/.acnodal/bin && ./cli_service set ${GROUP_ID} ${SERVICE_ID2} ${SERVICE_PROTO2} ${PROXY_IP} ${PROXY_PORT2} ${SERVICE_IP2} ${SERVICE_PORT2} ${TUNNEL_ID2} ${PASSWD2}"
 # check
 if [ "${VERBOSE}" ]; then
     echo ""
     docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/cli_service get all"
 fi
 
-docker exec -itd ${NODE} bash -c "python3 /tmp/.acnodal/bin/gue_ping_svc.py ${NIC} ${DELAY} ${PROXY_TUN_IP} ${NODE_TUN_PORT} ${PROXY_TUN_PORT} ${SERVICE_ID} ${PASSWD}"
-docker exec -itd ${NODE2} bash -c "python3 /tmp/.acnodal/bin/gue_ping_svc.py ${NIC} ${DELAY} ${PROXY_TUN_IP} ${NODE_TUN_PORT2} ${PROXY_TUN_PORT2} ${SERVICE_ID2} ${PASSWD2}"
+#docker exec -it ${NODE} bash -c "python3 /tmp/.acnodal/bin/gue_ping_svc_auto.py ${DELAY}"
+docker exec -it ${NODE} bash -c "python3 /tmp/.acnodal/bin/gue_ping_svc_once.py ${NIC} ${PROXY_TUN_IP} ${PROXY_TUN_PORT} ${NODE_TUN_PORT} ${GROUP_ID} ${SERVICE_ID} ${PASSWD}"
+docker exec -it ${NODE2} bash -c "python3 /tmp/.acnodal/bin/gue_ping_svc_once.py ${NIC} ${PROXY_TUN_IP} ${PROXY_TUN_PORT2} ${NODE_TUN_PORT2} ${GROUP_ID} ${SERVICE_ID2} ${PASSWD2}"
 
 echo "Waiting for GUE ping..."
 for (( i=1; i<10; i++ ))
 do
-    if [ "$(docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get ${SERVICE_ID}" | grep "TUN" | grep ${SERVICE_ID} | grep -v "0.0.0.0:0")" ] ; then
+    if [ "$(docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get ${TUNNEL_ID}" | grep "TUN" | grep ${TUNNEL_ID} | grep -v "0.0.0.0:0")" ] ; then
         break
     fi
     echo "."
@@ -174,17 +184,17 @@ done
 
 for (( i=1; i<10; i++ ))
 do
-    if [ "$(docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get ${SERVICE_ID2}" | grep "TUN" | grep ${SERVICE_ID2} | grep -v "0.0.0.0:0")" ] ; then
+    if [ "$(docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get ${TUNNEL_ID2}" | grep "TUN" | grep ${TUNNEL_ID2} | grep -v "0.0.0.0:0")" ] ; then
         break
     fi
     echo "."
     sleep 1
 done
 
-if [ ! "$(docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get ${SERVICE_ID}" | grep "TUN" | grep ${SERVICE_ID} | grep -v "0.0.0.0:0")" ] ; then
+if [ ! "$(docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get ${TUNNEL_ID}" | grep "TUN" | grep ${TUNNEL_ID} | grep -v "0.0.0.0:0")" ] ; then
     echo -e "\nGUE Ping for '${SERVICE_NAME}' \e[31mFAILED\e[0m\n"
     RETURN=1
-elif [ ! "$(docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get ${SERVICE_ID2}" | grep "TUN" | grep ${SERVICE_ID2} | grep -v "0.0.0.0:0")" ] ; then
+elif [ ! "$(docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get ${TUNNEL_ID2}" | grep "TUN" | grep ${TUNNEL_ID2} | grep -v "0.0.0.0:0")" ] ; then
     echo -e "\nGUE Ping for '${SERVICE_NAME2}' \e[31mFAILED\e[0m\n"
     RETURN=1
 else
