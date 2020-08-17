@@ -61,7 +61,8 @@ def main(argv):
                         src = ep[7].split(":")
                         dst = ep[-2].split(":")
                         print("sending %s:%d -> %s:%d -> %d -> %s" % (ifaces[src[0]], int(src[1]), dst[0], int(dst[1]), tid, verify[tid]))
-                        os.popen("python3 /tmp/.acnodal/bin/gue_ping_svc_once.py %s %s %s %s 0 %d '%s'" % (ifaces[src[0]], dst[0], dst[1], src[1], tid, verify[tid]))
+                        os.popen("python3 /tmp/.acnodal/bin/gue_ping_svc_once.py %s %s %s %s %d %d '%s'" %
+                                       (ifaces[src[0]], dst[0], dst[1], src[1], tid >> 16, tid & 0xFFFF, verify[tid]))
 
             time.sleep(delay)
     except KeyboardInterrupt:
