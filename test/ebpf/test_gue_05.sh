@@ -2,8 +2,6 @@
 # Setup HTTP service on NODE on same network as EGW, expose it on EGW and send request from CLIENT.
 # Attach and configure PFC on NODE and EGW.
 # Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*.
-# Setup HTTP service and forwarding.
-# Send HTTP request from client to *proxy ip:port*.
 # usage: $0 [-v|-V]
 
 # parse args
@@ -64,7 +62,7 @@ TUNNEL_ID=${GROUP_ID}
 ((TUNNEL_ID += ${SERVICE_ID}))
 
 PROXY_TUN_PORT="6080"
-NODE_TUN_PORT="6080"
+NODE_TUN_PORT="6081"
 NODE_TUN_IP="172.1.0.4"
 
 echo "Setup forwarding..."
@@ -77,17 +75,9 @@ echo "    Tunnel  : ${TUNNEL_ID} (${PROXY_TUN_IP}:${PROXY_TUN_PORT} -> ${NODE_TU
 ### Install & configure PFC (<node> <iface> <role> <mode> ...) ... using $name, ignoring $id
 NIC="eth1"
 
-docker exec -it ${PROXY} bash -c "iptables -t nat -A PREROUTING -p ${SERVICE_PROTO} -i ${NIC} --destination ${PROXY_IP} --dport ${PROXY_PORT} -j DNAT --to-destination ${SERVICE_IP}:${SERVICE_PORT}"
-docker exec -it ${PROXY} bash -c "iptables -t nat -A POSTROUTING -p ${SERVICE_PROTO} -o ${NIC} -s ${SERVICE_IP} --sport ${SERVICE_PORT} -j SNAT --to-source ${PROXY_IP}:${PROXY_PORT}"
-# check
-if [ "${VERBOSE}" ]; then
-    echo ""
-    docker exec -it ${PROXY} bash -c "iptables -t nat -L PREROUTING -vn --line-numbers"
-fi
-
 docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/attach_tc.sh ${NIC}"
 # cli_cfg set <idx> <id> <flags> <name>
-docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set ${NIC} 0 5 9 '${PROXY} RX' && ./cli_cfg set ${NIC} 1 5 9 '${PROXY} TX'"
+docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set ${NIC} 0 5 11 '${PROXY} RX' && ./cli_cfg set ${NIC} 1 5 11 '${PROXY} TX'"
 # check
 if [ "${VERBOSE}" ]; then
     echo ""
@@ -116,6 +106,8 @@ fi
 ### Install & configure PFC (<node> <iface> <role> <mode> ...)
 NIC="eth1"
 
+docker exec -itd ${NODE} bash -c "python3 /tmp/.acnodal/bin/gue_ping_svc_auto.py ${DELAY} > /tmp/gue_ping.log"
+
 docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/attach_tc.sh ${NIC}"
 # cli_cfg set <idx> <id> <flags> <name>
 docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set ${NIC} 0 1 9 '${NODE} RX' && ./cli_cfg set ${NIC} 1 1 8 '${NODE} TX'"
@@ -124,8 +116,6 @@ if [ "${VERBOSE}" ]; then
     echo ""
     docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/cli_cfg get all"
 fi
-
-docker exec -itd ${NODE} bash -c "python3 /tmp/.acnodal/bin/gue_ping_svc_auto.py ${DELAY} &> /tmp/gue_ping.log"
 
 ### Setup GUE tunnel from ${NODE} to ${PROXY} (separate (shared tunnel) or combo (one tunnel per service))
 # cli_tunnel set <id> <ip-local> <port-local> <ip-remote> <port-remote>
@@ -145,8 +135,6 @@ if [ "${VERBOSE}" ]; then
     docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/cli_service get all"
 fi
 
-docker exec -itd ${NODE} bash -c "python3 /tmp/.acnodal/bin/gue_ping_svc_once.py ${NIC} ${PROXY_TUN_IP} ${PROXY_TUN_PORT} ${NODE_TUN_PORT} ${GROUP_ID} ${SERVICE_ID} ${PASSWD}"
-
 echo "Waiting for GUE ping..."
 for (( i=1; i<10; i++ ))
 do
@@ -161,20 +149,7 @@ if [ ! "$(docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get ${T
     echo -e "\nGUE Ping for '${SERVICE_NAME}' \e[31mFAILED\e[0m\n"
     RETURN=1
 else
-    # check traces before
-#    tail -n60 /sys/kernel/debug/tracing/trace
-
-    # generate ICMP ECHO REQUEST + RESPONSE packets
-    # syntax: $0     <docker>  <ip>        <port>
-    if [ "$(./${SERVICE_TYPE}_check.sh ${CLIENT} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_ID} | grep ${SERVICE_ID})" ] ; then
-        echo -e "\nService '${SERVICE_NAME}' : \e[32mPASS\e[0m\n"
-    else
-        echo -e "\nService '${SERVICE_NAME}' : \e[31mFAILED\e[0m\n"
-        RETURN=1
-    fi
-
-    # check traces after
-#    tail -n60 /sys/kernel/debug/tracing/trace
+    echo -e "\nGUE Ping for '${SERVICE_NAME}' : \e[32mPASS\e[0m\n"
 fi
 
 #docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/detach_tc.sh eth1"

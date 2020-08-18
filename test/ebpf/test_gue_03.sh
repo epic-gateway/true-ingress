@@ -75,7 +75,7 @@ echo "    Tunnel  : ${TUNNEL_ID} (${PROXY_TUN_IP}:${PROXY_TUN_PORT} -> ${NODE_TU
 ### Install & configure PFC (<node> <iface> <role> <mode> ...) ... using $name, ignoring $id
 NIC="eth1"
 
-docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin ; ./attach_tc.sh ${NIC}"
+docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/attach_tc.sh ${NIC}"
 # cli_cfg set <idx> <id> <flags> <name>
 docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set ${NIC} 0 5 11 '${PROXY} RX' && ./cli_cfg set ${NIC} 1 5 11 '${PROXY} TX'"
 # check
@@ -86,7 +86,7 @@ fi
 
 ### Setup GUE tunnel from ${NODE} to ${PROXY} (separate (shared tunnel) or combo (one tunnel per service))
 # cli_tunnel set <id> <ip-local> <port-local> <ip-remote> <port-remote>
-docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_tunnel set ${TUNNEL_ID} ${PROXY_TUN_IP} ${PROXY_TUN_PORT} 0 0"
+docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel set ${TUNNEL_ID} ${PROXY_TUN_IP} ${PROXY_TUN_PORT} 0 0"
 # check
 if [ "${VERBOSE}" ]; then
     echo ""
@@ -95,7 +95,7 @@ fi
 
 ### Setup service forwarding (separate (shared tunnel) or combo (one tunnel per service))
 # cli_service set <service-id> <group-id> <proto> <ip-proxy> <port-proxy> <ip-ep> <port-ep> <tunnel-id> <key>
-docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_service set ${GROUP_ID} ${SERVICE_ID} ${SERVICE_PROTO} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${TUNNEL_ID} ${PASSWD}"
+docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_service set ${GROUP_ID} ${SERVICE_ID} ${SERVICE_PROTO} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${TUNNEL_ID} ${PASSWD}"
 # check
 if [ "${VERBOSE}" ]; then
     echo ""
@@ -106,7 +106,7 @@ fi
 ### Install & configure PFC (<node> <iface> <role> <mode> ...)
 NIC="eth1"
 
-docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin ; ./attach_tc.sh ${NIC}"
+docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/attach_tc.sh ${NIC}"
 # cli_cfg set <idx> <id> <flags> <name>
 docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set ${NIC} 0 1 9 '${NODE} RX' && ./cli_cfg set ${NIC} 1 1 8 '${NODE} TX'"
 # check
@@ -119,7 +119,7 @@ docker exec -itd ${NODE} bash -c "python3 /tmp/.acnodal/bin/gue_ping_svc_auto.py
 
 ### Setup GUE tunnel from ${NODE} to ${PROXY} (separate (shared tunnel) or combo (one tunnel per service))
 # cli_tunnel set <id> <ip-local> <port-local> <ip-remote> <port-remote>
-docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_tunnel set ${TUNNEL_ID} ${NODE_TUN_IP} ${NODE_TUN_PORT} ${PROXY_TUN_IP} ${PROXY_TUN_PORT}"
+docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/cli_tunnel set ${TUNNEL_ID} ${NODE_TUN_IP} ${NODE_TUN_PORT} ${PROXY_TUN_IP} ${PROXY_TUN_PORT}"
 # check
 if [ "${VERBOSE}" ]; then
     echo ""
@@ -128,7 +128,7 @@ fi
 
 ### Setup service forwarding (separate (shared tunnel) or combo (one tunnel per service))
 # cli_service set <service-id> <group-id> <proto> <ip-proxy> <port-proxy> <ip-ep> <port-ep> <tunnel-id> <key>
-docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_service set ${GROUP_ID} ${SERVICE_ID} ${SERVICE_PROTO} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${TUNNEL_ID} ${PASSWD}"
+docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/cli_service set ${GROUP_ID} ${SERVICE_ID} ${SERVICE_PROTO} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${TUNNEL_ID} ${PASSWD}"
 # check
 if [ "${VERBOSE}" ]; then
     echo ""
