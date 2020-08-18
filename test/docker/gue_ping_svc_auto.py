@@ -5,7 +5,7 @@ import time
 
 from scapy.all import *
 
-def usage():
+def usage(argv):
         print("Usage: %s <delay>" % argv[0])
         print("    <delay> - delay between packets in seconds")
         print("\nExample : %s 10" % argv[0])
@@ -14,7 +14,7 @@ def main(argv):
     print(argv)
 
     if (len(argv) < 2):
-        usage()
+        usage(argv)
         return 1
 
     delay = int(argv[1])
@@ -36,13 +36,7 @@ def main(argv):
             verify={}
             for service in services:
                 params = service.split(" ")
-                #print(params)
-                # >>>
-                #group = int(params[1].split("{")[1].split(",")[0])
-                #service = int(params[2].split("}")[0])
-                # ===
                 gid = int(params[10].split("{")[1], 16)
-                # <<<
                 pwd = params[4].split("'")[1]
                 #print("id [%d], password [%s]" % (gid, pwd))
                 verify[gid]=pwd
@@ -60,9 +54,10 @@ def main(argv):
                         ep = params[2].split(" ")
                         src = ep[7].split(":")
                         dst = ep[-2].split(":")
-                        print("sending %s:%d -> %s:%d -> %d -> %s" % (ifaces[src[0]], int(src[1]), dst[0], int(dst[1]), tid, verify[tid]))
-                        os.popen("python3 /tmp/.acnodal/bin/gue_ping_svc_once.py %s %s %s %s %d %d '%s'" %
+                        #print("sending %s:%d -> %s:%d -> %d -> %s" % (ifaces[src[0]], int(src[1]), dst[0], int(dst[1]), tid, verify[tid]))
+                        ret = os.popen("python3 /tmp/.acnodal/bin/gue_ping_svc_once.py %s %s %s %s %d %d '%s'" %
                                        (ifaces[src[0]], dst[0], dst[1], src[1], tid >> 16, tid & 0xFFFF, verify[tid]))
+                        print(ret)
 
             time.sleep(delay)
     except KeyboardInterrupt:

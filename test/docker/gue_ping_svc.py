@@ -5,7 +5,7 @@ import time
 
 from scapy.all import *
 
-def usage():
+def usage(argv):
         print("Usage: %s <interface> <delay> <remote-ip> <remote-port> <local-port> <group-id> <service-id> <security-key>" % argv[0])
         print("    <delay>          - delay between packets in seconds")
         print("    <interface>      - outgoing interface")
@@ -21,7 +21,7 @@ def main(argv):
     print(argv)
 
     if (len(argv) < 9):
-        usage()
+        usage(argv)
         return 1
 
     if (len(argv[8]) != 16):

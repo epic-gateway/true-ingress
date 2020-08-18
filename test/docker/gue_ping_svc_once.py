@@ -60,7 +60,7 @@ def get_if(if_name):
     print("Interface %s found" % (iface))
     return iface
 
-def usage():
+def usage(argv):
         print("Usage: %s <interface> <remote-ip> <remote-port> <local-port> <group-id> <service-id> <security-key>" % argv[0])
         print("    <interface>      - outgoing interface")
         print("    <remote-ip>      - IP destination")
@@ -75,7 +75,7 @@ def main(argv):
     print(argv)
 
     if (len(argv) < 8):
-        usage()
+        usage(argv)
         return 1
 
     if (len(argv[7]) != 16):
