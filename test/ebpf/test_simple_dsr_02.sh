@@ -151,7 +151,7 @@ if [ "${VERBOSE}" ]; then
     docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/cli_service get all"
 fi
 
-docker exec -itd ${NODE} bash -c "python3 /tmp/.acnodal/bin/gue_ping_svc_once.py ${NIC} ${PROXY_TUN_IP} ${PROXY_TUN_PORT} ${NODE_TUN_PORT} ${GROUP_ID} ${SERVICE_ID} ${PASSWD}"
+docker exec -it ${NODE} bash -c "python3 /tmp/.acnodal/bin/gue_ping_svc_once.py ${NIC} ${PROXY_TUN_IP} ${PROXY_TUN_PORT} ${NODE_TUN_PORT} ${GROUP_ID} ${SERVICE_ID} ${PASSWD}"
 
 echo "Waiting for GUE ping..."
 for (( i=1; i<10; i++ ))
@@ -172,7 +172,7 @@ else
 
     # generate ICMP ECHO REQUEST + RESPONSE packets
     # syntax: $0     <docker>  <ip>        <port>
-    if [ "$(./${SERVICE_TYPE}_check.sh ${CLIENT} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_ID} | grep ${SERVICE_ID})" ] ; then
+    if [ "$(./${SERVICE_TYPE}_check.sh ${CLIENT} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_ID} | grep ${SERVICE_NAME})" ] ; then
         echo -e "\nService '${SERVICE_NAME}' : \e[32mPASS\e[0m\n"
     else
         echo -e "\nService '${SERVICE_NAME}' : \e[31mFAILED\e[0m\n"
