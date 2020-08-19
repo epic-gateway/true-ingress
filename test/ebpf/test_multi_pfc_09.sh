@@ -47,37 +47,45 @@ SERVICE_PORT="4000"
 PROXY_PORT="3100"
 PASSWD='5erv1ceP@55w0rd1'
 
-NODE2="node1"
+NODE2="node2"
 SERVICE_TYPE2="http"
 SERVICE_PROTO2="tcp"
-SERVICE_ID2="110"
+SERVICE_ID2="200"
 SERVICE_NAME2="bar"
-SERVICE_IP2="1.1.1.1"
+SERVICE_IP2="2.2.2.2"
 SERVICE_PORT2="5000"
-PROXY_PORT2="3110"
+PROXY_PORT2="3200"
 PASSWD2='5erv1ceP@55w0rd2'
 
 PROXY_PORT_MIN=5000
 PROXY_PORT_MAX=5010
 NODE_PORT_MIN=6000
 NODE_PORT_MAX=6010
+NODE_PORT_MIN2=7000
+NODE_PORT_MAX2=7010
 
 PROXY_NIC="eth1"
 NODE_NIC="eth1"
+NODE_NIC2="eth1"
 DELAY=10
+DELAY2=10
 
 # Start PFC
 if [ "${VERBOSE}" ]; then
     docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/pfc_start.sh ${PROXY_NIC} "${PROXY}" 9 9 ${PROXY_PORT_MIN} ${PROXY_PORT_MAX}"
     docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/pfc_start.sh ${NODE_NIC} "${NODE}" 9 8 ${NODE_PORT_MIN} ${NODE_PORT_MAX} ${DELAY}"
+    docker exec -it ${NODE2} bash -c "/tmp/.acnodal/bin/pfc_start.sh ${NODE_NIC2} "${NODE2}" 9 8 ${NODE_PORT_MIN2} ${NODE_PORT_MAX2} ${DELAY2}"
 
     docker exec -it ${NODE} bash -c "ps aux | grep 'gue_ping'"
+    docker exec -it ${NODE2} bash -c "ps aux | grep 'gue_ping'"
 else
     echo "Starting PFC..."
     echo "  ${PROXY}"
     docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/pfc_start.sh ${PROXY_NIC} "${PROXY}" 9 9 ${PROXY_PORT_MIN} ${PROXY_PORT_MAX}" > /dev/null
     echo "  ${NODE}"
     docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/pfc_start.sh ${NODE_NIC} "${NODE}" 9 8 ${NODE_PORT_MIN} ${NODE_PORT_MAX} ${DELAY}" > /dev/null
+    echo "  ${NODE2}"
+    docker exec -it ${NODE2} bash -c "/tmp/.acnodal/bin/pfc_start.sh ${NODE_NIC2} "${NODE2}" 9 8 ${NODE_PORT_MIN2} ${NODE_PORT_MAX2} ${DELAY}" > /dev/null
 fi
 
 # Setup HTTP service on ${NODE}
@@ -111,7 +119,7 @@ TUNNEL_ID2=${GROUP_ID}
 
 PROXY_TUN_PORT2="?"
 NODE_TUN_PORT2="?"
-NODE_TUN_IP2="172.1.0.4"
+NODE_TUN_IP2="172.2.0.3"
 
 echo "Setup forwarding..."
 echo "  ${SERVICE_NAME}"
@@ -164,16 +172,13 @@ if [ "${VERBOSE}" ]; then
     docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_service get all"
 fi
 
-######## CONFIGURE FORWARDING ON NODE ########
+######## CONFIGURE FORWARDING ON NODE1 ########
 NODE_TUN_PORT=$(docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/port_alloc.sh")
 echo "    Allocated tunnel NODE port : ${NODE_TUN_PORT}"
-NODE_TUN_PORT2=$(docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/port_alloc.sh")
-echo "    Allocated tunnel NODE port : ${NODE_TUN_PORT2}"
 
 ### Setup GUE tunnel from ${NODE} to ${PROXY} (separate (shared tunnel) or combo (one tunnel per service))
 # cli_tunnel set <id> <ip-local> <port-local> <ip-remote> <port-remote>
 docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/cli_tunnel set ${TUNNEL_ID} ${NODE_TUN_IP} ${NODE_TUN_PORT} ${PROXY_TUN_IP} ${PROXY_TUN_PORT}"
-docker exec -it ${NODE2} bash -c "/tmp/.acnodal/bin/cli_tunnel set ${TUNNEL_ID2} ${NODE_TUN_IP2} ${NODE_TUN_PORT2} ${PROXY_TUN_IP} ${PROXY_TUN_PORT2}"
 # check
 if [ "${VERBOSE}" ]; then
     echo ""
@@ -183,16 +188,37 @@ fi
 ### Setup service forwarding (separate (shared tunnel) or combo (one tunnel per service))
 # cli_service set <service-id> <group-id> <proto> <ip-proxy> <port-proxy> <ip-ep> <port-ep> <tunnel-id> <key>
 docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/cli_service set ${GROUP_ID} ${SERVICE_ID} ${SERVICE_PROTO} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${TUNNEL_ID} ${PASSWD}"
-docker exec -it ${NODE2} bash -c "/tmp/.acnodal/bin/cli_service set ${GROUP_ID} ${SERVICE_ID2} ${SERVICE_PROTO2} ${PROXY_IP} ${PROXY_PORT2} ${SERVICE_IP2} ${SERVICE_PORT2} ${TUNNEL_ID2} ${PASSWD2}"
 # check
 if [ "${VERBOSE}" ]; then
     echo ""
     docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/cli_service get all"
 fi
 
-#docker exec -it ${NODE} bash -c "python3 /tmp/.acnodal/bin/gue_ping_svc_auto.py ${DELAY}"
 #docker exec -it ${NODE} bash -c "python3 /tmp/.acnodal/bin/gue_ping_svc_once.py ${NODE_NIC} ${PROXY_TUN_IP} ${PROXY_TUN_PORT} ${NODE_TUN_PORT} ${GROUP_ID} ${SERVICE_ID} ${PASSWD}"
-#docker exec -it ${NODE2} bash -c "python3 /tmp/.acnodal/bin/gue_ping_svc_once.py ${NODE_NIC} ${PROXY_TUN_IP} ${PROXY_TUN_PORT2} ${NODE_TUN_PORT2} ${GROUP_ID} ${SERVICE_ID2} ${PASSWD2}"
+
+######## CONFIGURE FORWARDING ON NODE2 ########
+NODE_TUN_PORT2=$(docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/port_alloc.sh")
+echo "    Allocated tunnel NODE port : ${NODE_TUN_PORT2}"
+
+# Setup GUE tunnel from ${NODE2} to ${PROXY}
+# cli_tunnel set <id> <ip-local> <port-local> <ip-remote> <port-remote>
+docker exec -it ${NODE2} bash -c "/tmp/.acnodal/bin/cli_tunnel set ${TUNNEL_ID2} ${NODE_TUN_IP2} ${NODE_TUN_PORT2} ${PROXY_TUN_IP} ${PROXY_TUN_PORT2}"
+# check
+if [ "${VERBOSE}" ]; then
+    echo ""
+    docker exec -it ${NODE2} bash -c "/tmp/.acnodal/bin/cli_tunnel get all"
+fi
+
+# configure service forwarding
+# cli_service set <service-id> <group-id> <proto> <ip-proxy> <port-proxy> <ip-ep> <port-ep> <tunnel-id> <key>
+docker exec -it ${NODE2} bash -c "/tmp/.acnodal/bin/cli_service set ${GROUP_ID} ${SERVICE_ID2} ${SERVICE_PROTO2} ${PROXY_IP} ${PROXY_PORT2} ${SERVICE_IP2} ${SERVICE_PORT2} ${TUNNEL_ID2} ${PASSWD2}"
+# check
+if [ "${VERBOSE}" ]; then
+    echo ""
+    docker exec -it ${NODE2} bash -c "/tmp/.acnodal/bin/cli_service get all"
+fi
+
+#docker exec -it ${NODE2} bash -c "python3 /tmp/.acnodal/bin/gue_ping_svc_once.py ${NODE_NIC2} ${PROXY_TUN_IP} ${PROXY_TUN_PORT2} ${NODE_TUN_PORT2} ${GROUP_ID} ${SERVICE_ID2} ${PASSWD2}"
 
 echo "Waiting for GUE ping..."
 for (( i=1; i<10; i++ ))
@@ -248,11 +274,12 @@ if [ "${VERBOSE}" ]; then
     docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/port_free.sh ${PROXY_TUN_PORT}"
     docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/port_free.sh ${PROXY_TUN_PORT2}"
     docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/port_free.sh ${NODE_TUN_PORT}"
-    docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/port_free.sh ${NODE_TUN_PORT2}"
+    docker exec -it ${NODE2} bash -c "/tmp/.acnodal/bin/port_free.sh ${NODE_TUN_PORT2}"
 
     # Stop PFC
     docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/pfc_stop.sh ${PROXY_NIC}"
     docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/pfc_stop.sh ${NODE_NIC}"
+    docker exec -it ${NODE2} bash -c "/tmp/.acnodal/bin/pfc_stop.sh ${NODE_NIC2}"
 
     ./topo_cleanup.sh basic.cfg
 else
@@ -260,11 +287,12 @@ else
     docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/port_free.sh ${PROXY_TUN_PORT}" > /dev/null
     docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/port_free.sh ${PROXY_TUN_PORT2}" > /dev/null
     docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/port_free.sh ${NODE_TUN_PORT}" > /dev/null
-    docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/port_free.sh ${NODE_TUN_PORT2}" > /dev/null
+    docker exec -it ${NODE2} bash -c "/tmp/.acnodal/bin/port_free.sh ${NODE_TUN_PORT2}" > /dev/null
 
     # Stop PFC
     docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/pfc_stop.sh ${PROXY_NIC}" > /dev/null
     docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/pfc_stop.sh ${NODE_NIC}" > /dev/null
+    docker exec -it ${NODE2} bash -c "/tmp/.acnodal/bin/pfc_stop.sh ${NODE_NIC2}" > /dev/null
 
     ./topo_cleanup.sh basic.cfg > /dev/null
 fi
