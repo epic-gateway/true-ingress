@@ -30,6 +30,10 @@ RUN make build
 #
 FROM system as prod
 
+RUN mkdir -p /tmp/.acnodal/bin
+RUN mkdir -p /tmp/.acnodal/cfg
+RUN mkdir -p /tmp/.acnodal/log
+
 WORKDIR /tmp/.acnodal/bin
 
 # Copy eBPF
@@ -39,6 +43,8 @@ COPY --from=builder /usr/src/pfc/test/docker/*.sh ./
 
 # Copy CLI
 COPY --from=builder /usr/src/pfc/src/cli_cfg /usr/src/pfc/src/cli_service /usr/src/pfc/src/cli_tunnel ./
+COPY --from=builder /usr/src/pfc/test/port_*.sh ./
+COPY --from=builder /usr/src/pfc/test/pfc_*.sh ./
 
 # for WEB Server
 COPY --from=builder /usr/src/pfc/test/docker/server.py ./
