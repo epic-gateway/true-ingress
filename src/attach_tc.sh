@@ -24,12 +24,13 @@ fi
 
 if [ "${DIRECTION}" ] ; then
     echo "### Loading ${BINARY}_${DIRECTION}_tc.o to ${NIC} ${DIRECTION} ###"
-    sudo tc -d filter add dev ${NIC} ${DIRECTION} bpf direct-action object-file ${BINARY}_${DIRECTION}_tc.o sec .text
+    #sudo tc -d filter add dev ${NIC} ${DIRECTION} bpf direct-action object-file ${BINARY}_${DIRECTION}_tc.o sec .text
+    sudo tc filter add dev ${NIC} ${DIRECTION} bpf direct-action object-file ${BINARY}_${DIRECTION}_tc.o sec .text
 else
     echo "### Loading ${BINARY}_ingress_tc.o to ${NIC} ingress ###"
-    sudo tc -d filter add dev ${NIC} ingress bpf direct-action object-file ${BINARY}_ingress_tc.o sec .text
+    sudo tc filter add dev ${NIC} ingress bpf direct-action object-file ${BINARY}_ingress_tc.o sec .text
     echo "### Loading ${BINARY}_egress_tc.o to ${NIC} egress ###"
-    sudo tc -d filter add dev ${NIC} egress  bpf direct-action object-file ${BINARY}_egress_tc.o sec .text
+    sudo tc filter add dev ${NIC} egress  bpf direct-action object-file ${BINARY}_egress_tc.o sec .text
 fi
 
 echo "### Check ###"
