@@ -225,14 +225,22 @@ else
 
     # generate ICMP ECHO REQUEST + RESPONSE packets
     # syntax: $0     <docker>  <ip>        <port>
-    if [ "$(./${SERVICE_TYPE}_check.sh ${CLIENT} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_ID} | grep ${SERVICE_NAME})" ] ; then
+    TMP=$(./${SERVICE_TYPE}_check.sh ${CLIENT} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_ID})
+    if [ "${VERBOSE}" ]; then
+        echo "${TMP}"
+    fi
+    if [ "$(echo "${TMP}" | grep ${SERVICE_NAME})" ] ; then
         echo -e "\nService '${SERVICE_NAME}' : \e[32mPASS\e[0m\n"
     else
         echo -e "\nService '${SERVICE_NAME}' : \e[31mFAILED\e[0m\n"
         RETURN=1
     fi
 
-    if [ "$(./${SERVICE_TYPE2}_check.sh ${CLIENT} ${PROXY_IP} ${PROXY_PORT2} ${SERVICE_ID2} | grep ${SERVICE_NAME2})" ] ; then
+    TMP=$(./${SERVICE_TYPE2}_check.sh ${CLIENT} ${PROXY_IP} ${PROXY_PORT2} ${SERVICE_ID2})                                                                                                                                                                                       
+    if [ "${VERBOSE}" ]; then                                                                                                                                                                                                                                                 
+        echo "${TMP}"                                                                                                                                                                                                                                                         
+    fi                                                                                                                                                                                                                                                                        
+    if [ "$(echo "${TMP}" | grep ${SERVICE_NAME2})" ] ; then
         echo -e "\nService '${SERVICE_NAME2}' : \e[32mPASS\e[0m\n"
     else
         echo -e "\nService '${SERVICE_NAME2}' : \e[31mFAILED\e[0m\n"
