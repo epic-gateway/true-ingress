@@ -285,6 +285,117 @@ Set of tests for running multiple service instances on same node.
 Set of tests for attaching and detaching TC programs to **EGW** and **NODE**.
 
 
+## PFC interface scripts
+
+Located on docker image under /tmp/.acnodal/bin/
+
+### pfc_start.sh
+
+Start and configure PCF.
+
+- start GUE ping daemon
+- attach PFC (eBPF) binaries to interface
+- configure PFC
+- initialize port pool
+
+    ./pfc_start.sh <nic> <name> <conf-rx> <conf-tx> <port-min> <port-max> [<delay>]
+       <nic>       - Interface to bind PFC to
+       <name>      - Instance name
+       <conf-rx>   - PFC Inress configuration flags
+       <conf-tx>   - PFC Egress configuration flags
+       <port-min>  - Gue tunnel port range lower bound
+       <port-max>  - Gue tunnel port range upper bound
+       <delay>     - (Optional) Interval of sending GUE pings in seconds
+
+Example:
+
+    ./pfc_start.sh eth1 node1 9 9 5000 6000 10
+    
+which will attache PFC to eth1. Instance will ideantify itself in log as "node1". Ingress operation mode is 9, egress operation mode is 9 (for details check TABLE-CONFIG). GUE ports will be assigned from range <5000, 6000> and GUE ping daemon will be started with period of 10s.
+
+### pfc_stop.sh
+
+Stop PCF and cleanup.
+
+- stop GUE ping daemon
+- detach PFC (eBPF) binaries from interface
+- cleanup port pool
+
+    ./pfc_stop.sh <nic>
+       <nic>       - Interface which PFC is bound to
+
+Example:
+
+    ./pfc_stop.sh eth1
+
+which will remove PFC instance attached to eth1.
+
+### pfc_add.sh
+
+Configure GUE tunnel and service forwarding.
+
+    ./pfc_add.sh [-p] <nic> <group-id> <service-id> <passwd> <remote-tunnel-ip> <remote-tunnel-port> <proto> <proxy-ip> <proxy-port> <backend-ip> <backend-port>
+       <-p>                    - (Optional) Send one time GUE ping
+       <nic>                   - Interface to sending one time GUE ping from
+       <group-id>              - Group ID
+       <service-id>            - Service ID
+       <passwd>                - Security key
+       <remote-tunnel-ip>      - Remote GUE tunnel IPv4 address
+       <remote-tunnel-port>    - Remote GUE tunnel port
+       <proto>                 - Service IP protocol
+       <proxy-ip>              - Service proxy IPv4 address
+       <proxy-port>            - Service proxy port
+       <backend-ip>            - Service backend IPv4 address
+       <backend-port>          - Service backend port
+
+Example:
+
+    ./pfc_add.sh eth1 1 100 "abcdefgh12345678" 172.1.0.3 5000 tcp 5.5.5.5 3100 1.1.1.1 4000
+
+### pfc_delete.sh
+
+Delete GUE tunnel and service forwarding.
+
+    ./pfc_delete.sh <group-id> <service-id>
+       <group-id>              - Group ID
+       <service-id>            - Service ID
+
+Example:
+
+    ./pfc_delete.sh 1 100
+
+### pfc_list.sh
+
+Show content of lookup tables.
+
+    ./pfc_list.sh
+
+
+### port_init.sh
+
+Initialize port pool from range specifiaec by <min> and <max> (including).
+
+    ./port_init.sh <min> <max>
+
+### port_alloc.sh
+
+Get first port from pool.
+
+    ./port_alloc.sh
+
+### port_free.sh
+
+Insert port at the end of the pool.
+
+    ./port_free.sh <port>
+
+### port_list.sh
+
+Show content of GUE port pool.
+
+    ./port_list.sh
+
+
 ## Helpers
 
 There is bunch of other scripts to help you with testing and debugging. They will be described here.
