@@ -119,5 +119,5 @@ $(BPF_OBJ): %.o: %.c $(OBJECT_LIBBPF) Makefile $(COMMON_MK) $(KERN_USER_H) $(EXT
 	    -Wno-pointer-sign \
 	    -Wno-compare-distinct-pointer-types \
 	    -Werror \
-	    -O2 -emit-llvm -c -g -o ${@:.o=.ll} $<
+	    -O2 -emit-llvm -c -o ${@:.o=.ll} $<
 	$(LLC) -march=bpf -filetype=obj -o $@ ${@:.o=.ll}
