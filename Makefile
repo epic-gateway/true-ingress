@@ -23,7 +23,7 @@ init-submodules:
 init-dependencies:
 	scripts/dependencies.sh
 
-init: init-submodules init-dependencies system-img
+init: init-submodules init-dependencies
 
 test:
 	$(MAKE) -C test/basic
@@ -51,5 +51,5 @@ help:
 	@echo 'check            try to attach/detach TCs locally'
 	@echo 'prod-img         (re)build docker production image (set TAG to override default tag)'
 	@echo 'push             push docker image (set TAG to override default tag)'
-	@echo 'init             submodule init + install dependencies + system-img'
+	@echo 'init             submodule init + install dependencies'
 	@echo 'test             execute simple test scenario test/basic/test_01.sh'
