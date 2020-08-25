@@ -133,22 +133,23 @@ DEFAULT_NAT_ROUTE=`docker exec -it nat bash -c "ip addr" | grep "eth2" | grep in
 echo "DEFAULT_ROUTE: [${DEFAULT_ROUTE}]"
 echo "DEFAULT_NAT_ROUTE: [${DEFAULT_NAT_ROUTE}]"
 
-for NODE in ${PROXIES}
+prxs=(${PROXIES})
+for (( i=0; i<${#prxs[@]}; i++ ))
 do
-    echo -e "\n### Configuring '${NODE}' ###\n"
+    echo -e "\n### Configuring '${prxs[i]}' ###\n"
     # enable packet forwarding
-    docker exec -it ${NODE} bash -c "echo 1 > /proc/sys/net/ipv4/ip_forward"
+    docker exec -it ${prxs[i]} bash -c "echo 1 > /proc/sys/net/ipv4/ip_forward"
 
     echo "Disabling ICMP redirects..."
-    docker exec -it ${NODE} bash -c "echo 'net.ipv4.conf.all.send_redirects=0' >> /etc/sysctl.conf"
-    docker exec -it ${NODE} bash -c "echo 'net.ipv4.conf.default.send_redirects=0' >> /etc/sysctl.conf"
-    docker exec -it ${NODE} bash -c "echo 'net.ipv4.conf.eth0.send_redirects=0' >> /etc/sysctl.conf"
+    docker exec -it ${prxs[i]} bash -c "echo 'net.ipv4.conf.all.send_redirects=0' >> /etc/sysctl.conf"
+    docker exec -it ${prxs[i]} bash -c "echo 'net.ipv4.conf.default.send_redirects=0' >> /etc/sysctl.conf"
+    docker exec -it ${prxs[i]} bash -c "echo 'net.ipv4.conf.eth0.send_redirects=0' >> /etc/sysctl.conf"
 
-    docker exec -it ${NODE} bash -c "ip addr add ${PROXY_IP} dev lo"        # need different ip per proxy
+    docker exec -it ${prxs[i]} bash -c "ip addr add ${PROXY_IP[i]} dev lo"        # need different ip per proxy
 
     if [ "${VERBOSE}" ]; then
         echo ""
-        docker exec -it ${NODE} bash -c "ip addr"
+        docker exec -it ${prxs[i]} bash -c "ip addr"
     fi
 done
 
@@ -156,7 +157,10 @@ for NODE in ${CLIENTS}
 do
     echo -e "\n### Configuring '${NODE}' ###\n"
     # set routing
-    docker exec -it ${NODE} bash -c "ip route add ${PROXY_IP}/32 via ${DEFAULT_ROUTE} dev eth1"     # need one route per proxy
+    for (( i=0; i<${#PROXY_IP[@]}; i++ ))
+    do
+        docker exec -it ${NODE} bash -c "ip route add ${PROXY_IP[i]}/32 via ${DEFAULT_ROUTE} dev eth1"     # need one route per proxy
+    done
 
     if [ "${VERBOSE}" ]; then
         echo ""
@@ -175,9 +179,15 @@ do
     # set routing
     CHECK=`docker exec -it ${NODE} bash -c "ip route" | grep "172.1.0.0/16"`
     if [ "${CHECK}" ] ; then
-        docker exec -it ${NODE} bash -c "ip route add ${PROXY_IP}/32 via ${DEFAULT_ROUTE} dev eth1"     # need one route per proxy
+        for (( i=0; i<${#PROXY_IP[@]}; i++ ))
+        do
+            docker exec -it ${NODE} bash -c "ip route add ${PROXY_IP[i]}/32 via ${DEFAULT_ROUTE} dev eth1"     # need one route per proxy
+        done
     else
-        docker exec -it ${NODE} bash -c "ip route add ${PROXY_IP}/32 via ${DEFAULT_NAT_ROUTE} dev eth1"     # need one route per proxy/with own NAT box IP
+        for (( i=0; i<${#PROXY_IP[@]}; i++ ))      # need one route per proxy/with own NAT box IP
+        do
+            docker exec -it ${NODE} bash -c "ip route add ${PROXY_IP[i]}/32 via ${DEFAULT_ROUTE} dev eth1"     # need one route per proxy
+        done
         docker exec -it ${NODE} bash -c "ip route add ${NETWORK_SUBNET[1]} via ${DEFAULT_NAT_ROUTE} dev eth1"     # required when sitting behind nat
     fi
 
@@ -194,15 +204,22 @@ do
     # enable packet forwarding
     docker exec -it ${NODE} bash -c "echo 1 > /proc/sys/net/ipv4/ip_forward"
 
-    docker exec -it ${NODE} bash -c "ip route add ${PROXY_IP}/32 via ${DEFAULT_ROUTE} dev eth1"     # need one route per proxy
+    for (( i=0; i<${#PROXY_IP[@]}; i++ ))      # need one route per proxy/with own NAT box IP
+    do
+        docker exec -it ${NODE} bash -c "ip route add ${PROXY_IP[i]}/32 via ${DEFAULT_ROUTE} dev eth1"     # need one route per proxy
+    done
 
     # NAT eth2 (private) -> eth1 (public)
     docker exec -it ${NODE} bash -c "iptables -t raw -A PREROUTING -j TRACE"
     docker exec -it ${NODE} bash -c "iptables -t raw -A OUTPUT -j TRACE"
 
+    docker exec -it ${NODE} bash -c "iptables -t nat -A POSTROUTING -j LOG --log-prefix='FWD:ALL '"
+    docker exec -it ${NODE} bash -c "iptables -t nat -A POSTROUTING -o eth1 -j LOG --log-prefix='MASQUERADE '"
     docker exec -it ${NODE} bash -c "iptables -t nat -A POSTROUTING -o eth1 -j MASQUERADE"          # assuming eth1 facing to public and eth2 to private network
+    docker exec -it ${NODE} bash -c "iptables -A FORWARD -j LOG --log-prefix='FWD:ALL '"
     docker exec -it ${NODE} bash -c "iptables -A FORWARD -i eth1 -o eth2 -m state --state RELATED,ESTABLISHED -j ACCEPT"
     docker exec -it ${NODE} bash -c "iptables -A FORWARD -i eth2 -o eth1 -j ACCEPT"
+    docker exec -it ${NODE} bash -c "iptables-translate -A INPUT -j CHECKSUM --checksum-fill"
 
     if [ "${VERBOSE}" ]; then
         echo ""
