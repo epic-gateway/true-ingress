@@ -13,6 +13,10 @@
 #       <backend-ip>            - Service backend IPv4 address
 #       <backend-port>          - Service backend port
 
+set -Eeo pipefail
+
+#VERBOSE="1"
+
 # parse args
 while getopts "p" opt; do
     case "$opt" in
@@ -34,28 +38,21 @@ PROXY_PORT=$9
 SERVICE_IP=${10}
 SERVICE_PORT=${11}
 
-set -Eeo pipefail
-
-#VERBOSE="1"
-
-if [ "${VERBOSE}" ]; then
-    echo -e "PFC.ADD : NIC='${NIC}' GROUP_ID='${GROUP_ID}' SERVICE_ID='${SERVICE_ID}' PASSWD='${PASSWD}' REMOTE_TUN_IP='${REMOTE_TUN_IP}' REMOTE_TUN_PORT='${REMOTE_TUN_PORT}' PROTO='${PROTO}' PROXY_IP='${PROXY_IP}' PROXY_PORT='${PROXY_PORT}' SERVICE_IP='${SERVICE_IP}' SERVICE_PORT='${SERVICE_PORT}'"
-fi
-
-LOCAL_TUN_IP=$(ip addr show dev ${NIC} | grep inet | awk '{print $2}' | sed 's/\// /g' | awk '{print $1}')
-LOCAL_TUN_PORT=$(/tmp/.acnodal/bin/port_alloc.sh)
 TUNNEL_ID=${GROUP_ID}
 ((TUNNEL_ID <<= 16))
 ((TUNNEL_ID += ${SERVICE_ID}))
-
-if [ "${VERBOSE}" ]; then
-    echo "    Local IP : ${LOCAL_TUN_IP}"
-    echo "    Allocated tunnel port : ${LOCAL_TUN_PORT}"
-    echo "    Tunnel-ID : ${TUNNEL_ID}"
-fi
+LOCAL_TUN_IP=$(ip addr show dev ${NIC} | grep inet | awk '{print $2}' | sed 's/\// /g' | awk '{print $1}')
+LOCAL_TUN_PORT=$(/tmp/.acnodal/bin/port_alloc.sh)
 
 if [ ! "${LOCAL_TUN_PORT}" ] ; then
     exit -1
+fi
+
+if [ "${VERBOSE}" ]; then
+    echo -e "\nPFC.ADD : NIC='${NIC}' GROUP_ID='${GROUP_ID}' SERVICE_ID='${SERVICE_ID}' PASSWD='${PASSWD}' REMOTE_TUN_IP='${REMOTE_TUN_IP}' REMOTE_TUN_PORT='${REMOTE_TUN_PORT}' PROTO='${PROTO}' PROXY_IP='${PROXY_IP}' PROXY_PORT='${PROXY_PORT}' SERVICE_IP='${SERVICE_IP}' SERVICE_PORT='${SERVICE_PORT}'"
+    echo "    Local IP : ${LOCAL_TUN_IP}"
+    echo "    Allocated tunnel port : ${LOCAL_TUN_PORT}"
+    echo "    Tunnel-ID : ${TUNNEL_ID}"
 fi
 
 ## Setup GUE tunnel from ${NODE} to ${PROXY}

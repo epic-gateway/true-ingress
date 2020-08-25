@@ -10,23 +10,23 @@ set -Eeo pipefail
 
 #VERBOSE="1"
 
-if [ "${VERBOSE}" ]; then
+#if [ "${VERBOSE}" ]; then
     echo -e "PFC.DEL : GROUP_ID='${GROUP_ID}' SERVICE_ID='${SERVICE_ID}'"
-fi
+#fi
 
 TUNNEL_ID=${GROUP_ID}
 ((TUNNEL_ID <<= 16))
 ((TUNNEL_ID += ${SERVICE_ID}))
 LOCAL_TUN_PORT=$(/tmp/.acnodal/bin/cli_tunnel get ${TUNNEL_ID} | grep ${TUNNEL_ID} | awk '{print $3}' | sed 's/:/ /g' | awk '{print $2}')
 
-if [ "${VERBOSE}" ]; then
+#if [ "${VERBOSE}" ]; then
     echo "    Tunnel-ID : ${TUNNEL_ID}"
     echo "    Freeing port : ${LOCAL_TUN_PORT}"
-fi
+#fi
 
 ## Remove service forwarding
 #                 cli_service set  <group-id>  <service-id> 
-/tmp/.acnodal/bin/cli_service del ${GROUP_ID} ${SERVICE_ID}
+/tmp/.acnodal/bin/cli_service del ${SERVICE_ID} ${GROUP_ID}
 
 ## Remove GUE tunnel from ${NODE} to ${PROXY}
 #                 cli_tunnel set  <id> 
