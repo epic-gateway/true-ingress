@@ -26,7 +26,7 @@ LOCAL_TUN_PORT=$(/tmp/.acnodal/bin/cli_tunnel get ${TUNNEL_ID} | grep ${TUNNEL_I
 
 ## Remove service forwarding
 #                 cli_service set  <group-id>  <service-id> 
-/tmp/.acnodal/bin/cli_service del ${SERVICE_ID} ${GROUP_ID}
+/tmp/.acnodal/bin/cli_service del ${GROUP_ID} ${SERVICE_ID}
 
 ## Remove GUE tunnel from ${NODE} to ${PROXY}
 #                 cli_tunnel set  <id> 
