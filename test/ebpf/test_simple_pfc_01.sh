@@ -23,19 +23,21 @@ done
 cd ..
 
 RETURN=0
+TOPO=basic.cfg
 
 # INFRA: setup topology
 if [ "${VERBOSE}" ]; then
-    ./topo_setup.sh basic.cfg
+    ./topo_setup.sh ${TOPO}
 else
-    echo "Starting topology..."
-    ./topo_setup.sh basic.cfg > /dev/null
+    echo "Starting '${TOPO}' topology..."
+    ./topo_setup.sh ${TOPO} > /dev/null
 fi
 
 CLIENT="client"
+GROUP_ID=1
+
 PROXY="egw"
 PROXY_IP="5.5.5.5"
-GROUP_ID=1
 
 NODE="node1"
 SERVICE_TYPE="http"
@@ -81,7 +83,7 @@ else
     ./service_start.sh ${NODE} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_NAME} ${SERVICE_TYPE} > /dev/null
 fi
 
-PROXY_TUN_IP="172.1.0.3"
+PROXY_TUN_IP=$(docker exec -it ${PROXY} bash -c "ip addr show dev ${PROXY_NIC}" | grep inet | awk '{print $2}' | sed 's/\// /g' | awk '{print $1}')
 
 TUNNEL_ID=${GROUP_ID}
 ((TUNNEL_ID <<= 16))
@@ -89,7 +91,7 @@ TUNNEL_ID=${GROUP_ID}
 
 PROXY_TUN_PORT="?"
 NODE_TUN_PORT="?"
-NODE_TUN_IP="172.1.0.4"
+NODE_TUN_IP=$(docker exec -it ${NODE} bash -c "ip addr show dev ${NODE_NIC}" | grep inet | awk '{print $2}' | sed 's/\// /g' | awk '{print $1}')
 
 echo "Setup forwarding..."
 echo "  ${SERVICE_NAME}"
@@ -168,9 +170,9 @@ if [ "${VERBOSE}" ]; then
     docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/pfc_stop.sh ${PROXY_NIC}"
     docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/pfc_stop.sh ${NODE_NIC}"
 
-    ./topo_cleanup.sh basic.cfg
+    ./topo_cleanup.sh ${TOPO}
 else
-    echo "Topology cleanup..."
+    echo "Shutdown '${TOPO}' topology..."
     docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/pfc_delete.sh ${GROUP_ID} ${SERVICE_ID}" > /dev/null
     docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/pfc_delete.sh ${GROUP_ID} ${SERVICE_ID}" > /dev/null
 
@@ -178,7 +180,7 @@ else
     docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/pfc_stop.sh ${PROXY_NIC}" > /dev/null
     docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/pfc_stop.sh ${NODE_NIC}" > /dev/null
 
-    ./topo_cleanup.sh basic.cfg > /dev/null
+    ./topo_cleanup.sh ${TOPO} > /dev/null
 fi
 
 exit ${RETURN}
