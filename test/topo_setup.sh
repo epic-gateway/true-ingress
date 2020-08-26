@@ -74,7 +74,7 @@ fi
 echo -e "\n==========================================="
 echo "# TOPO($1).START [4/${STEPS}] : Creating Docker Networks"
 echo "==========================================="
-for (( i=1; i<${#NETWORK_NAME[@]}; i++ ))
+for (( i=0; i<${#NETWORK_NAME[@]}; i++ ))
 do
     echo "### Creating (bridge) network '${NETWORK_NAME[$i]}' subnet '${NETWORK_SUBNET[$i]}' ###"
     docker network create --driver bridge --opt com.docker.network.bridge.name=br_$i --subnet "${NETWORK_SUBNET[$i]}" "${NETWORK_NAME[$i]}"
@@ -108,7 +108,7 @@ echo -e "\n==========================================="
 echo "# TOPO($1).START [6/${STEPS}] : Connecting Docker Networks"
 echo "==========================================="
 
-for (( i=1; i<${#NETWORK_NAME[@]}; i++ ))
+for (( i=0; i<${#NETWORK_NAME[@]}; i++ ))
 do
     for NODE in ${NET_MAPPING[i]}
     do
@@ -128,12 +128,12 @@ done
 echo -e "\n==========================================="
 echo "# TOPO($1).START [7/${STEPS}] : Configuring nodes"
 echo "==========================================="
-DEFAULT_ROUTE=`docker exec -it egw bash -c "ip addr" | grep "eth1" | grep inet | awk '{print $2}' | sed 's/\/16//g'`
-DEFAULT_NAT_ROUTE=`docker exec -it nat bash -c "ip addr" | grep "eth2" | grep inet | awk '{print $2}' | sed 's/\/16//g'`
+DEFAULT_NAT_ROUTE=$(docker exec -it nat bash -c "ip addr" | grep "eth2" | grep inet | awk '{print $2}' | sed 's/\/16//g')
 echo "DEFAULT_ROUTE: [${DEFAULT_ROUTE}]"
 echo "DEFAULT_NAT_ROUTE: [${DEFAULT_NAT_ROUTE}]"
 
 prxs=(${PROXIES})
+echo "[${prxs}]"
 for (( i=0; i<${#prxs[@]}; i++ ))
 do
     echo -e "\n### Configuring '${prxs[i]}' ###\n"
@@ -159,6 +159,7 @@ do
     # set routing
     for (( i=0; i<${#PROXY_IP[@]}; i++ ))
     do
+        DEFAULT_ROUTE=$(docker exec -it ${prxs[i]} bash -c "ip addr" | grep "eth1" | grep inet | awk '{print $2}' | sed 's/\/16//g')
         docker exec -it ${NODE} bash -c "ip route add ${PROXY_IP[i]}/32 via ${DEFAULT_ROUTE} dev eth1"     # need one route per proxy
     done
 
@@ -176,19 +177,15 @@ do
     # enable packet forwarding
     docker exec -it ${NODE} bash -c "echo 1 > /proc/sys/net/ipv4/ip_forward"
 
-    # set routing
-    CHECK=`docker exec -it ${NODE} bash -c "ip route" | grep "172.1.0.0/16"`
+    # set routing if on main network (if behind nat, it will be configured together with nat box)
+    CHECK=$(docker exec -it ${NODE} bash -c "ip route" | grep ${NETWORK_SUBNET[0]})
     if [ "${CHECK}" ] ; then
         for (( i=0; i<${#PROXY_IP[@]}; i++ ))
         do
+            DEFAULT_ROUTE=$(docker exec -it ${prxs[i]} bash -c "ip addr" | grep "eth1" | grep inet | awk '{print $2}' | sed 's/\/16//g')
+            #echo "docker exec -it ${NODE} bash -c 'ip route add ${PROXY_IP[i]}/32 via ${DEFAULT_ROUTE} dev eth1'"
             docker exec -it ${NODE} bash -c "ip route add ${PROXY_IP[i]}/32 via ${DEFAULT_ROUTE} dev eth1"     # need one route per proxy
         done
-    else
-        for (( i=0; i<${#PROXY_IP[@]}; i++ ))      # need one route per proxy/with own NAT box IP
-        do
-            docker exec -it ${NODE} bash -c "ip route add ${PROXY_IP[i]}/32 via ${DEFAULT_ROUTE} dev eth1"     # need one route per proxy
-        done
-        docker exec -it ${NODE} bash -c "ip route add ${NETWORK_SUBNET[1]} via ${DEFAULT_NAT_ROUTE} dev eth1"     # required when sitting behind nat
     fi
 
     if [ "${VERBOSE}" ]; then
@@ -198,40 +195,68 @@ do
     fi
 done
 
-for NODE in ${NATS}
+nats=(${NATS})
+echo "[${#nats[@]}]"
+for (( i=0; i<${#nats[@]}; i++ ))
 do
-    echo -e "\n### Configuring '${NODE}' ###\n"
+    echo -e "\n### Configuring '${nats[i]}' ###\n"
     # enable packet forwarding
-    docker exec -it ${NODE} bash -c "echo 1 > /proc/sys/net/ipv4/ip_forward"
+    docker exec -it ${nats[i]} bash -c "echo 1 > /proc/sys/net/ipv4/ip_forward"
 
-    for (( i=0; i<${#PROXY_IP[@]}; i++ ))      # need one route per proxy/with own NAT box IP
+    for (( j=0; j<${#PROXY_IP[@]}; j++ ))      # need one route per proxy/with own NAT box IP
     do
-        docker exec -it ${NODE} bash -c "ip route add ${PROXY_IP[i]}/32 via ${DEFAULT_ROUTE} dev eth1"     # need one route per proxy
+        DEFAULT_ROUTE=$(docker exec -it ${prxs[j]} bash -c "ip addr" | grep "eth1" | grep inet | awk '{print $2}' | sed 's/\/16//g')
+        #echo "[${DEFAULT_ROUTE}]=docker exec -it ${prxs[j]} bash -c 'ip addr' | grep 'eth1' | grep inet | awk '{print $2}' | sed 's/\/16//g'"
+        #echo "docker exec -it ${nats[i]} bash -c 'ip route add ${PROXY_IP[j]}/32 via ${DEFAULT_ROUTE} dev eth1'"
+        docker exec -it ${nats[i]} bash -c "ip route add ${PROXY_IP[j]}/32 via ${DEFAULT_ROUTE} dev eth1"     # need one route per proxy
     done
 
     # NAT eth2 (private) -> eth1 (public)
-    docker exec -it ${NODE} bash -c "iptables -t raw -A PREROUTING -j TRACE"
-    docker exec -it ${NODE} bash -c "iptables -t raw -A OUTPUT -j TRACE"
+    docker exec -it ${nats[i]} bash -c "iptables -t raw -A PREROUTING -j TRACE"
+    docker exec -it ${nats[i]} bash -c "iptables -t raw -A OUTPUT -j TRACE"
 
-    docker exec -it ${NODE} bash -c "iptables -t nat -A POSTROUTING -j LOG --log-prefix='FWD:ALL '"
-    docker exec -it ${NODE} bash -c "iptables -t nat -A POSTROUTING -o eth1 -j LOG --log-prefix='MASQUERADE '"
-    docker exec -it ${NODE} bash -c "iptables -t nat -A POSTROUTING -o eth1 -j MASQUERADE"          # assuming eth1 facing to public and eth2 to private network
-    docker exec -it ${NODE} bash -c "iptables -A FORWARD -j LOG --log-prefix='FWD:ALL '"
-    docker exec -it ${NODE} bash -c "iptables -A FORWARD -i eth1 -o eth2 -m state --state RELATED,ESTABLISHED -j ACCEPT"
-    docker exec -it ${NODE} bash -c "iptables -A FORWARD -i eth2 -o eth1 -j ACCEPT"
-    docker exec -it ${NODE} bash -c "iptables-translate -A INPUT -j CHECKSUM --checksum-fill"
+    docker exec -it ${nats[i]} bash -c "iptables -t nat -A POSTROUTING -j LOG --log-prefix='FWD:ALL '"
+    docker exec -it ${nats[i]} bash -c "iptables -t nat -A POSTROUTING -o eth1 -j LOG --log-prefix='MASQUERADE '"
+    docker exec -it ${nats[i]} bash -c "iptables -t nat -A POSTROUTING -o eth1 -j MASQUERADE"          # assuming eth1 facing to public and eth2 to private network
+    docker exec -it ${nats[i]} bash -c "iptables -A FORWARD -j LOG --log-prefix='FWD:ALL '"
+    docker exec -it ${nats[i]} bash -c "iptables -A FORWARD -i eth1 -o eth2 -m state --state RELATED,ESTABLISHED -j ACCEPT"
+    docker exec -it ${nats[i]} bash -c "iptables -A FORWARD -i eth2 -o eth1 -j ACCEPT"
+    docker exec -it ${nats[i]} bash -c "iptables-translate -A INPUT -j CHECKSUM --checksum-fill"
 
     if [ "${VERBOSE}" ]; then
         echo ""
-        docker exec -it ${NODE} bash -c "ip route"
+        docker exec -it ${nats[i]} bash -c "ip route"
     fi
+
+    # configure default GW on nodes sitting behind thin NAT box
+    DEFAULT_NAT_ROUTE=$(docker exec -it ${nats[i]} bash -c "ip addr" | grep "eth2" | grep inet | awk '{print $2}' | sed 's/\/16//g')
+    for NODE in ${NAT_GW[i]}
+    do
+        echo -e "\n### Adding routing of '${NODE}' via '${DEFAULT_NAT_ROUTE}' ###\n"
+        for (( i=0; i<${#PROXY_IP[@]}; i++ ))      # need one route per proxy/with own NAT box IP
+        do
+            #echo "docker exec -it ${NODE} bash -c 'ip route add ${PROXY_IP[i]}/32 via ${DEFAULT_NAT_ROUTE} dev eth1'"
+            docker exec -it ${NODE} bash -c "ip route add ${PROXY_IP[i]}/32 via ${DEFAULT_NAT_ROUTE} dev eth1"     # need one route per proxy
+        done
+        #echo "docker exec -it ${NODE} bash -c 'ip route add ${NETWORK_SUBNET[0]} via ${DEFAULT_NAT_ROUTE} dev eth1'"
+        docker exec -it ${NODE} bash -c "ip route add ${NETWORK_SUBNET[0]} via ${DEFAULT_NAT_ROUTE} dev eth1"     # required when sitting behind nat
+
+        if [ "${VERBOSE}" ]; then
+            echo ""
+            docker exec -it ${NODE} bash -c "ip route"
+        fi
+    done
 done
 
 echo -e "\n==========================================="
 echo "# TOPO($1).START [8/${STEPS}] : Reachability Check"
 echo "==========================================="
 
-./test_icmp.sh ${PROXY_IP} "${CLIENTS} ${SERVERS} ${NATS}"
+for (( i=0; i<${#PROXY_IP[@]}; i++ ))      # need one route per proxy/with own NAT box IP
+do
+    ./test_icmp.sh ${PROXY_IP[i]} "${CLIENTS} ${SERVERS} ${NATS}"
+    echo "=========="
+done
 
 echo -e "\n==========================================="
 echo "# TOPO($1).START : DONE"
