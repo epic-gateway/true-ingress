@@ -168,7 +168,7 @@ bool map_tunnel_delall(int map_fd) {
 // TABLE-DECAP
 ////////////////////
 void map_decap_print_header() {
-    printf("TABLE-DECAP:\n           proto\t\tip\t\t port\t\tref-count\n");
+    printf("TABLE-DECAP:\n           proto\t\tip:port\t\tref-count\n");
     printf("--------------------------------------------------------------------------\n");
 }
 
@@ -181,8 +181,8 @@ void map_decap_print_record(struct endpoint *key, __u32 *value) {
     struct in_addr from;
     from.s_addr = ntohl(key->ip);
 
-    printf("DECAP\t%8s\t%16s\t%6u\t\t%u", get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port), *value);
-    printf("\t\t(%04x  %08x  %04x)\n", key->proto, key->ip, key->port);
+    printf("DECAP\t%8s\t%16s:%u\t\t%u", get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port), *value);
+    printf("\t\t(%04x  %08x:%04x)\n", key->proto, key->ip, key->port);
 }
 
 void map_decap_print_ok(struct endpoint *key, const char *name) {

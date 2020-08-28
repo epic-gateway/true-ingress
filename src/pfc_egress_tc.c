@@ -46,18 +46,19 @@ int pfc_tx(struct __sk_buff *skb)
 
     // start processing
     struct endpoint ep = { 0 };
+    // get Destination EP
+    parse_dest_ep(&ep, &hdr);
+    bpf_print("Parsed Dest EP: ip %x, port %u, proto %u\n", ep.ip, bpf_ntohs(ep.port), bpf_ntohs(ep.proto));
+    bpf_print("KEY: %lx\n", *(__u64*)&ep);
 
     // check ROLE
     if (cfg->flags & CFG_TX_PROXY) {
         //bpf_print("Is PROXY\n");
 
-        // get Destination EP
-        parse_dest_ep(&ep, &hdr);
-
         // is Service endpoint?
         struct service *svc = bpf_map_lookup_elem(&map_encap, &ep);
         if (svc) {
-            bpf_print("GUE Encap Service: service-id %u, group-id %u, tunnel-id %u\n",
+            bpf_print("GUE Encap Service: group-id %u, service-id %u, tunnel-id %u\n",
                       bpf_ntohs(svc->identity.service_id), bpf_ntohs(svc->identity.group_id), bpf_ntohl(svc->tunnel_id));
             __u64 *ptr = (__u64 *)svc->key.value;
             bpf_print("    key %lx%lx\n", ptr[0], ptr[1]);
@@ -101,9 +102,7 @@ int pfc_tx(struct __sk_buff *skb)
     } else {
         //bpf_print("Is NODE\n");
 
-        // get SEP
-        parse_src_ep(&ep, &hdr);
-
+        // FIXME: client tracking ...
         // check output mode
         if (cfg->flags & CFG_TX_SNAT) {
             //bpf_print("Output mode: DSR (SNAT)\n");
@@ -124,8 +123,13 @@ int pfc_tx(struct __sk_buff *skb)
 
             struct service *svc = bpf_map_lookup_elem(&map_encap, &ep);
             if (svc) {
-                bpf_print("GUE Encap Service: service-id %u, group-id %u, tunnel-id %u\n",
+//                __u32 *tmp = (__u32 *)svc;
+//                bpf_print("%x %x %x\n", tmp[0], tmp[1], tmp[2]);
+//                bpf_print("%x %x %x\n", tmp[3], tmp[4], tmp[5]);
+                bpf_print("GUE Encap Service: group-id %u, service-id %u, tunnel-id %u\n",
                           bpf_ntohs(svc->identity.service_id), bpf_ntohs(svc->identity.group_id), bpf_ntohl(svc->tunnel_id));
+//                bpf_print("GUE Encap Service: service-id %x, group-id %x, tunnel-id %x\n",
+//                          svc->identity.service_id, svc->identity.group_id, svc->tunnel_id);
                 __u64 *ptr = (__u64 *)svc->key.value;
                 bpf_print("    key %lx%lx\n", ptr[0], ptr[1]);
                 __u32 key = bpf_ntohl(svc->tunnel_id);

@@ -116,6 +116,73 @@ int parse_headers(struct __sk_buff *skb, struct headers *hdr)
 }
 
 static inline
+int parse_ep(struct __sk_buff *skb, struct endpoint *sep, struct endpoint *dep)
+{
+    void *data = (void *)(long)skb->data;
+    void *data_end = (void *)(long)skb->data_end;
+    __u32 nh_off = 0;
+    struct ethhdr *eth;
+    struct iphdr *iph;
+    struct tcphdr *tcph;
+    struct udphdr *udph;
+
+    eth = data;
+    nh_off += sizeof(struct ethhdr);
+    if (data + nh_off > data_end)
+    {
+        bpf_print("ERROR: (ETH) Invalid packet size\n");
+        return TC_ACT_SHOT;
+    }
+
+    if (eth->h_proto != bpf_htons(ETH_P_IP))
+    {
+        return TC_ACT_SHOT;
+    }
+
+    iph = data + nh_off;
+    nh_off += sizeof(struct iphdr);
+    if (data + nh_off > data_end)
+    {
+        bpf_print("ERROR: (IPv4) Invalid packet size\n");
+        return TC_ACT_SHOT;
+    }
+
+    sep->ip       = bpf_htonl(iph->saddr);
+    sep->proto    = bpf_htons(iph->protocol);
+    dep->ip       = bpf_htonl(iph->saddr);
+    dep->proto    = bpf_htons(iph->protocol);
+
+    if (iph->protocol == IPPROTO_TCP)
+    {
+        tcph = data + nh_off;
+        nh_off += sizeof(struct tcphdr);
+        if ((void*)&tcph[1] > data_end)
+        {
+            bpf_print("ERROR: (UDP) Invalid packet size\n");
+            return TC_ACT_SHOT;
+        }
+        sep->port = tcph->source;
+        dep->port = tcph->dest;
+        return TC_ACT_OK;
+    }
+    else if (iph->protocol == IPPROTO_UDP)
+    {
+        udph = data + nh_off;
+        nh_off += sizeof(struct udphdr);
+        if ((void*)&udph[1] > data_end)
+        {
+            bpf_print("ERROR: (UDP) Invalid packet size\n");
+            return TC_ACT_SHOT;
+        }
+        sep->port = udph->source;
+        dep->port = udph->dest;
+        return TC_ACT_OK;
+    }
+
+    return TC_ACT_SHOT;
+}
+
+static inline
 void parse_src_ep(struct endpoint *ep, struct headers *hdr)
 {
     ep->ip       = bpf_htonl(hdr->iph->saddr);
@@ -124,6 +191,8 @@ void parse_src_ep(struct endpoint *ep, struct headers *hdr)
         ep->port = hdr->tcph->source;
     else if (hdr->udph)
         ep->port = hdr->udph->source;
+    else
+        ep->port = 0;
 
 //    bpf_print("Parsed Source EP: ip %x, port %u, proto %u\n", ep->ip, bpf_ntohs(ep->port), bpf_ntohs(ep->proto));
 //    bpf_print("Parsed Source EP: %lx\n", *(__u64*)ep);
@@ -278,23 +347,24 @@ int update_tunnel_from_guec(__u32 tunnel_id, struct headers *hdr)
 static inline
 int service_verify(struct gueext5hdr *gueext)
 {
-    __u32 id = bpf_ntohl(gueext->id);
+    struct identity id = *(struct identity *)&gueext->id;
     struct verify *vrf = bpf_map_lookup_elem(&map_verify, (struct identity *)&gueext->id);
-    ASSERT(vrf != 0, dump_action(TC_ACT_UNSPEC), "ERROR: Service id %u not found!\n", id);
+    ASSERT(vrf != 0, dump_action(TC_ACT_UNSPEC), "ERROR: Service (group-id %u, service-id %u) not found!\n", bpf_ntohs(id.service_id), bpf_ntohs(id.group_id));
 
     __u64 *ref_key = (__u64 *)vrf->value;
     __u64 *pkt_key = (__u64 *)gueext->key;
 
     if ((pkt_key[0] != ref_key[0]) || (pkt_key[1] != ref_key[1])) {
-        bpf_print("ERROR: Service id %u key mismatch!\n", id);
+        bpf_print("ERROR: Service (group-id %u, service-id %u) key mismatch!\n", bpf_ntohs(id.service_id), bpf_ntohs(id.group_id));
         bpf_print("    Expected : %lx%lx\n", bpf_ntohll(ref_key[0]), bpf_ntohll(ref_key[1]));
         bpf_print("    Received : %lx%lx\n", bpf_ntohll(pkt_key[0]), bpf_ntohll(pkt_key[1]));
         return 1;
     }
 
-    bpf_print("Service id %u key verified\n", id);
+    bpf_print("Service (group-id %u, service-id %u) key verified\n", bpf_ntohs(id.service_id), bpf_ntohs(id.group_id));
     return 0;
 }
+
 
 static __always_inline
 void set_ipv4_csum(struct iphdr *iph)
@@ -339,6 +409,7 @@ int gue_encap_v4(struct __sk_buff *skb, struct tunnel *tun, struct service *svc)
     h_outer.ip.saddr = bpf_htonl(tun->ip_local);
     h_outer.ip.tot_len = bpf_htons(olen + bpf_ntohs(h_outer.ip.tot_len));
     h_outer.ip.protocol = IPPROTO_UDP;
+    h_outer.ip.tos = 0;     // SET EXPLICIT TRAFFIC CLASS
 
     set_ipv4_csum((void *)&h_outer.ip);
 

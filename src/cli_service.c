@@ -63,7 +63,7 @@ void usage(char *prog) {
 // struct endpoint -> struct endpoint
 ////////////////////
 void map_nat_print_header() {
-    printf("TABLE-NAT:\ntunnel-id\t\tlocal-ip:port -> remote-ip:port\n");
+    printf("TABLE-NAT:\n\t    proxy-ip:port -> backend-ip:port\n");
     printf("--------------------------------------------------------------------------\n");
 }
 
@@ -165,7 +165,7 @@ bool map_nat_delall(int map_fd) {
 //};
 ////////////////////
 void map_verify_print_header() {
-    printf("TABLE-VERIFY:\ntunnel-id\t\tlocal-ip:port -> remote-ip:port\n");
+    printf("TABLE-VERIFY:\n\tgid+sid -> security key\t\tproxy-ip:port\t\tbackend-ip:port\t\ttunnel-id\n");
     printf("--------------------------------------------------------------------------\n");
 }
 
@@ -185,17 +185,18 @@ bool map_verify_get(int map_fd, struct identity *key, struct verify *value) {
         dnat_ip.s_addr = ntohl(value->dnat.ip);
         snat_ip.s_addr = ntohl(value->snat.ip);
 
-        printf("VERIFY {%u, %u} -> ", ntohs(key->service_id), ntohs(key->group_id));
-        printf("{\'%16.16s\'", value->value);
-        printf(" {%s, %s, %u}}",
+        printf("VERIFY (%u, %u) -> ", ntohs(key->service_id), ntohs(key->group_id));
+        printf("\'%16.16s\'", value->value);
+        printf("\t(%s, %s, %u)",
                 get_proto_name(ntohs(value->dnat.proto)), inet_ntoa(dnat_ip), ntohs(value->dnat.port));
-        printf(" {%s, %s, %u}}",
+        printf("\t(%s, %s, %u)",
                 get_proto_name(ntohs(value->snat.proto)), inet_ntoa(snat_ip), ntohs(value->snat.port));
+        printf("\t%u", value->tunnel_id);
         printf("\t\t{%08x (%04x, %04x)} -> ", ntohl(*(__u32*)key), ntohs(key->service_id), ntohs(key->group_id));
         __u64 *ptr = (__u64 *)value->value;
-        printf("{\'%llx%llx\' {%04x, %08x, %04x} {%04x, %08x, %04x}}\n", ptr[0], ptr[1],
+        printf("{\'%llx%llx\' {%04x, %08x, %04x} {%04x, %08x, %04x} %08x}\n", ptr[0], ptr[1],
                 value->dnat.proto, value->dnat.ip, value->dnat.port,
-                value->snat.proto, value->snat.ip, value->snat.port);
+                value->snat.proto, value->snat.ip, value->snat.port, value->tunnel_id);
     }
 
     return true;
@@ -267,7 +268,7 @@ bool map_verify_delall(int map_fd) {
 //};
 ////////////////////
 void map_encap_print_header() {
-    printf("TABLE-ENCAP:\ntunnel-id\t\tlocal-ip:port -> remote-ip:port\n");
+    printf("TABLE-ENCAP:\n\t\tdestination -> tunnel-id\tgid+sid\t\tkey\n");
     printf("--------------------------------------------------------------------------\n");
 }
 
@@ -286,11 +287,11 @@ bool map_encap_get(int map_fd, struct endpoint *key, struct service *value) {
 
         return false;
     } else {
-        printf("ENCAP {%s, %s, %u} -> ", get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port));
-        printf("{%u, {%u, %u}, \'%16.16s\'}", ntohl(value->tunnel_id), ntohs(value->identity.service_id), ntohs(value->identity.group_id), (char*)value->key.value);
-        printf("\t\t{%04x, %08x, %04x} -> ", key->proto, key->ip, key->port);
+        printf("ENCAP (%s, %s, %u) -> ", get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port));
+        printf("%u\t\t(%u, %u)\t\'%16.16s\'", ntohl(value->tunnel_id), ntohs(value->identity.service_id), ntohs(value->identity.group_id), (char*)value->key.value);
+        printf("\t\t(%04x, %08x, %04x) -> ", key->proto, key->ip, key->port);
         __u64 *ptr = (__u64 *)value->key.value;
-        printf("{%08x, {%04x, %04x}, \'%llx%llx\'}\n", value->tunnel_id, value->identity.service_id, value->identity.group_id, ptr[0], ptr[1]);
+        printf("(%08x\t(%04x, %04x)\t\'%llx%llx\'\n", value->tunnel_id, value->identity.service_id, value->identity.group_id, ptr[0], ptr[1]);
     }
     return true;
 }
@@ -416,9 +417,10 @@ int main(int argc, char **argv)
         struct service svc;
         struct identity id;
         struct verify pwd;
+        __u32 tid = atoi(argv[9]);
         
         strncpy((char*)pwd.value, argv[10], SECURITY_KEY_SIZE);
-        map_encap_set(map_encap_fd, &ep_to, make_service(&svc, atoi(argv[9]), make_identity(&id, atoi(argv[2]), atoi(argv[3])), make_verify(&pwd, &ep_from, &ep_to)));
+        map_encap_set(map_encap_fd, &ep_to, make_service(&svc, tid, make_identity(&id, atoi(argv[2]), atoi(argv[3])), make_verify(&pwd, &ep_from, &ep_to, tid)));
 
         map_verify_set(map_verify_fd, &id, &pwd);
     } else if (!strncmp(argv[1], "get", 4)) {

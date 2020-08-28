@@ -83,12 +83,14 @@ struct verify {
     __u8   value[SECURITY_KEY_SIZE];        /* GUE security KEY */
     struct endpoint dnat;
     struct endpoint snat;
+    __u32  tunnel_id;
 };
 
 static inline struct verify *
 make_verify(struct verify   *ref,
             struct endpoint *dnat,
-            struct endpoint *snat)
+            struct endpoint *snat,
+            __u32  tunnel_id)
 {
     ref->dnat.ip    = dnat->ip;
     ref->dnat.port  = dnat->port;
@@ -96,6 +98,7 @@ make_verify(struct verify   *ref,
     ref->snat.ip    = snat->ip;
     ref->snat.port  = snat->port;
     ref->snat.proto = snat->proto;
+    ref->tunnel_id  = tunnel_id;
     return ref;
 }
 

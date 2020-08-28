@@ -92,13 +92,47 @@ int pfc_rx(struct __sk_buff *skb)
 
                 //__u32 id = bpf_ntohl(gueext->id);
                 //bpf_print("GUE Data: id %x (service-id %u, group-id %u)\n", id, id & 0xFFFF, (id >> 16) & 0xFFFF);
-
+                // check service identity
                 ASSERT1(service_verify(gueext) == 0, dump_action(TC_ACT_SHOT), );
+
+                // get verify structure
+                struct verify *verify = bpf_map_lookup_elem(&map_verify, (struct identity *)&gueext->id);
+                ASSERT(verify != 0, dump_action(TC_ACT_UNSPEC), "ERROR: Service id %u not found!\n", bpf_ntohl(gueext->id));
+
+                struct service svc = { 0 };
+                svc.tunnel_id = bpf_htonl(verify->tunnel_id);
+                svc.identity = *(struct identity *)&gueext->id;
+                __u64 *left = (__u64 *)svc.key.value;
+                __u64 *right = (__u64 *)gueext->key;
+                left[0] = right[0];
+                left[1] = right[1];
 
                 ASSERT (TC_ACT_OK == gue_decap_v4(skb), dump_action(TC_ACT_SHOT), "GUE Decap Failed!\n");
                 if (cfg->flags & CFG_TX_DUMP) {
                     dump_pkt(skb);
                 }
+
+                bpf_print("Create/refresh tracking record:\n");
+                // get client
+                //ASSERT(parse_headers(skb, &hdr) != TC_ACT_SHOT, dump_action(TC_ACT_UNSPEC), "ERROR: SRC EP parsing failed!\n");
+                //parse_src_ep(&ep, &hdr);
+                //ASSERT(parse_src_ep1(skb, &ep, &hdr) != TC_ACT_SHOT, dump_action(TC_ACT_UNSPEC), "ERROR: SRC EP parsing failed!\n");
+                struct endpoint sep = { 0 }, dep = { 0 };
+                ASSERT(parse_ep(skb, &sep, &dep) != TC_ACT_SHOT, dump_action(TC_ACT_UNSPEC), "ERROR: SRC EP parsing failed!\n");
+                bpf_print("  Parsed Source EP: ip %x, port %u, proto %u\n", sep.ip, bpf_ntohs(sep.port), bpf_ntohs(sep.proto));
+                bpf_print("  KEY: %lx\n", *(__u64*)&sep);
+
+//                __u32 *tmp = (__u32 *)&svc;
+//                bpf_print("%x %x %x\n", tmp[0], tmp[1], tmp[2]);
+//                bpf_print("%x %x %x\n", tmp[3], tmp[4], tmp[5]);
+                bpf_print("  VALUE: group-id %u, service-id %u, tunnel-id %u\n",
+                          bpf_ntohs(svc.identity.service_id), bpf_ntohs(svc.identity.group_id), bpf_ntohl(svc.tunnel_id));
+//                bpf_print("VALUE: service-id %x, group-id %x, tunnel-id %x\n",
+//                          svc.identity.service_id, svc.identity.group_id, svc.tunnel_id);
+                __u64 *ptr = (__u64 *)svc.key.value;
+                bpf_print("    key %lx%lx\n", ptr[0], ptr[1]);
+
+                bpf_map_update_elem(&map_encap, &sep, &svc, BPF_ANY);
 
                 return dump_action(TC_ACT_OK);
             }

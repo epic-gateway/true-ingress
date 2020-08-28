@@ -17,7 +17,7 @@ struct bpf_elf_map SEC("maps") map_stats = {
 };
 
 static inline
-int stats_update(__u32 key, __u32 index, struct __sk_buff *skb)
+__u32 stats_update(__u32 key, __u32 index, struct __sk_buff *skb)
 {
     if (index >= STAT_IDX_MAX) {
         char msg[] = "stats_update: Invalid index %u\n";
