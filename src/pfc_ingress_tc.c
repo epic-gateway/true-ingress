@@ -132,7 +132,10 @@ int pfc_rx(struct __sk_buff *skb)
                 __u64 *ptr = (__u64 *)svc.key.value;
                 bpf_print("    key %lx%lx\n", ptr[0], ptr[1]);
 
+                // update TABLE-ENCAP
                 bpf_map_update_elem(&map_encap, &sep, &svc, BPF_ANY);
+                // update TABLE-NAT (in case of DSR)
+                bpf_map_update_elem(&map_nat, &sep, &verify->dnat, BPF_ANY);
 
                 return dump_action(TC_ACT_OK);
             }
