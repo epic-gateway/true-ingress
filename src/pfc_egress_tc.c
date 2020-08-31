@@ -45,18 +45,18 @@ int pfc_tx(struct __sk_buff *skb)
     }
 
     // start processing
-    struct endpoint ep = { 0 };
+    struct endpoint dep = { 0 }, sep = { 0 };
     // get Destination EP
-    parse_dest_ep(&ep, &hdr);
-    bpf_print("Parsed Dest EP: ip %x, port %u, proto %u\n", ep.ip, bpf_ntohs(ep.port), bpf_ntohs(ep.proto));
-    bpf_print("KEY: %lx\n", *(__u64*)&ep);
+    parse_dest_ep(&dep, &hdr);
+    bpf_print("Parsed Dest EP: ip %x, port %u, proto %u\n", dep.ip, bpf_ntohs(dep.port), bpf_ntohs(dep.proto));
+    bpf_print("KEY: %lx\n", *(__u64*)&dep);
 
     // check ROLE
     if (cfg->flags & CFG_TX_PROXY) {
         //bpf_print("Is PROXY\n");
 
         // is Service endpoint?
-        struct service *svc = bpf_map_lookup_elem(&map_encap, &ep);
+        struct service *svc = bpf_map_lookup_elem(&map_encap, &dep);
         if (svc) {
             bpf_print("GUE Encap Service: group-id %u, service-id %u, tunnel-id %u\n",
                       bpf_ntohs(svc->identity.service_id), bpf_ntohs(svc->identity.group_id), bpf_ntohl(svc->tunnel_id));
@@ -85,9 +85,9 @@ int pfc_tx(struct __sk_buff *skb)
             //bpf_print("Checking SNAT\n");
 
             // get Source EP
-            parse_src_ep(&ep, &hdr);
+            parse_src_ep(&sep, &hdr);
 
-            struct endpoint *snat = bpf_map_lookup_elem(&map_nat, &ep);
+            struct endpoint *snat = bpf_map_lookup_elem(&map_nat, &sep);
             if (snat) {
                 bpf_print("SNAT to %x:%u\n", snat->ip, bpf_ntohs(snat->port));
 
@@ -107,7 +107,7 @@ int pfc_tx(struct __sk_buff *skb)
         if (cfg->flags & CFG_TX_SNAT) {
             //bpf_print("Output mode: DSR (SNAT)\n");
 
-            struct endpoint *snat = bpf_map_lookup_elem(&map_nat, &ep);
+            struct endpoint *snat = bpf_map_lookup_elem(&map_nat, &dep);
             if (snat) {
                 bpf_print("SNAT to %x:%u\n", snat->ip, bpf_ntohs(snat->port));
 
@@ -121,7 +121,7 @@ int pfc_tx(struct __sk_buff *skb)
         } else {
             //bpf_print("Output mode: Regular (GUE Encap)\n");
 
-            struct service *svc = bpf_map_lookup_elem(&map_encap, &ep);
+            struct service *svc = bpf_map_lookup_elem(&map_encap, &dep);
             if (svc) {
 //                __u32 *tmp = (__u32 *)svc;
 //                bpf_print("%x %x %x\n", tmp[0], tmp[1], tmp[2]);
