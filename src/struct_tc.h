@@ -108,6 +108,7 @@ struct service {
     __u32           tunnel_id;
     struct identity identity;
     struct verify   key;
+    __u32           hash;
 };
 
 static inline struct service *
@@ -119,6 +120,7 @@ make_service(struct service  *ref,
     ref->tunnel_id  = bpf_htonl(tunnel_id);
     ref->identity   = *identity;
     ref->key        = *key;
+    ref->hash       = 0;
     return ref;
 }
 ////////////////////////////////

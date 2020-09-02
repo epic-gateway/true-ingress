@@ -53,9 +53,9 @@ const char *get_proto_name(__u16 proto) {
 void usage(char *prog) {
     fprintf(stderr,"ERR: Too little arguments\n");
     fprintf(stderr,"Usage:\n");
-    fprintf(stderr,"    %s get <service-id> <group-id>\n", prog);
-    fprintf(stderr,"    %s set <service-id> <group-id> <proto> <ip-proxy> <port-proxy> <ip-ep> <port-ep> <tunnel-id> <key>\n", prog);
-    fprintf(stderr,"    %s del <service-id> <group-id>\n", prog);
+    fprintf(stderr,"    %s get all|<service-id> <group-id>\n", prog);
+    fprintf(stderr,"    %s set all|<service-id> <group-id> <proto> <ip-proxy> <port-proxy> <ip-ep> <port-ep> <tunnel-id> <key>\n", prog);
+    fprintf(stderr,"    %s del all|<service-id> <group-id>\n", prog);
 }
 
 ////////////////////
@@ -288,7 +288,7 @@ bool map_encap_get(int map_fd, struct endpoint *key, struct service *value) {
         return false;
     } else {
         printf("ENCAP (%s, %s, %u) -> ", get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port));
-        printf("%u\t\t(%u, %u)\t\'%16.16s\'", ntohl(value->tunnel_id), ntohs(value->identity.service_id), ntohs(value->identity.group_id), (char*)value->key.value);
+        printf("%u\t\t(%u, %u)\t\'%16.16s\'\t%u", ntohl(value->tunnel_id), ntohs(value->identity.service_id), ntohs(value->identity.group_id), (char*)value->key.value, value->hash);
         printf("\t\t(%04x, %08x, %04x) -> ", key->proto, key->ip, key->port);
         __u64 *ptr = (__u64 *)value->key.value;
         printf("(%08x\t(%04x, %04x)\t\'%llx%llx\'\n", value->tunnel_id, value->identity.service_id, value->identity.group_id, ptr[0], ptr[1]);
