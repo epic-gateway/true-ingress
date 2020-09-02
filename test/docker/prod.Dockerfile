@@ -42,7 +42,7 @@ COPY --from=builder /usr/src/pfc/src/*.sh ./
 COPY --from=builder /usr/src/pfc/test/docker/*.sh ./
 
 # Copy CLI
-COPY --from=builder /usr/src/pfc/src/cli_cfg /usr/src/pfc/src/cli_service /usr/src/pfc/src/cli_tunnel ./
+COPY --from=builder /usr/src/pfc/src/cli_cfg /usr/src/pfc/src/cli_service /usr/src/pfc/src/cli_tunnel /usr/src/pfc/src/cli_gc ./
 COPY --from=builder /usr/src/pfc/test/port_*.sh ./
 COPY --from=builder /usr/src/pfc/test/pfc_*.sh ./
 
