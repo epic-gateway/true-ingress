@@ -24,7 +24,8 @@
 //__section("ingress")
 int pfc_rx(struct __sk_buff *skb)
 {
-    bpf_print("PFC RX <<<< # %u, ifindex %u, len %u\n", stats_update(skb->ifindex, STAT_IDX_RX, skb), skb->ifindex, skb->len);
+    __u32 pktnum = stats_update(skb->ifindex, STAT_IDX_RX, skb);
+    bpf_print("PFC RX <<<< # %u, ifindex %u, len %u\n", pktnum, skb->ifindex, skb->len);
 
     // get config
     __u32 key = skb->ifindex;
@@ -102,6 +103,7 @@ int pfc_rx(struct __sk_buff *skb)
                 struct service svc = { 0 };
                 svc.tunnel_id = bpf_htonl(verify->tunnel_id);
                 svc.identity = *(struct identity *)&gueext->id;
+                svc.hash = pktnum;
                 __u64 *left = (__u64 *)svc.key.value;
                 __u64 *right = (__u64 *)gueext->key;
                 left[0] = right[0];
@@ -127,6 +129,7 @@ int pfc_rx(struct __sk_buff *skb)
 //                bpf_print("%x %x %x\n", tmp[3], tmp[4], tmp[5]);
                 bpf_print("  VALUE: group-id %u, service-id %u, tunnel-id %u\n",
                           bpf_ntohs(svc.identity.service_id), bpf_ntohs(svc.identity.group_id), bpf_ntohl(svc.tunnel_id));
+                bpf_print("         hash %x\n", svc.hash);
 //                bpf_print("VALUE: service-id %x, group-id %x, tunnel-id %x\n",
 //                          svc.identity.service_id, svc.identity.group_id, svc.tunnel_id);
                 __u64 *ptr = (__u64 *)svc.key.value;
