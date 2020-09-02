@@ -1,12 +1,14 @@
 #!/bin/bash
-# syntax: $0 <nic> <name> <conf-rx> <conf-tx> <port-min> <port-max> [<delay>]
-#       <nic>       - Interface to bind PFC to
-#       <name>      - Instance name
-#       <conf-rx>   - PFC Inress configuration flags
-#       <conf-tx>   - PFC Egress configuration flags
-#       <port-min>  - Gue tunnel port range lower bound
-#       <port-max>  - Gue tunnel port range upper bound
-#       <delay>     - (Optional) Interval of sending GUE pings in seconds
+# syntax: $0 <nic> <name> <conf-rx> <conf-tx> <port-min> <port-max> [<gue-delay>] [<sweep-delay>] [<sweep-count>]
+#       <nic>             - Interface to bind PFC to
+#       <name>            - Instance name
+#       <conf-rx>         - PFC Inress configuration flags
+#       <conf-tx>         - PFC Egress configuration flags
+#       <port-min>        - Gue tunnel port range lower bound
+#       <port-max>        - Gue tunnel port range upper bound
+#       <gue-delay>       - (Optional) Interval of sending GUE pings (in seconds)
+#       <sweep-delay>     - (Optional) Interval of checking stale session (in seconds)
+#       <sweep-count>     - (Optional) Number of inactivity cycles before expiration
 
 NIC=$1
 NAME=$2
@@ -14,20 +16,30 @@ CONF_RX=$3
 CONF_TX=$4
 PORT_MIN=$5
 PORT_MAX=$6
-DELAY=$7
+GUE_DELAY=$7
+if [ $8 ] ; then
+    SWEEP_DELAY=$8
+else
+    SWEEP_DELAY=10
+fi
+if [ $9 ] ; then
+    SWEEP_CNT=$9
+else
+    SWEEP_CNT=6
+fi
 
 #set -Eeo pipefail
 
 #VERBOSE="1"
 
 if [ "${VERBOSE}" ]; then
-    echo -e "\PFC.START : NIC='${NIC}' NAME='${NAME}' CONF_RX='${CONF_RX}' CONF_TX='${CONF_TX}' PORT_MIN='${PORT_MIN}' PORT_MAX='${PORT_MAX}' DELAY='${DELAY}'"
+    echo -e "\PFC.START : NIC='${NIC}' NAME='${NAME}' CONF_RX='${CONF_RX}' CONF_TX='${CONF_TX}' PORT_MIN='${PORT_MIN}' PORT_MAX='${PORT_MAX}' GUE_DELAY='${GUE_DELAY}' SWEEP_DELAY='${SWEEP_DELAY}' SWEEP_CNT='${SWEEP_CNT}'"
 fi
 
-if [ "${DELAY}" ]; then
+if [ "${GUE_DELAY}" ]; then
     #nohup bash -c "python3 /tmp/.acnodal/bin/gue_ping_svc_auto.py ${DELAY}" &
     #nohup bash -c "python3 /tmp/.acnodal/bin/gue_ping_svc_auto.py ${DELAY} &> /tmp/gue_ping.log" &
-    nohup python3 /tmp/.acnodal/bin/gue_ping_svc_auto.py ${DELAY} &
+    nohup python3 /tmp/.acnodal/bin/gue_ping_svc_auto.py ${GUE_DELAY} ${SWEEP_DELAY} ${SWEEP_CNT} &
     #ps aux | grep "gue_ping"
 fi
 
