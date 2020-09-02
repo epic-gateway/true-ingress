@@ -128,12 +128,8 @@ done
 echo -e "\n==========================================="
 echo "# TOPO($1).START [7/${STEPS}] : Configuring nodes"
 echo "==========================================="
-DEFAULT_NAT_ROUTE=$(docker exec -it nat bash -c "ip addr" | grep "eth2" | grep inet | awk '{print $2}' | sed 's/\/16//g')
-echo "DEFAULT_ROUTE: [${DEFAULT_ROUTE}]"
-echo "DEFAULT_NAT_ROUTE: [${DEFAULT_NAT_ROUTE}]"
-
 prxs=(${PROXIES})
-echo "[${prxs}]"
+#echo "[${prxs}]"
 for (( i=0; i<${#prxs[@]}; i++ ))
 do
     echo -e "\n### Configuring '${prxs[i]}' ###\n"
@@ -196,7 +192,7 @@ do
 done
 
 nats=(${NATS})
-echo "[${#nats[@]}]"
+#echo "[${#nats[@]}]"
 for (( i=0; i<${#nats[@]}; i++ ))
 do
     echo -e "\n### Configuring '${nats[i]}' ###\n"
