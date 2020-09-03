@@ -108,9 +108,11 @@ def session_sweep(expire):
                 ret = os.popen("/tmp/.acnodal/bin/cli_gc del %s%s%s" % (to_del[0], to_del[1], to_del[2])).read()
             else:
                 session_ttl[key] += 1
+                #print("%s  ->  %d/%d" % (key, session_ttl[key], expire))
         else:
             session_hash[key] = hash
             session_ttl[key] = 1
+            #print("%s  ->  %d/%d" % (key, session_ttl[key], expire))
 
 def main(argv):
     print(argv)
@@ -122,7 +124,7 @@ def main(argv):
     tun_delay = int(argv[1])
     sweep_delay = int(argv[2])
     sweep_count = int(argv[3])
-    counter = 0
+    counter = sweep_delay
 
     try:
         print("Starting PFC daemon")
@@ -137,7 +139,7 @@ def main(argv):
                 counter += 1
             else:
                 session_sweep(sweep_count)
-                counter = 0
+                counter = 1
 
             time.sleep(1)
     except KeyboardInterrupt:
