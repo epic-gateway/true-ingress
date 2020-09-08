@@ -25,6 +25,8 @@
 int pfc_tx(struct __sk_buff *skb)
 {
     bpf_print("PFC TX <<<< # %u, ifindex %u, len %u\n", stats_update(skb->ifindex, STAT_IDX_TX, skb), skb->ifindex, skb->len);
+    bpf_print("  skb->protocol: %x\n", bpf_ntohs(skb->protocol));
+    bpf_print("  data_meta %x, wire_len %u, gso_segs %u\n", skb->data_meta, skb->wire_len, skb->gso_segs);
 
     // get config
     __u32 key = skb->ifindex;
@@ -71,6 +73,9 @@ int pfc_tx(struct __sk_buff *skb)
             bpf_print("GUE Encap Tunnel: id %u\n", key);
             bpf_print("    FROM %x:%u\n", tun->ip_local, bpf_ntohs(tun->port_local));
             bpf_print("    TO   %x:%u\t(%x)\n", tun->ip_remote, bpf_ntohs(tun->port_remote), bpf_ntohl(*mac));
+
+            // fix MSS
+            //set_mss(skb, 1400);
 
             ASSERT (TC_ACT_OK == gue_encap_v4(skb, tun, svc), dump_action(TC_ACT_SHOT), "GUE Encap Failed!\n");
             if (cfg->flags & CFG_TX_DUMP) {
@@ -141,6 +146,9 @@ int pfc_tx(struct __sk_buff *skb)
                 bpf_print("GUE Encap Tunnel: id %u\n", key);
                 bpf_print("    FROM %x:%u\n", tun->ip_local, bpf_ntohs(tun->port_local));
                 bpf_print("    TO   %x:%u\t(%x)\n", tun->ip_remote, bpf_ntohs(tun->port_remote), bpf_ntohl(*mac));
+
+                // fix MSS
+                //set_mss(skb, 1400);
 
                 ASSERT (TC_ACT_OK == gue_encap_v4(skb, tun, svc), dump_action(TC_ACT_SHOT), "GUE Encap Failed!\n");
                 if (cfg->flags & CFG_TX_DUMP) {

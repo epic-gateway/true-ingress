@@ -26,6 +26,8 @@ int pfc_rx(struct __sk_buff *skb)
 {
     __u32 pktnum = stats_update(skb->ifindex, STAT_IDX_RX, skb);
     bpf_print("PFC RX <<<< # %u, ifindex %u, len %u\n", pktnum, skb->ifindex, skb->len);
+    bpf_print("  skb->protocol: %x\n", bpf_ntohs(skb->protocol));
+    bpf_print("  data_meta %x, wire_len %u, gso_segs %u\n", skb->data_meta, skb->wire_len, skb->gso_segs);
 
     // get config
     __u32 key = skb->ifindex;

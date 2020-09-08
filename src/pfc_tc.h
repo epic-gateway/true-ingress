@@ -116,6 +116,189 @@ int parse_headers(struct __sk_buff *skb, struct headers *hdr)
 }
 
 static inline
+int set_mss(struct __sk_buff *skb, __u16 new_mss)
+{
+    void *data = (void *)(long)skb->data;
+    void *data_end = (void *)(long)skb->data_end;
+    __u32 nh_off = 0;
+    struct ethhdr *eth;
+    struct iphdr *iph;
+    struct tcphdr *tcph;
+
+    eth = data;
+    nh_off += sizeof(struct ethhdr);
+    if (data + nh_off > data_end)
+    {
+        bpf_print("ERROR: (ETH) Invalid packet size\n");
+        return TC_ACT_SHOT;
+    }
+
+    if (eth->h_proto != bpf_htons(ETH_P_IP))
+    {
+        return TC_ACT_OK;
+    }
+
+    iph = data + nh_off;
+    nh_off += sizeof(struct iphdr);
+    if (data + nh_off > data_end)
+    {
+        bpf_print("ERROR: (IPv4) Invalid packet size\n");
+        return TC_ACT_SHOT;
+    }
+
+    if (iph->protocol != IPPROTO_TCP)
+    {
+        return TC_ACT_OK;
+    }
+
+    tcph = data + nh_off;
+    nh_off += sizeof(struct tcphdr);
+    if ((void*)&tcph[1] > data_end)
+    {
+        bpf_print("ERROR: (UDP) Invalid packet size\n");
+        return TC_ACT_SHOT;
+    }
+
+    if (!tcph->syn) {
+        return TC_ACT_OK;
+    }
+
+    __u32 *optx = (void*)&tcph[1];
+    int i = 0;
+
+    ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "ERROR: (TCP) no OPT anymore\n");
+    if (i < (tcph->doff - 5)) {
+        if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
+            __u16 *old_mss = (__u16 *)&optx[i];
+            if (bpf_ntohs(old_mss[1]) > new_mss) {
+                bpf_print("Replacing mss %u -> %u\n", old_mss, new_mss);
+                old_mss[1] = bpf_htons(new_mss);
+            }
+            return TC_ACT_OK;
+        }
+    }
+
+    i++;
+    ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "ERROR: (TCP) no OPT anymore\n");
+    if (i < (tcph->doff - 5)) {
+        if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
+            __u16 *old_mss = (__u16 *)&optx[i];
+            if (bpf_ntohs(old_mss[1]) > new_mss) {
+                bpf_print("Replacing mss %u -> %u\n", old_mss, new_mss);
+                old_mss[1] = bpf_htons(new_mss);
+            }
+            return TC_ACT_OK;
+        }
+    }
+
+    i++;
+    ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "ERROR: (TCP) no OPT anymore\n");
+    if (i < (tcph->doff - 5)) {
+        if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
+            __u16 *old_mss = (__u16 *)&optx[i];
+            if (bpf_ntohs(old_mss[1]) > new_mss) {
+                bpf_print("Replacing mss %u -> %u\n", old_mss, new_mss);
+                old_mss[1] = bpf_htons(new_mss);
+            }
+            return TC_ACT_OK;
+        }
+    }
+
+    i++;
+    ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "ERROR: (TCP) no OPT anymore\n");
+    if (i < (tcph->doff - 5)) {
+        if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
+            __u16 *old_mss = (__u16 *)&optx[i];
+            if (bpf_ntohs(old_mss[1]) > new_mss) {
+                bpf_print("Replacing mss %u -> %u\n", old_mss, new_mss);
+                old_mss[1] = bpf_htons(new_mss);
+            }
+            return TC_ACT_OK;
+        }
+    }
+
+    i++;
+    ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "ERROR: (TCP) no OPT anymore\n");
+    if (i < (tcph->doff - 5)) {
+        if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
+            __u16 *old_mss = (__u16 *)&optx[i];
+            if (bpf_ntohs(old_mss[1]) > new_mss) {
+                bpf_print("Replacing mss %u -> %u\n", old_mss, new_mss);
+                old_mss[1] = bpf_htons(new_mss);
+            }
+            return TC_ACT_OK;
+        }
+    }
+
+    i++;
+    ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "ERROR: (TCP) no OPT anymore\n");
+    if (i < (tcph->doff - 5)) {
+        if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
+            __u16 *old_mss = (__u16 *)&optx[i];
+            if (bpf_ntohs(old_mss[1]) > new_mss) {
+                bpf_print("Replacing mss %u -> %u\n", old_mss, new_mss);
+                old_mss[1] = bpf_htons(new_mss);
+            }
+            return TC_ACT_OK;
+        }
+    }
+
+    i++;
+    ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "ERROR: (TCP) no OPT anymore\n");
+    if (i < (tcph->doff - 5)) {
+        if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
+            __u16 *old_mss = (__u16 *)&optx[i];
+            if (bpf_ntohs(old_mss[1]) > new_mss) {
+                bpf_print("Replacing mss %u -> %u\n", old_mss, new_mss);
+                old_mss[1] = bpf_htons(new_mss);
+            }
+            return TC_ACT_OK;
+        }
+    }
+
+    i++;
+    ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "ERROR: (TCP) no OPT anymore\n");
+    if (i < (tcph->doff - 5)) {
+        if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
+            __u16 *old_mss = (__u16 *)&optx[i];
+            if (bpf_ntohs(old_mss[1]) > new_mss) {
+                bpf_print("Replacing mss %u -> %u\n", old_mss, new_mss);
+                old_mss[1] = bpf_htons(new_mss);
+            }
+            return TC_ACT_OK;
+        }
+    }
+
+    i++;
+    ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "ERROR: (TCP) no OPT anymore\n");
+    if (i < (tcph->doff - 5)) {
+        if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
+            __u16 *old_mss = (__u16 *)&optx[i];
+            if (bpf_ntohs(old_mss[1]) > new_mss) {
+                bpf_print("Replacing mss %u -> %u\n", old_mss, new_mss);
+                old_mss[1] = bpf_htons(new_mss);
+            }
+            return TC_ACT_OK;
+        }
+    }
+
+    i++;
+    ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "ERROR: (TCP) no OPT anymore\n");
+    if (i < (tcph->doff - 5)) {
+        if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
+            __u16 *old_mss = (__u16 *)&optx[i];
+            if (bpf_ntohs(old_mss[1]) > new_mss) {
+                bpf_print("Replacing mss %u -> %u\n", old_mss, new_mss);
+                old_mss[1] = bpf_htons(new_mss);
+            }
+            return TC_ACT_OK;
+        }
+    }
+
+    return TC_ACT_OK;
+}
+
+static inline
 int parse_ep(struct __sk_buff *skb, struct endpoint *sep, struct endpoint *dep)
 {
     void *data = (void *)(long)skb->data;
@@ -390,11 +573,10 @@ int gue_encap_v4(struct __sk_buff *skb, struct tunnel *tun, struct service *svc)
     int olen = sizeof(h_outer);
     __u64 flags = 0;
     __u64 *from = (__u64 *)svc->key.value;
+    int ret;
 
     if (bpf_skb_load_bytes(skb, ETH_HLEN, &iph_inner, sizeof(iph_inner)) < 0)
         return TC_ACT_OK;
-
-    flags = BPF_F_ADJ_ROOM_FIXED_GSO | BPF_F_ADJ_ROOM_ENCAP_L3_IPV4 | BPF_F_ADJ_ROOM_ENCAP_L4_UDP;
 
     // prepare new outer network header
     // fill GUE
@@ -421,12 +603,19 @@ int gue_encap_v4(struct __sk_buff *skb, struct tunnel *tun, struct service *svc)
     h_outer.udp.check   = 0;
 
     // add room between mac and network header
-    if (bpf_skb_adjust_room(skb, olen, BPF_ADJ_ROOM_MAC, flags))
+    flags = BPF_F_ADJ_ROOM_FIXED_GSO | BPF_F_ADJ_ROOM_ENCAP_L3_IPV4 | BPF_F_ADJ_ROOM_ENCAP_L4_UDP;
+    ret = bpf_skb_adjust_room(skb, olen, BPF_ADJ_ROOM_MAC, flags); 
+    if (ret) {
+        bpf_print("bpf_skb_adjust_room: %d\n", ret);
         return TC_ACT_SHOT;
+    }
 
     // store new outer network header
-    if (bpf_skb_store_bytes(skb, ETH_HLEN, &h_outer, olen, BPF_F_INVALIDATE_HASH) < 0)
+    ret = bpf_skb_store_bytes(skb, ETH_HLEN, &h_outer, olen, BPF_F_INVALIDATE_HASH);
+    if (ret < 0) {
+        bpf_print("bpf_skb_store_bytes: %d\n", ret);
         return TC_ACT_SHOT;
+    }
 
     // Resolve destination MAC
     __u32 *ptr = (__u32 *)&tun->mac_remote[2];
@@ -469,8 +658,11 @@ int gue_encap_v4(struct __sk_buff *skb, struct tunnel *tun, struct service *svc)
 
     // Update destination MAC
     //bpf_print("Setting D-MAC %x\n", bpf_ntohl(*ptr));
-    if (bpf_skb_store_bytes(skb, 0, tun->mac_remote, 6, BPF_F_INVALIDATE_HASH) < 0)
+    ret = bpf_skb_store_bytes(skb, 0, tun->mac_remote, 6, BPF_F_INVALIDATE_HASH);
+    if (ret < 0) {
+        bpf_print("bpf_skb_store_bytes: %d\n", ret);
         return TC_ACT_SHOT;
+    }
 
     return TC_ACT_OK;
 }
