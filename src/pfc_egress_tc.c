@@ -75,7 +75,7 @@ int pfc_tx(struct __sk_buff *skb)
             bpf_print("    TO   %x:%u\t(%x)\n", tun->ip_remote, bpf_ntohs(tun->port_remote), bpf_ntohl(*mac));
 
             // fix MSS
-            //set_mss(skb, 1400);
+            set_mss(skb, 1400);
 
             ASSERT (TC_ACT_OK == gue_encap_v4(skb, tun, svc), dump_action(TC_ACT_SHOT), "GUE Encap Failed!\n");
             if (cfg->flags & CFG_TX_DUMP) {
@@ -148,7 +148,7 @@ int pfc_tx(struct __sk_buff *skb)
                 bpf_print("    TO   %x:%u\t(%x)\n", tun->ip_remote, bpf_ntohs(tun->port_remote), bpf_ntohl(*mac));
 
                 // fix MSS
-                //set_mss(skb, 1400);
+                set_mss(skb, 1400);
 
                 ASSERT (TC_ACT_OK == gue_encap_v4(skb, tun, svc), dump_action(TC_ACT_SHOT), "GUE Encap Failed!\n");
                 if (cfg->flags & CFG_TX_DUMP) {
