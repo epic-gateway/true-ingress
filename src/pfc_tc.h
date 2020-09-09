@@ -8,6 +8,20 @@
 
 #include "common_tc.h"
 
+#define IP_CSUM_OFF offsetof(struct iphdr, check)
+#define IP_DST_OFF offsetof(struct iphdr, daddr)
+#define IP_SRC_OFF offsetof(struct iphdr, saddr)
+
+#define TCP_CSUM_OFF offsetof(struct tcphdr, check)
+#define TCP_SPORT_OFF offsetof(struct tcphdr, source)
+#define TCP_DPORT_OFF offsetof(struct tcphdr, dest)
+
+#define UDP_CSUM_OFF offsetof(struct udphdr, check)
+#define UDP_SPORT_OFF offsetof(struct udphdr, source)
+#define UDP_DPORT_OFF offsetof(struct udphdr, dest)
+
+#define IS_PSEUDO 0x10
+
 struct guehdr {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
     __u8    hlen : 5,
@@ -178,6 +192,10 @@ int set_mss(struct __sk_buff *skb, __u16 new_mss)
             if (bpf_ntohs(old_mss[1]) > new_mss) {
                 bpf_print("Replacing mss %u -> %u\n", old_mss, new_mss);
                 old_mss[1] = bpf_htons(new_mss);
+
+                // checksum
+                int ret = bpf_l4_csum_replace(skb, nh_off + TCP_CSUM_OFF, *old_mss, new_mss, IS_PSEUDO | sizeof(new_mss));
+                ASSERT(ret >= 0, TC_ACT_UNSPEC, "bpf_l4_csum_replace failed: %d\n", ret);
             }
             break;
         }
@@ -282,20 +300,6 @@ void parse_dest_ep(struct endpoint *ep, struct headers *hdr)
 //    bpf_print("Parsed Destination EP: ip %x, port %u, proto %u\n", ep->ip, bpf_ntohs(ep->port), bpf_ntohs(ep->proto));
 //    bpf_print("Parsed Destination EP: %lx\n", *(__u64*)ep);
 }
-
-#define IP_CSUM_OFF offsetof(struct iphdr, check)
-#define IP_DST_OFF offsetof(struct iphdr, daddr)
-#define IP_SRC_OFF offsetof(struct iphdr, saddr)
-
-#define TCP_CSUM_OFF offsetof(struct tcphdr, check)
-#define TCP_SPORT_OFF offsetof(struct tcphdr, source)
-#define TCP_DPORT_OFF offsetof(struct tcphdr, dest)
-
-#define UDP_CSUM_OFF offsetof(struct udphdr, check)
-#define UDP_SPORT_OFF offsetof(struct udphdr, source)
-#define UDP_DPORT_OFF offsetof(struct udphdr, dest)
-
-#define IS_PSEUDO 0x10
 
 static inline
 int dnat4(struct __sk_buff *skb, struct headers *hdr, __u32 new_ip, __u16 new_port)
