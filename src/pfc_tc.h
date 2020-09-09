@@ -166,132 +166,20 @@ int set_mss(struct __sk_buff *skb, __u16 new_mss)
     __u32 *optx = (void*)&tcph[1];
     int i = 0;
 
-    ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "ERROR: (TCP) no OPT anymore\n");
-    if (i < (tcph->doff - 5)) {
-        if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
-            __u16 *old_mss = (__u16 *)&optx[i];
-            if (bpf_ntohs(old_mss[1]) > new_mss) {
-                bpf_print("Replacing mss %u -> %u\n", old_mss, new_mss);
-                old_mss[1] = bpf_htons(new_mss);
-            }
-            return TC_ACT_OK;
+    #pragma clang loop unroll(full)
+    for (i = 0; i < 10; i++) {
+        if (i >= (tcph->doff - 5)) {
+            break;
         }
-    }
 
-    i++;
-    ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "ERROR: (TCP) no OPT anymore\n");
-    if (i < (tcph->doff - 5)) {
+        ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "ERROR: (TCP) no OPT anymore\n");
         if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
             __u16 *old_mss = (__u16 *)&optx[i];
             if (bpf_ntohs(old_mss[1]) > new_mss) {
                 bpf_print("Replacing mss %u -> %u\n", old_mss, new_mss);
                 old_mss[1] = bpf_htons(new_mss);
             }
-            return TC_ACT_OK;
-        }
-    }
-
-    i++;
-    ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "ERROR: (TCP) no OPT anymore\n");
-    if (i < (tcph->doff - 5)) {
-        if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
-            __u16 *old_mss = (__u16 *)&optx[i];
-            if (bpf_ntohs(old_mss[1]) > new_mss) {
-                bpf_print("Replacing mss %u -> %u\n", old_mss, new_mss);
-                old_mss[1] = bpf_htons(new_mss);
-            }
-            return TC_ACT_OK;
-        }
-    }
-
-    i++;
-    ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "ERROR: (TCP) no OPT anymore\n");
-    if (i < (tcph->doff - 5)) {
-        if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
-            __u16 *old_mss = (__u16 *)&optx[i];
-            if (bpf_ntohs(old_mss[1]) > new_mss) {
-                bpf_print("Replacing mss %u -> %u\n", old_mss, new_mss);
-                old_mss[1] = bpf_htons(new_mss);
-            }
-            return TC_ACT_OK;
-        }
-    }
-
-    i++;
-    ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "ERROR: (TCP) no OPT anymore\n");
-    if (i < (tcph->doff - 5)) {
-        if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
-            __u16 *old_mss = (__u16 *)&optx[i];
-            if (bpf_ntohs(old_mss[1]) > new_mss) {
-                bpf_print("Replacing mss %u -> %u\n", old_mss, new_mss);
-                old_mss[1] = bpf_htons(new_mss);
-            }
-            return TC_ACT_OK;
-        }
-    }
-
-    i++;
-    ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "ERROR: (TCP) no OPT anymore\n");
-    if (i < (tcph->doff - 5)) {
-        if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
-            __u16 *old_mss = (__u16 *)&optx[i];
-            if (bpf_ntohs(old_mss[1]) > new_mss) {
-                bpf_print("Replacing mss %u -> %u\n", old_mss, new_mss);
-                old_mss[1] = bpf_htons(new_mss);
-            }
-            return TC_ACT_OK;
-        }
-    }
-
-    i++;
-    ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "ERROR: (TCP) no OPT anymore\n");
-    if (i < (tcph->doff - 5)) {
-        if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
-            __u16 *old_mss = (__u16 *)&optx[i];
-            if (bpf_ntohs(old_mss[1]) > new_mss) {
-                bpf_print("Replacing mss %u -> %u\n", old_mss, new_mss);
-                old_mss[1] = bpf_htons(new_mss);
-            }
-            return TC_ACT_OK;
-        }
-    }
-
-    i++;
-    ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "ERROR: (TCP) no OPT anymore\n");
-    if (i < (tcph->doff - 5)) {
-        if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
-            __u16 *old_mss = (__u16 *)&optx[i];
-            if (bpf_ntohs(old_mss[1]) > new_mss) {
-                bpf_print("Replacing mss %u -> %u\n", old_mss, new_mss);
-                old_mss[1] = bpf_htons(new_mss);
-            }
-            return TC_ACT_OK;
-        }
-    }
-
-    i++;
-    ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "ERROR: (TCP) no OPT anymore\n");
-    if (i < (tcph->doff - 5)) {
-        if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
-            __u16 *old_mss = (__u16 *)&optx[i];
-            if (bpf_ntohs(old_mss[1]) > new_mss) {
-                bpf_print("Replacing mss %u -> %u\n", old_mss, new_mss);
-                old_mss[1] = bpf_htons(new_mss);
-            }
-            return TC_ACT_OK;
-        }
-    }
-
-    i++;
-    ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "ERROR: (TCP) no OPT anymore\n");
-    if (i < (tcph->doff - 5)) {
-        if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
-            __u16 *old_mss = (__u16 *)&optx[i];
-            if (bpf_ntohs(old_mss[1]) > new_mss) {
-                bpf_print("Replacing mss %u -> %u\n", old_mss, new_mss);
-                old_mss[1] = bpf_htons(new_mss);
-            }
-            return TC_ACT_OK;
+            break;
         }
     }
 
