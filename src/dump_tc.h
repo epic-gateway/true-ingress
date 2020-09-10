@@ -100,20 +100,105 @@ int dump_tcp(void *data, void *data_end)
 
     if (tcph->syn) {
         __u32 *optx = (void*)&tcph[1];
+
         int i = 0;
+        ASSERT(i < (tcph->doff - 5), TC_ACT_OK, "(TCP) has no OPT anymore\n");
+        ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "(TCP) has no OPT anymore\n");
 
-        #pragma clang loop unroll(full)
-        for (i = 0; i < 10; i++) {
-            if (i >= (tcph->doff - 5)) {
-                break;
-            }
+        if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
+            __u16 *mss = (__u16 *)&optx[i];
+            bpf_print("    mss %uB\n", bpf_ntohs(mss[1]));
+            return TC_ACT_OK;
+        }
 
-            ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "ERROR: (TCP) no OPT anymore\n");
-            if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
-                __u16 *mss = (__u16 *)&optx[i];
-                bpf_print("    mss %uB\n", bpf_ntohs(mss[1]));
-                break;
-            }
+        i = 1;
+        ASSERT(i < (tcph->doff - 5), TC_ACT_OK, "(TCP) has no OPT anymore\n");
+        ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "(TCP) has no OPT anymore\n");
+
+        if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
+            __u16 *mss = (__u16 *)&optx[i];
+            bpf_print("    mss %uB\n", bpf_ntohs(mss[1]));
+            return TC_ACT_OK;
+        }
+
+        i = 2;
+        ASSERT(i < (tcph->doff - 5), TC_ACT_OK, "(TCP) has no OPT anymore\n");
+        ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "(TCP) has no OPT anymore\n");
+
+        if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
+            __u16 *mss = (__u16 *)&optx[i];
+            bpf_print("    mss %uB\n", bpf_ntohs(mss[1]));
+            return TC_ACT_OK;
+        }
+
+        i = 3;
+        ASSERT(i < (tcph->doff - 5), TC_ACT_OK, "(TCP) has no OPT anymore\n");
+        ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "(TCP) has no OPT anymore\n");
+
+        if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
+            __u16 *mss = (__u16 *)&optx[i];
+            bpf_print("    mss %uB\n", bpf_ntohs(mss[1]));
+            return TC_ACT_OK;
+        }
+
+        i = 4;
+        ASSERT(i < (tcph->doff - 5), TC_ACT_OK, "(TCP) has no OPT anymore\n");
+        ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "(TCP) has no OPT anymore\n");
+
+        if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
+            __u16 *mss = (__u16 *)&optx[i];
+            bpf_print("    mss %uB\n", bpf_ntohs(mss[1]));
+            return TC_ACT_OK;
+        }
+
+        i = 5;
+        ASSERT(i < (tcph->doff - 5), TC_ACT_OK, "(TCP) has no OPT anymore\n");
+        ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "(TCP) has no OPT anymore\n");
+
+        if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
+            __u16 *mss = (__u16 *)&optx[i];
+            bpf_print("    mss %uB\n", bpf_ntohs(mss[1]));
+            return TC_ACT_OK;
+        }
+
+        i = 6;
+        ASSERT(i < (tcph->doff - 5), TC_ACT_OK, "(TCP) has no OPT anymore\n");
+        ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "(TCP) has no OPT anymore\n");
+
+        if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
+            __u16 *mss = (__u16 *)&optx[i];
+            bpf_print("    mss %uB\n", bpf_ntohs(mss[1]));
+            return TC_ACT_OK;
+        }
+
+        i = 7;
+        ASSERT(i < (tcph->doff - 5), TC_ACT_OK, "(TCP) has no OPT anymore\n");
+        ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "(TCP) has no OPT anymore\n");
+
+        if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
+            __u16 *mss = (__u16 *)&optx[i];
+            bpf_print("    mss %uB\n", bpf_ntohs(mss[1]));
+            return TC_ACT_OK;
+        }
+
+        i = 8;
+        ASSERT(i < (tcph->doff - 5), TC_ACT_OK, "(TCP) has no OPT anymore\n");
+        ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "(TCP) has no OPT anymore\n");
+
+        if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
+            __u16 *mss = (__u16 *)&optx[i];
+            bpf_print("    mss %uB\n", bpf_ntohs(mss[1]));
+            return TC_ACT_OK;
+        }
+
+        i = 9;
+        ASSERT(i < (tcph->doff - 5), TC_ACT_OK, "(TCP) has no OPT anymore\n");
+        ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "(TCP) has no OPT anymore\n");
+
+        if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
+            __u16 *mss = (__u16 *)&optx[i];
+            bpf_print("    mss %uB\n", bpf_ntohs(mss[1]));
+            return TC_ACT_OK;
         }
     }
 

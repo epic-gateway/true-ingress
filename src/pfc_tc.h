@@ -178,27 +178,165 @@ int set_mss(struct __sk_buff *skb, __u16 new_mss)
     }
 
     __u32 *optx = (void*)&tcph[1];
+
     int i = 0;
+    ASSERT(i < (tcph->doff - 5), TC_ACT_OK, "(TCP) has no OPT anymore\n");
+    ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "(TCP) has no OPT anymore\n");
+    if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
+        __u16 *old_mss = (__u16 *)&optx[i];
+        if (bpf_ntohs(old_mss[1]) > new_mss) {
+            bpf_print("Replacing mss %u -> %u\n", old_mss, new_mss);
+            old_mss[1] = bpf_htons(new_mss);
 
-    #pragma clang loop unroll(full)
-    for (i = 0; i < 10; i++) {
-        if (i >= (tcph->doff - 5)) {
-            break;
+            // checksum
+            int ret = bpf_l4_csum_replace(skb, nh_off + TCP_CSUM_OFF, *old_mss, new_mss, IS_PSEUDO | sizeof(new_mss));
+            ASSERT(ret >= 0, TC_ACT_UNSPEC, "bpf_l4_csum_replace failed: %d\n", ret);
         }
+        return TC_ACT_OK;
+    }
 
-        ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "ERROR: (TCP) no OPT anymore\n");
-        if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
-            __u16 *old_mss = (__u16 *)&optx[i];
-            if (bpf_ntohs(old_mss[1]) > new_mss) {
-                bpf_print("Replacing mss %u -> %u\n", old_mss, new_mss);
-                old_mss[1] = bpf_htons(new_mss);
+    i = 1;
+    ASSERT(i < (tcph->doff - 5), TC_ACT_OK, "(TCP) has no OPT anymore\n");
+    ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "(TCP) has no OPT anymore\n");
+    if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
+        __u16 *old_mss = (__u16 *)&optx[i];
+        if (bpf_ntohs(old_mss[1]) > new_mss) {
+            bpf_print("Replacing mss %u -> %u\n", old_mss, new_mss);
+            old_mss[1] = bpf_htons(new_mss);
 
-                // checksum
-                int ret = bpf_l4_csum_replace(skb, nh_off + TCP_CSUM_OFF, *old_mss, new_mss, IS_PSEUDO | sizeof(new_mss));
-                ASSERT(ret >= 0, TC_ACT_UNSPEC, "bpf_l4_csum_replace failed: %d\n", ret);
-            }
-            break;
+            // checksum
+            int ret = bpf_l4_csum_replace(skb, nh_off + TCP_CSUM_OFF, *old_mss, new_mss, IS_PSEUDO | sizeof(new_mss));
+            ASSERT(ret >= 0, TC_ACT_UNSPEC, "bpf_l4_csum_replace failed: %d\n", ret);
         }
+        return TC_ACT_OK;
+    }
+
+    i = 2;
+    ASSERT(i < (tcph->doff - 5), TC_ACT_OK, "(TCP) has no OPT anymore\n");
+    ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "(TCP) has no OPT anymore\n");
+    if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
+        __u16 *old_mss = (__u16 *)&optx[i];
+        if (bpf_ntohs(old_mss[1]) > new_mss) {
+            bpf_print("Replacing mss %u -> %u\n", old_mss, new_mss);
+            old_mss[1] = bpf_htons(new_mss);
+
+            // checksum
+            int ret = bpf_l4_csum_replace(skb, nh_off + TCP_CSUM_OFF, *old_mss, new_mss, IS_PSEUDO | sizeof(new_mss));
+            ASSERT(ret >= 0, TC_ACT_UNSPEC, "bpf_l4_csum_replace failed: %d\n", ret);
+        }
+        return TC_ACT_OK;
+    }
+
+    i = 3;
+    ASSERT(i < (tcph->doff - 5), TC_ACT_OK, "(TCP) has no OPT anymore\n");
+    ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "(TCP) has no OPT anymore\n");
+    if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
+        __u16 *old_mss = (__u16 *)&optx[i];
+        if (bpf_ntohs(old_mss[1]) > new_mss) {
+            bpf_print("Replacing mss %u -> %u\n", old_mss, new_mss);
+            old_mss[1] = bpf_htons(new_mss);
+
+            // checksum
+            int ret = bpf_l4_csum_replace(skb, nh_off + TCP_CSUM_OFF, *old_mss, new_mss, IS_PSEUDO | sizeof(new_mss));
+            ASSERT(ret >= 0, TC_ACT_UNSPEC, "bpf_l4_csum_replace failed: %d\n", ret);
+        }
+        return TC_ACT_OK;
+    }
+
+    i = 4;
+    ASSERT(i < (tcph->doff - 5), TC_ACT_OK, "(TCP) has no OPT anymore\n");
+    ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "(TCP) has no OPT anymore\n");
+    if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
+        __u16 *old_mss = (__u16 *)&optx[i];
+        if (bpf_ntohs(old_mss[1]) > new_mss) {
+            bpf_print("Replacing mss %u -> %u\n", old_mss, new_mss);
+            old_mss[1] = bpf_htons(new_mss);
+
+            // checksum
+            int ret = bpf_l4_csum_replace(skb, nh_off + TCP_CSUM_OFF, *old_mss, new_mss, IS_PSEUDO | sizeof(new_mss));
+            ASSERT(ret >= 0, TC_ACT_UNSPEC, "bpf_l4_csum_replace failed: %d\n", ret);
+        }
+        return TC_ACT_OK;
+    }
+
+    i = 5;
+    ASSERT(i < (tcph->doff - 5), TC_ACT_OK, "(TCP) has no OPT anymore\n");
+    ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "(TCP) has no OPT anymore\n");
+    if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
+        __u16 *old_mss = (__u16 *)&optx[i];
+        if (bpf_ntohs(old_mss[1]) > new_mss) {
+            bpf_print("Replacing mss %u -> %u\n", old_mss, new_mss);
+            old_mss[1] = bpf_htons(new_mss);
+
+            // checksum
+            int ret = bpf_l4_csum_replace(skb, nh_off + TCP_CSUM_OFF, *old_mss, new_mss, IS_PSEUDO | sizeof(new_mss));
+            ASSERT(ret >= 0, TC_ACT_UNSPEC, "bpf_l4_csum_replace failed: %d\n", ret);
+        }
+        return TC_ACT_OK;
+    }
+
+    i = 6;
+    ASSERT(i < (tcph->doff - 5), TC_ACT_OK, "(TCP) has no OPT anymore\n");
+    ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "(TCP) has no OPT anymore\n");
+    if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
+        __u16 *old_mss = (__u16 *)&optx[i];
+        if (bpf_ntohs(old_mss[1]) > new_mss) {
+            bpf_print("Replacing mss %u -> %u\n", old_mss, new_mss);
+            old_mss[1] = bpf_htons(new_mss);
+
+            // checksum
+            int ret = bpf_l4_csum_replace(skb, nh_off + TCP_CSUM_OFF, *old_mss, new_mss, IS_PSEUDO | sizeof(new_mss));
+            ASSERT(ret >= 0, TC_ACT_UNSPEC, "bpf_l4_csum_replace failed: %d\n", ret);
+        }
+        return TC_ACT_OK;
+    }
+
+    i = 7;
+    ASSERT(i < (tcph->doff - 5), TC_ACT_OK, "(TCP) has no OPT anymore\n");
+    ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "(TCP) has no OPT anymore\n");
+    if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
+        __u16 *old_mss = (__u16 *)&optx[i];
+        if (bpf_ntohs(old_mss[1]) > new_mss) {
+            bpf_print("Replacing mss %u -> %u\n", old_mss, new_mss);
+            old_mss[1] = bpf_htons(new_mss);
+
+            // checksum
+            int ret = bpf_l4_csum_replace(skb, nh_off + TCP_CSUM_OFF, *old_mss, new_mss, IS_PSEUDO | sizeof(new_mss));
+            ASSERT(ret >= 0, TC_ACT_UNSPEC, "bpf_l4_csum_replace failed: %d\n", ret);
+        }
+        return TC_ACT_OK;
+    }
+
+    i = 8;
+    ASSERT(i < (tcph->doff - 5), TC_ACT_OK, "(TCP) has no OPT anymore\n");
+    ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "(TCP) has no OPT anymore\n");
+    if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
+        __u16 *old_mss = (__u16 *)&optx[i];
+        if (bpf_ntohs(old_mss[1]) > new_mss) {
+            bpf_print("Replacing mss %u -> %u\n", old_mss, new_mss);
+            old_mss[1] = bpf_htons(new_mss);
+
+            // checksum
+            int ret = bpf_l4_csum_replace(skb, nh_off + TCP_CSUM_OFF, *old_mss, new_mss, IS_PSEUDO | sizeof(new_mss));
+            ASSERT(ret >= 0, TC_ACT_UNSPEC, "bpf_l4_csum_replace failed: %d\n", ret);
+        }
+        return TC_ACT_OK;
+    }
+
+    i = 9;
+    ASSERT(i < (tcph->doff - 5), TC_ACT_OK, "(TCP) has no OPT anymore\n");
+    ASSERT((void*)&optx[i+1] <= data_end, TC_ACT_OK, "(TCP) has no OPT anymore\n");
+    if ((bpf_ntohl(optx[i]) >> 16) == 0x0204) {
+        __u16 *old_mss = (__u16 *)&optx[i];
+        if (bpf_ntohs(old_mss[1]) > new_mss) {
+            bpf_print("Replacing mss %u -> %u\n", old_mss, new_mss);
+            old_mss[1] = bpf_htons(new_mss);
+
+            // checksum
+            int ret = bpf_l4_csum_replace(skb, nh_off + TCP_CSUM_OFF, *old_mss, new_mss, IS_PSEUDO | sizeof(new_mss));
+            ASSERT(ret >= 0, TC_ACT_UNSPEC, "bpf_l4_csum_replace failed: %d\n", ret);
+        }
+        return TC_ACT_OK;
     }
 
     return TC_ACT_OK;
@@ -495,8 +633,16 @@ int gue_encap_v4(struct __sk_buff *skb, struct tunnel *tun, struct service *svc)
     h_outer.udp.check   = 0;
 
     // add room between mac and network header
+//    flags = BPF_F_ADJ_ROOM_FIXED_GSO | BPF_F_ADJ_ROOM_ENCAP_L3_IPV4 | BPF_F_ADJ_ROOM_ENCAP_L4_UDP;
     flags = BPF_F_ADJ_ROOM_FIXED_GSO | BPF_F_ADJ_ROOM_ENCAP_L3_IPV4 | BPF_F_ADJ_ROOM_ENCAP_L4_UDP;
-    ret = bpf_skb_adjust_room(skb, olen, BPF_ADJ_ROOM_MAC, flags); 
+    ret = bpf_skb_adjust_room(skb, olen, BPF_ADJ_ROOM_MAC, flags);
+/*    if (ret == -524) {   // -ENOTSUPP
+        bpf_print("bpf_skb_adjust_room: %d, sizeof(skb) %u\n", ret, sizeof(*skb));
+
+//        skb->gso_segs++;
+        bpf_print("new skb->gso_segs %u\n", skb->gso_segs);
+        ret = bpf_skb_adjust_room(skb, olen, BPF_ADJ_ROOM_MAC, flags);
+    }*/
     if (ret) {
         bpf_print("bpf_skb_adjust_room: %d\n", ret);
         return TC_ACT_SHOT;
