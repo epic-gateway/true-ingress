@@ -4,9 +4,13 @@
 
 echo "Download kernel packages"
 case $1 in
+"5.9")
+    FOLDER="kernel.ubuntu.com/~kernel-ppa/mainline/v5.9-rc4/amd64"
+    FILES="linux-headers-5.9.0-050900rc4_5.9.0-050900rc4.202009070130_all linux-headers-5.9.0-050900rc4-generic_5.9.0-050900rc4.202009070130_amd64 linux-image-unsigned-5.9.0-050900rc4-generic_5.9.0-050900rc4.202009070130_amd64 linux-modules-5.9.0-050900rc4-generic_5.9.0-050900rc4.202009070130_amd64"
+    ;;
 "5.8")
-    FOLDER="kernel.ubuntu.com/~kernel-ppa/mainline/v5.8-rc3/amd64"
-    FILES="linux-headers-5.8.0-050800_5.8.0-050800.202006282330_all linux-headers-5.8.0-050800-generic_5.8.0-050800.202006282330_amd64 linux-image-unsigned-5.8.0-050800-generic_5.8.0-050800.202006282330_amd64 linux-modules-5.8.0-050800-generic_5.8.0-050800.202006282330_amd64"
+    FOLDER="kernel.ubuntu.com/~kernel-ppa/mainline/v5.8.7/amd64"
+    FILES="linux-headers-5.8.7-050807_5.8.7-050807.202009051031_all linux-headers-5.8.7-050807-generic_5.8.7-050807.202009051031_amd64 linux-image-unsigned-5.8.7-050807-generic_5.8.7-050807.202009051031_amd64 linux-modules-5.8.7-050807-generic_5.8.7-050807.202009051031_amd64"
     ;;
 "5.7")
     FOLDER="kernel.ubuntu.com/~kernel-ppa/mainline/v5.7.6/amd64"
