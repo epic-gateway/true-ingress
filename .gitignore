@@ -57,6 +57,7 @@ dkms.conf
 cli_cfg
 cli_tunnel
 cli_service
+cli_gc
 
 # tracing userspace programs
 
