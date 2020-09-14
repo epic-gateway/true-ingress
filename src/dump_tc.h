@@ -68,12 +68,13 @@ int dump_icmp(void *data, void *data_end)
     }
     else if (icmph->type == ICMP_DEST_UNREACH)
     {
-        bpf_print("  ICMP DEST UNREACHABLE...\n");
+        bpf_print("  ICMP DEST UNREACHABLE: %u\n", icmph->code);
     }
     else
     {
         bpf_print("  ICMP : type %x, code %x\n", icmph->type, icmph->code);
     }
+    bpf_print("    csum 0x%x\n", bpf_ntohs(icmph->checksum));
 
     return TC_ACT_OK;
 }
@@ -212,7 +213,7 @@ int dump_udp(void *data, void *data_end)
     ASSERT((void*)&udph[1] <= data_end, TC_ACT_SHOT, "ERROR: (UDP) Invalid packet size\n");
 
     bpf_print("  UDP  : %d -> %d\n", bpf_ntohs(udph->source), bpf_ntohs(udph->dest));
-    bpf_print("    csum 0x%x\n", bpf_ntohs(udph->check));
+    bpf_print("    len %u, csum 0x%x\n", bpf_ntohs(udph->len), bpf_ntohs(udph->check));
 
     return TC_ACT_OK;
 }
@@ -223,8 +224,9 @@ int dump_ipv4(void *data, void *data_end)
     struct iphdr *iph = data;
     ASSERT((void*)&iph[1] <= data_end, TC_ACT_SHOT, "ERROR: (IPv4) Invalid packet size\n");
 
-    bpf_print("  IPv4 : %x -> %x, id %u\n", bpf_ntohl(iph->saddr), bpf_ntohl(iph->daddr), bpf_ntohs(iph->id));
-    bpf_print("    csum 0x%x\n", bpf_ntohs(iph->check));
+    bpf_print("  IPv4 : %x -> %x\n", bpf_ntohl(iph->saddr), bpf_ntohl(iph->daddr));
+    bpf_print("    len %u, id %u, csum 0x%x\n", bpf_ntohs(iph->tot_len), bpf_ntohs(iph->id), bpf_ntohs(iph->check));
+    bpf_print("    flags %x, frag_off %u\n", bpf_ntohs(iph->frag_off) >> 13, bpf_ntohs(iph->frag_off) & 0x1FFF);
 
     if (iph->protocol == IPPROTO_ICMP)
         dump_icmp(&iph[1], data_end);
