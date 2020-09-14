@@ -26,7 +26,8 @@ int pfc_tx(struct __sk_buff *skb)
 {
     bpf_print("PFC TX <<<< # %u, ifindex %u, len %u\n", stats_update(skb->ifindex, STAT_IDX_TX, skb), skb->ifindex, skb->len);
     bpf_print("  skb->protocol: %x\n", bpf_ntohs(skb->protocol));
-    bpf_print("  data_meta %x, wire_len %u, gso_segs %u\n", skb->data_meta, skb->wire_len, skb->gso_segs);
+    bpf_print("  gso_segs %u\n", skb->gso_segs);
+//    bpf_print("  gso_size %u\n", skb->gso_size);
 
     // get config
     __u32 key = skb->ifindex;
@@ -47,6 +48,7 @@ int pfc_tx(struct __sk_buff *skb)
     }
 
     // start processing
+    int ret;
     struct endpoint dep = { 0 }, sep = { 0 };
     // get Destination EP
     parse_dest_ep(&dep, &hdr);
@@ -75,14 +77,15 @@ int pfc_tx(struct __sk_buff *skb)
             bpf_print("    TO   %x:%u\t(%x)\n", tun->ip_remote, bpf_ntohs(tun->port_remote), bpf_ntohl(*mac));
 
             // fix MSS
-            set_mss(skb, 1400);
+            //set_mss(skb, 1400);
 
-            ASSERT (TC_ACT_OK == gue_encap_v4(skb, tun, svc), dump_action(TC_ACT_SHOT), "GUE Encap Failed!\n");
+            ret = gue_encap_v4(skb, tun, svc);
+            ASSERT (ret != TC_ACT_SHOT, dump_action(TC_ACT_SHOT), "GUE Encap Failed!\n");
             if (cfg->flags & CFG_TX_DUMP) {
                 dump_pkt(skb);
             }
 
-            return dump_action(TC_ACT_OK);
+            return dump_action(ret);
         }
 
         // check output mode
@@ -148,14 +151,15 @@ int pfc_tx(struct __sk_buff *skb)
                 bpf_print("    TO   %x:%u\t(%x)\n", tun->ip_remote, bpf_ntohs(tun->port_remote), bpf_ntohl(*mac));
 
                 // fix MSS
-                set_mss(skb, 1400);
+                //set_mss(skb, 1400);
 
-                ASSERT (TC_ACT_OK == gue_encap_v4(skb, tun, svc), dump_action(TC_ACT_SHOT), "GUE Encap Failed!\n");
+                ret = gue_encap_v4(skb, tun, svc);
+                ASSERT (ret != TC_ACT_SHOT, dump_action(TC_ACT_SHOT), "GUE Encap Failed!\n");
                 if (cfg->flags & CFG_TX_DUMP) {
                     dump_pkt(skb);
                 }
 
-                return dump_action(TC_ACT_OK);
+                return dump_action(ret);
             }
         }
     }

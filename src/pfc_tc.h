@@ -5,6 +5,7 @@
 #include <linux/ip.h>
 #include <linux/tcp.h>
 #include <linux/udp.h>
+#include <linux/icmp.h>
 
 #include "common_tc.h"
 
@@ -578,7 +579,6 @@ int service_verify(struct gueext5hdr *gueext)
     return 0;
 }
 
-
 static __always_inline
 void set_ipv4_csum(struct iphdr *iph)
 {
@@ -608,6 +608,98 @@ int gue_encap_v4(struct __sk_buff *skb, struct tunnel *tun, struct service *svc)
     if (bpf_skb_load_bytes(skb, ETH_HLEN, &iph_inner, sizeof(iph_inner)) < 0)
         return TC_ACT_OK;
 
+    // add room between mac and network header
+//    flags = BPF_F_ADJ_ROOM_FIXED_GSO | BPF_F_ADJ_ROOM_ENCAP_L3_IPV4 | BPF_F_ADJ_ROOM_ENCAP_L4_UDP;
+    flags = BPF_F_ADJ_ROOM_FIXED_GSO | BPF_F_ADJ_ROOM_ENCAP_L3_IPV4 | BPF_F_ADJ_ROOM_ENCAP_L4_UDP;
+    ret = bpf_skb_adjust_room(skb, olen, BPF_ADJ_ROOM_MAC, flags);
+    if (ret == -524) {   // -ENOTSUPP (caused by near MTU sized packet)
+        bpf_print("bpf_skb_adjust_room FAILED, sending ICMP response back\n", ret);
+
+        // get original L4 header
+        __u64 buff;
+        ret = bpf_skb_load_bytes(skb, ETH_HLEN + sizeof(iph_inner), &buff, sizeof(buff));
+        ASSERT(ret >= 0, TC_ACT_UNSPEC, "bpf_skb_load_bytes()1 failed: %d\n", ret);
+
+        // adjust buffer size
+        olen = (ETH_HLEN + 2 * sizeof(struct iphdr) + sizeof(struct icmphdr) + sizeof(buff)) - skb->len;
+        ret = bpf_skb_adjust_room(skb, olen, BPF_ADJ_ROOM_NET, 0);
+        if (ret) {
+            bpf_print("bpf_skb_adjust_room: %d\n", ret);
+            return TC_ACT_SHOT;
+        }
+
+        // store original L4 as ICMP payload
+        ret = bpf_skb_store_bytes(skb, ETH_HLEN + 2 * sizeof(struct iphdr) + sizeof(struct icmphdr), &buff, sizeof(buff), 0);
+        ASSERT(ret >= 0, TC_ACT_UNSPEC, "bpf_skb_store_bytes()1 failed: %d\n", ret);
+
+        // store original IPv4 as ICMP payload
+        ret = bpf_skb_store_bytes(skb, ETH_HLEN + sizeof(struct iphdr) + sizeof(struct icmphdr), &iph_inner, sizeof(iph_inner), 0);
+        ASSERT(ret >= 0, TC_ACT_UNSPEC, "bpf_skb_store_bytes()2 failed: %d\n", ret);
+
+        struct icmphdr icmph = { 0 };
+
+        ret = bpf_skb_load_bytes(skb, ETH_HLEN + sizeof(struct iphdr), &icmph, sizeof(struct icmphdr));
+        ASSERT(ret >= 0, TC_ACT_UNSPEC, "bpf_skb_load_bytes()2 failed: %d\n", ret);
+
+        icmph.type = 3;
+        icmph.code = 4;
+        icmph.checksum = 0;
+        icmph.un.frag.mtu = bpf_htons(1400);
+
+        // calculate ICMP cecksum
+        __u16 *ptr16 = (__u16 *)&buff;
+        __u32 csum = ptr16[0] + ptr16[1] + ptr16[2] + ptr16[3];
+        ptr16 = (__u16 *)&iph_inner;
+        csum += ptr16[0] + ptr16[1] + ptr16[2] + ptr16[3] + ptr16[4] + ptr16[5] + ptr16[6] + ptr16[7] + ptr16[8] + ptr16[9];
+        ptr16 = (__u16 *)&icmph;
+        csum += ptr16[0] + ptr16[1] + ptr16[2] + ptr16[3];
+
+        icmph.checksum = ~((csum & 0xffff) + (csum >> 16));
+
+        // store ICMP header
+        ret = bpf_skb_store_bytes(skb, ETH_HLEN + sizeof(struct iphdr), &icmph, sizeof(struct icmphdr), 0);
+        ASSERT(ret >= 0, TC_ACT_UNSPEC, "bpf_skb_store_bytes()3 failed: %d\n", ret);
+
+        // update IPv4 header (size & proto)
+        __u32 old_len = iph_inner.tot_len;
+        __u16 old_proto = iph_inner.protocol;
+
+        iph_inner.tot_len = bpf_htons(2 * sizeof(struct iphdr) + sizeof(struct icmphdr) + sizeof(buff));
+        iph_inner.protocol = IPPROTO_ICMP;
+
+        // IPv4 swap addesses
+        __u32 tmp = iph_inner.saddr;
+        iph_inner.saddr = iph_inner.daddr;
+        iph_inner.daddr = tmp;
+
+        // store IPv4
+        ret = bpf_skb_store_bytes(skb, ETH_HLEN, &iph_inner, sizeof(iph_inner), 0);
+        ASSERT(ret >= 0, TC_ACT_UNSPEC, "bpf_skb_store_bytes()3 failed: %d\n", ret);
+
+        // update IPv4 checksum
+        ret = bpf_l3_csum_replace(skb, ETH_HLEN + IP_CSUM_OFF, old_len + bpf_htons(old_proto), iph_inner.tot_len + bpf_ntohs(iph_inner.protocol), sizeof(old_proto));
+        ASSERT(ret >= 0, TC_ACT_UNSPEC, "bpf_l3_csum_replace()2 failed: %d\n", ret);
+
+        // swap MACs
+        __u8 src[6], dst[6];
+        ret = bpf_skb_load_bytes(skb, 0, src, 6);
+        ASSERT(ret >= 0, TC_ACT_UNSPEC, "bpf_skb_load_bytes()3 failed: %d\n", ret);
+        ret = bpf_skb_load_bytes(skb, 6, dst, 6);
+        ASSERT(ret >= 0, TC_ACT_UNSPEC, "bpf_skb_load_bytes()4 failed: %d\n", ret);
+
+        ret = bpf_skb_store_bytes(skb, 0, dst, 6, 0);
+        ASSERT(ret >= 0, TC_ACT_UNSPEC, "bpf_skb_load_bytes()5 failed: %d\n", ret);
+        ret = bpf_skb_store_bytes(skb, 6, src, 6, 0);
+        ASSERT(ret >= 0, TC_ACT_UNSPEC, "bpf_skb_load_bytes()6 failed: %d\n", ret);
+
+        // done
+        return bpf_redirect(skb->ifindex, BPF_F_INGRESS);
+    }
+    if (ret) {
+        bpf_print("bpf_skb_adjust_room: %d\n", ret);
+        return TC_ACT_SHOT;
+    }
+
     // prepare new outer network header
     // fill GUE
     h_outer.gue = 0xa00405;   //GUE data header: 0x0504a000
@@ -631,22 +723,6 @@ int gue_encap_v4(struct __sk_buff *skb, struct tunnel *tun, struct service *svc)
     h_outer.udp.source  = tun->port_local;
     h_outer.udp.len     = bpf_htons(len);
     h_outer.udp.check   = 0;
-
-    // add room between mac and network header
-//    flags = BPF_F_ADJ_ROOM_FIXED_GSO | BPF_F_ADJ_ROOM_ENCAP_L3_IPV4 | BPF_F_ADJ_ROOM_ENCAP_L4_UDP;
-    flags = BPF_F_ADJ_ROOM_FIXED_GSO | BPF_F_ADJ_ROOM_ENCAP_L3_IPV4 | BPF_F_ADJ_ROOM_ENCAP_L4_UDP;
-    ret = bpf_skb_adjust_room(skb, olen, BPF_ADJ_ROOM_MAC, flags);
-/*    if (ret == -524) {   // -ENOTSUPP
-        bpf_print("bpf_skb_adjust_room: %d, sizeof(skb) %u\n", ret, sizeof(*skb));
-
-//        skb->gso_segs++;
-        bpf_print("new skb->gso_segs %u\n", skb->gso_segs);
-        ret = bpf_skb_adjust_room(skb, olen, BPF_ADJ_ROOM_MAC, flags);
-    }*/
-    if (ret) {
-        bpf_print("bpf_skb_adjust_room: %d\n", ret);
-        return TC_ACT_SHOT;
-    }
 
     // store new outer network header
     ret = bpf_skb_store_bytes(skb, ETH_HLEN, &h_outer, olen, BPF_F_INVALIDATE_HASH);
@@ -695,7 +771,6 @@ int gue_encap_v4(struct __sk_buff *skb, struct tunnel *tun, struct service *svc)
     }
 
     // Update destination MAC
-    //bpf_print("Setting D-MAC %x\n", bpf_ntohl(*ptr));
     ret = bpf_skb_store_bytes(skb, 0, tun->mac_remote, 6, BPF_F_INVALIDATE_HASH);
     if (ret < 0) {
         bpf_print("bpf_skb_store_bytes: %d\n", ret);
