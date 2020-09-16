@@ -226,7 +226,7 @@ int dump_ipv4(void *data, void *data_end)
 
     bpf_print("  IPv4 : %x -> %x\n", bpf_ntohl(iph->saddr), bpf_ntohl(iph->daddr));
     bpf_print("    len %u, id %u, csum 0x%x\n", bpf_ntohs(iph->tot_len), bpf_ntohs(iph->id), bpf_ntohs(iph->check));
-    bpf_print("    flags %x, frag_off %u\n", bpf_ntohs(iph->frag_off) >> 13, bpf_ntohs(iph->frag_off) & 0x1FFF);
+    bpf_print("    ttl %u, flags %x, frag_off %u\n", iph->ttl, bpf_ntohs(iph->frag_off) >> 13, bpf_ntohs(iph->frag_off) & 0x1FFF);
 
     if (iph->protocol == IPPROTO_ICMP)
         dump_icmp(&iph[1], data_end);
