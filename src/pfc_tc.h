@@ -714,6 +714,7 @@ int gue_encap_v4(struct __sk_buff *skb, struct tunnel *tun, struct service *svc)
     h_outer.ip.tot_len = bpf_htons(olen + bpf_ntohs(h_outer.ip.tot_len));
     h_outer.ip.protocol = IPPROTO_UDP;
     h_outer.ip.tos = 0;     // SET EXPLICIT TRAFFIC CLASS
+    h_outer.ip.ttl = 64;
 
     set_ipv4_csum((void *)&h_outer.ip);
 
