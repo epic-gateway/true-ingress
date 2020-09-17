@@ -47,7 +47,7 @@ COPY --from=builder /usr/src/pfc/test/port_*.sh ./
 COPY --from=builder /usr/src/pfc/test/pfc_*.sh ./
 
 # for WEB Server
-COPY --from=builder /usr/src/pfc/test/docker/server.py ./
+COPY --from=builder /usr/src/pfc/test/docker/server.py /usr/src/pfc/test/docker/udp_server.py /usr/src/pfc/test/docker/udp_client.py ./
 
 # for GUE Ping
 COPY --from=builder /usr/src/pfc/test/docker/gue_ping*.py ./
