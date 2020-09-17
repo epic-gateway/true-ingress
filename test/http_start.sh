@@ -44,7 +44,7 @@ docker exec -itd ${NODE} bash -c "python3 /tmp/.acnodal/bin/server.py ${IP} ${PO
 #docker exec -it ${NODE} bash -c "python /tmp/server.py ${IP} ${PORT} ${HOME}"
 
 echo -e "\n==============================================="
-echo "# HTTP.START [4/${STEPS}] : Wait about ${DELAY} seconds for HTTP server going up"
+echo "# HTTP.START [4/${STEPS}] : Wait about ${DELAY} seconds for server going up"
 sleep ${DELAY}
 
 echo -e "\n==============================================="
