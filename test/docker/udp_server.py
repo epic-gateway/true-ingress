@@ -18,6 +18,11 @@ def create_request_handler(home_dir, chunk_size):
             message = self.request[0].strip()
             socket = self.request[1]
 
+            if (len(message) == 0):
+                print("Received empty request")
+                socket.sendto(b'', self.client_address)
+                return
+
             try:
                 # Sending a reply to client
                 path = "%s/%s" % (self.home_dir, message.decode())
@@ -40,11 +45,13 @@ def create_request_handler(home_dir, chunk_size):
                         print(sent)
                         break
 
-                socket.sendto(b'', self.client_address)
-                print('done')
+                print('Done')
             except FileNotFoundError:
                 print("File '%s' not found" % (path))
-                socket.sendto(b'', self.client_address)
+            except Exception as e:
+                print("Error '", e.__class__, "' occurred.")
+
+            socket.sendto(b'', self.client_address)
 
     return MyHandler
 
