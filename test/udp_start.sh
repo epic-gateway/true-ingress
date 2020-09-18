@@ -37,10 +37,9 @@ docker exec -it ${NODE} bash -c "dd if=/dev/zero of=${HOME}/data_1M.bin count=1 
 echo -e "\n==============================================="
 echo "# UDP.START [3/${STEPS}] : Starting HTTP server ID ${SERVICE_ID} on ${IP}:${PORT}"
 # TODO: append PID=... to info file
-#docker exec -it ${NODE} bash -c "echo 5 > /proc/sys/net/ipv4/ip_no_pmtu_disc"
-sudo bash -c "echo 0 > /proc/sys/net/ipv4/ip_no_pmtu_disc"
-docker exec -itd ${NODE} bash -c "python3 /tmp/.acnodal/bin/udp_server.py ${IP} ${PORT} ${HOME} &> ${HOME}/log"
-#docker exec -it ${NODE} bash -c "python3 /tmp/.acnodal/bin/udp_server.py ${IP} ${PORT} ${HOME}"
+#docker exec -it ${NODE} bash -c "echo 0 > /proc/sys/net/ipv4/ip_no_pmtu_disc"
+#read
+docker exec -itd ${NODE} bash -c "python3 /tmp/.acnodal/bin/udp_server.py ${IP} ${PORT} ${HOME} 4096 &> ${HOME}/log"
 
 echo -e "\n==============================================="
 echo "# UDP.START [4/${STEPS}] : Wait about ${DELAY} seconds for server going up"
