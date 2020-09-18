@@ -34,7 +34,7 @@ def main(argv):
     # Listen for response
     while(True):
         try:
-            data, address = UDPClientSocket.recvfrom(4096)
+            data, address = UDPClientSocket.recvfrom(65535)
             if (len(data) == 0):
                 f.close()
                 print('done')
