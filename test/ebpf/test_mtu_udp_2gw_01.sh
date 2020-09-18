@@ -72,7 +72,7 @@ else
     docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/pfc_start.sh ${NODE_NIC} "${NODE}" 9 8 ${NODE_PORT_MIN} ${NODE_PORT_MAX} ${DELAY}" > /dev/null
 fi
 
-# INFRA: Setup HTTP service on ${NODE}
+# INFRA: Setup ${SERVICE_TYPE} service on ${NODE}
 if [ "${VERBOSE}" ]; then
     # service_start.sh  <node>  <ip>          <port>          <service-id>   <service>
     ./service_start.sh ${NODE} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_NAME} ${SERVICE_TYPE}
@@ -143,10 +143,8 @@ else
 
     # generate ICMP ECHO REQUEST + RESPONSE packets
     # syntax: $0     <docker>  <ip>        <port>
-read
     docker exec -it ${CLIENT} bash -c "python3 /tmp/.acnodal/bin/udp_client.py ${PROXY_IP} ${PROXY_PORT} data_2M.bin"
     docker exec -it ${CLIENT} bash -c "ls -l /tmp"
-#    docker exec -it ${NODE} bash -c "ls -l /tmp"
 #    TMP=$(./${SERVICE_TYPE}_check.sh ${CLIENT} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_ID})
 #    if [ "${VERBOSE}" ]; then
 #        echo "${TMP}"

@@ -143,7 +143,6 @@ else
 
     # generate ICMP ECHO REQUEST + RESPONSE packets
     # syntax: $0     <docker>  <ip>        <port>
-read
     docker exec -it ${CLIENT} bash -c "curl --output /tmp/data_2M.bin --connect-timeout 3 ${PROXY_IP}:${PROXY_PORT}/data_2M.bin"
     docker exec -it ${CLIENT} bash -c "ls -l /tmp"
 #    TMP=$(./${SERVICE_TYPE}_check.sh ${CLIENT} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_ID})

@@ -72,7 +72,7 @@ else
     docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/pfc_start.sh ${NODE_NIC} "${NODE}" 9 8 ${NODE_PORT_MIN} ${NODE_PORT_MAX} ${DELAY}" > /dev/null
 fi
 
-# INFRA: Setup HTTP service on ${NODE}
+# INFRA: Setup ${SERVICE_TYPE} service on ${NODE}
 if [ "${VERBOSE}" ]; then
     # service_start.sh  <node>  <ip>          <port>          <service-id>   <service>
     ./service_start.sh ${NODE} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_NAME} ${SERVICE_TYPE}
