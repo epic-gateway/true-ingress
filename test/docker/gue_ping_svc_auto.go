@@ -72,41 +72,6 @@ func tunnel_ping(timeout int) {
     tunnels = map[int]int{}
 //    fmt.Println(tunnels)
 
-//    fmt.Println("Interfaces:")
-    var ifaces = map[string]int{}
-    interfaces, _ := net.Interfaces()
-//    fmt.Println(interfaces)
-
-    for _, iface := range interfaces {
-        if (iface.Flags & net.FlagUp) == 0 {
-            continue // interface down
-        }
-
-        if (iface.Flags & net.FlagLoopback) != 0 {
-            continue // loopback interface
-        }
-
-        addrs, _ := iface.Addrs()
-//        fmt.Println(addrs)
-
-        for _, addr := range addrs {
-            var ip net.IP
-            switch v := addr.(type) {
-            case *net.IPNet:
-                ip = v.IP
-            case *net.IPAddr:
-                ip = v.IP
-            }
-
-            if ip != nil && !ip.IsLoopback() {
-                if ip = ip.To4(); ip != nil {
-                    ifaces[ip.String()] = iface.Index
-                }
-            }
-        }
-    }
-//    fmt.Println(ifaces)
-
 //    fmt.Println("Services:")
     cmd := "/tmp/.acnodal/bin/cli_service get all | grep 'VERIFY' | grep -v 'TABLE'"
 //    cmd := "../../src/cli_service get all | grep 'VERIFY' | grep -v 'TABLE'"
@@ -184,8 +149,6 @@ func tunnel_ping(timeout int) {
             tunnels[tid] = tmp[tid] + 1
         } else {
             fmt.Printf("sending GUE ping %s:%s -> %s:%s -> %d -> %s\n", src[0], src[1], dst[0], dst[1], tid, verify[tid])
-//            fmt.Printf("inteface %s -> %d\n", src[0], ifaces[src[0]])
-
             send_ping(src[0], src[1], dst[0], dst[1], tid, verify[tid])
 
             tunnels[tid] = 1
@@ -195,40 +158,27 @@ func tunnel_ping(timeout int) {
 }
 
 func session_sweep(expire int) {
-    fmt.Println("sweep check")
+    fmt.Println("Sweep check")
 
     cmd := "/tmp/.acnodal/bin/cli_gc get all | grep 'ENCAP' | grep -v 'TABLE'"
-//    cmd := "../../src/cli_gc get all | grep 'ENCAP' | grep -v 'TABLE'"
-//    cmd := "../../src/cli_service get all | grep 'ENCAP' | grep -v 'TABLE'"
     out, err := exec.Command("bash", "-c", cmd).Output()
     if err != nil {
         fmt.Println("Error")
-        //log.Fatal(err1)
         return
     }
-//    fmt.Printf("%s\n", out)
     var services = strings.Split(string(out), "\n")
-//    fmt.Printf("%q\n", services[:len(services)-1])
-
     
     for _, service := range services[:len(services)-1] {
-//        fmt.Println(service)
-//        continue
         var params = strings.Split(service, " ")
-//        fmt.Printf("%q\n", params)
 
         if params[0] != "ENCAP" {
             continue
         }
 
         key := strings.Split(service, "->")[0]
-//        fmt.Printf("%q\n", key)
-
         hash, _ := strconv.Atoi(strings.Split(params[6], "\t")[2])
-//        fmt.Println(hash)
 
-        if hash == 0 {
-            // static record
+        if hash == 0 { // static record
             continue
         }
 
@@ -236,22 +186,18 @@ func session_sweep(expire int) {
         if ok && h == hash {
             if session_ttl[key] >= expire {
                 to_del := strings.Split(strings.Split(strings.Split(key, "(")[1], ")")[0], ",")
-//                fmt.Printf("%q\n", to_del)
 
                 delete(session_hash, key)
                 delete(session_ttl, key)
-//                fmt.Printf("cli_gc del %s%s%s\n", to_del[0], to_del[1], to_del[2])
+                fmt.Printf("  delete %s%s%s\n", to_del[0], to_del[1], to_del[2])
                 cmd := fmt.Sprintf("/tmp/.acnodal/bin/cli_gc del %s%s%s\n", to_del[0], to_del[1], to_del[2])
-//                fmt.Println(cmd)
                 exec.Command("bash", "-c", cmd).Output()
             } else {
                 session_ttl[key] += 1
-                //fmt.Printf("%s  ->  %d/%d\n", key, session_ttl[key], expire)
             }
         } else {
             session_hash[key] = hash
             session_ttl[key] = 1
-            //fmt.Printf("%s  ->  %d/%d\n", key, session_ttl[key], expire)
         }
     }
 }
@@ -273,8 +219,6 @@ func main() {
     fmt.Println("Starting PFC daemon")
 
     for {
-        fmt.Println(".")
-
         // GUE ping
         tunnel_ping(tun_delay)
 
