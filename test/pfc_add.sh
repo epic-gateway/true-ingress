@@ -63,13 +63,6 @@ fi
 #                 cli_service set  <group-id>  <service-id>  <proto>  <ip-proxy>  <port-proxy>  <ip-ep>       <port-ep>       <tunnel-id> <key>
 /tmp/.acnodal/bin/cli_service set ${GROUP_ID} ${SERVICE_ID} ${PROTO} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${TUNNEL_ID} ${PASSWD}
 
-if [ "${PING}" ]; then
-    if [ "${VERBOSE}" ]; then
-        echo "Sending GUE one time ping..."
-    fi
-    python3 /tmp/.acnodal/bin/gue_ping_svc_once.py ${NIC} ${REMOTE_TUN_IP} ${REMOTE_TUN_PORT} ${LOCAL_TUN_PORT} ${GROUP_ID} ${SERVICE_ID} ${PASSWD}
-fi
-
 if [ "${VERBOSE}" ]; then
     echo "# PFC.ADD : DONE"
 fi
