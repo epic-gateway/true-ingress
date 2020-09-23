@@ -29,35 +29,21 @@ var (
     sweep_counter int
 )
 
-type guehdr struct {
-    hdr  uint32
-    id   uint32
-}
-
 func send_ping(src_ip string, src_port string, dst_ip string, dst_port string, id int, pwd string) {
+    //fmt.Printf("%s:%s -> %s:%s (%d '%s')\n", src_ip, src_port, dst_ip, dst_port, id, pwd)
     sport, _ := strconv.Atoi(src_port)
     dport, _ := strconv.Atoi(dst_port)
 
     ServerAddr := net.UDPAddr{IP: net.ParseIP(dst_ip), Port: dport}
-    /*ServerAddr,err := net.ResolveUDPAddr("udp","127.0.0.1:10001")
-    if err  != nil {
-        fmt.Println("Dst UDPAddr: " , err)
-        return
-    }*/
-
     LocalAddr := net.UDPAddr{IP: net.ParseIP(src_ip), Port: sport}
-    /*LocalAddr, err := net.ResolveUDPAddr("udp", "127.0.0.1:0")
-    if err  != nil {
-        fmt.Println("Src UDPAddr: " , err)
-        return
-    }*/
 
     b := new(bytes.Buffer)
     binary.Write(b, binary.BigEndian, uint32(0x2101a000))
     binary.Write(b, binary.BigEndian, uint32(id))
     binary.Write(b, binary.BigEndian, []byte(pwd))
-    fmt.Println(b.Bytes())
+//    fmt.Println(b.Bytes())
 
+//    fmt.Println("Open")
     conn, err := net.DialUDP("udp", &LocalAddr, &ServerAddr)
     if err  != nil {
         fmt.Println("DialUDP: " , err)
@@ -65,10 +51,14 @@ func send_ping(src_ip string, src_port string, dst_ip string, dst_port string, i
     }
     
     defer conn.Close()
-    _,err = conn.Write(b.Bytes())
+
+//    fmt.Println("Send")
+    _ ,err = conn.Write(b.Bytes())
     if err != nil {
         fmt.Println("Write: " , err)
     }
+
+//    fmt.Println("Done ")
 }
 
 func tunnel_ping(timeout int) {
@@ -118,8 +108,8 @@ func tunnel_ping(timeout int) {
 //    fmt.Println(ifaces)
 
 //    fmt.Println("Services:")
-//    cmd := "/tmp/.acnodal/bin/cli_service get all | grep 'VERIFY' | grep -v 'TABLE'"
-    cmd := "../../src/cli_service get all | grep 'VERIFY' | grep -v 'TABLE'"
+    cmd := "/tmp/.acnodal/bin/cli_service get all | grep 'VERIFY' | grep -v 'TABLE'"
+//    cmd := "../../src/cli_service get all | grep 'VERIFY' | grep -v 'TABLE'"
     out, err := exec.Command("bash", "-c", cmd).Output()
     if err != nil {
         fmt.Println("Error")
@@ -158,8 +148,8 @@ func tunnel_ping(timeout int) {
     }
 
 //    fmt.Println("Tunnels:")
-//    cmd := "/tmp/.acnodal/bin/cli_tunnel get all | grep 'TUN' | grep -v 'TABLE'"
-    cmd = "../../src/cli_tunnel get all | grep 'TUN' | grep -v 'TABLE'"
+    cmd = "/tmp/.acnodal/bin/cli_tunnel get all | grep 'TUN' | grep -v 'TABLE'"
+//    cmd = "../../src/cli_tunnel get all | grep 'TUN' | grep -v 'TABLE'"
     out, err = exec.Command("bash", "-c", cmd).Output()
     if err != nil {
         fmt.Println("Error")
@@ -193,14 +183,10 @@ func tunnel_ping(timeout int) {
         if ok && t < timeout {
             tunnels[tid] = tmp[tid] + 1
         } else {
-            fmt.Printf("sending %s:%s -> %s:%s -> %d -> %s\n", src[0], src[1], dst[0], dst[1], tid, verify[tid])
-            fmt.Printf("inteface %s -> %d\n", src[0], ifaces[src[0]])
+            fmt.Printf("sending GUE ping %s:%s -> %s:%s -> %d -> %s\n", src[0], src[1], dst[0], dst[1], tid, verify[tid])
+//            fmt.Printf("inteface %s -> %d\n", src[0], ifaces[src[0]])
 
-//            ret = os.popen("python3 /tmp/.acnodal/bin/gue_ping_svc_once.py %s %s %s %s %d %d '%s'" %
-//                       (ifaces[src[0]], dst[0], dst[1], src[1], tid >> 16, tid & 0xFFFF, verify[tid])).read()
-//            #print(ret)
-            //send_ping(ifaces[src[0]], dst[0], dst[1], src[1], tid, verify[tid])
-            send_ping(src[0], dst[0], dst[1], src[1], tid, verify[tid])
+            send_ping(src[0], src[1], dst[0], dst[1], tid, verify[tid])
 
             tunnels[tid] = 1
         }
@@ -211,9 +197,9 @@ func tunnel_ping(timeout int) {
 func session_sweep(expire int) {
     fmt.Println("sweep check")
 
-//    cmd := "/tmp/.acnodal/bin/cli_gc get all | grep 'ENCAP' | grep -v 'TABLE'"
+    cmd := "/tmp/.acnodal/bin/cli_gc get all | grep 'ENCAP' | grep -v 'TABLE'"
 //    cmd := "../../src/cli_gc get all | grep 'ENCAP' | grep -v 'TABLE'"
-    cmd := "../../src/cli_service get all | grep 'ENCAP' | grep -v 'TABLE'"
+//    cmd := "../../src/cli_service get all | grep 'ENCAP' | grep -v 'TABLE'"
     out, err := exec.Command("bash", "-c", cmd).Output()
     if err != nil {
         fmt.Println("Error")
