@@ -46,11 +46,12 @@ COPY --from=builder /usr/src/pfc/src/cli_cfg /usr/src/pfc/src/cli_service /usr/s
 COPY --from=builder /usr/src/pfc/test/port_*.sh ./
 COPY --from=builder /usr/src/pfc/test/pfc_*.sh ./
 
-# for WEB Server
+# Copy services for TEST
 COPY --from=builder /usr/src/pfc/test/docker/server.py /usr/src/pfc/test/docker/udp_server.py /usr/src/pfc/test/docker/udp_client.py ./
 
 # for GUE Ping
-COPY --from=builder /usr/src/pfc/test/docker/gue_ping*.py ./
+#COPY --from=builder /usr/src/pfc/test/docker/gue_ping*.py ./
+COPY --from=builder /usr/src/pfc/test/docker/gue_ping_svc_auto ./
 
 # Shell on attach
 CMD ["bash"]

@@ -1,4 +1,4 @@
-SOURCES = $(wildcard src)
+SOURCES = $(wildcard src) test/docker
 CLEAN = $(addsuffix _clean,$(SOURCES))
 
 .PHONY: clean $(SOURCES) $(CLEAN) check test prod-img
@@ -22,6 +22,7 @@ init-submodules:
 
 init-dependencies:
 	scripts/dependencies.sh
+	scripts/docker.sh
 
 init: init-submodules init-dependencies
 
@@ -36,6 +37,9 @@ detach:
 
 check:
 	$(MAKE) -C src attach detach
+
+go:
+	$(MAKE) -C test/docker go
 
 $(SOURCES):
 	$(MAKE) -C $@
