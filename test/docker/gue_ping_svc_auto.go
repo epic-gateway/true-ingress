@@ -6,9 +6,7 @@ import (
     "time"
     "strconv"
     "net"
-//    "bytes"
     "os/exec"
-//    "log"
     "strings"
     "bytes"
     "encoding/binary"
@@ -41,9 +39,7 @@ func send_ping(src_ip string, src_port string, dst_ip string, dst_port string, i
     binary.Write(b, binary.BigEndian, uint32(0x2101a000))
     binary.Write(b, binary.BigEndian, uint32(id))
     binary.Write(b, binary.BigEndian, []byte(pwd))
-//    fmt.Println(b.Bytes())
 
-//    fmt.Println("Open")
     conn, err := net.DialUDP("udp", &LocalAddr, &ServerAddr)
     if err  != nil {
         fmt.Println("DialUDP: " , err)
@@ -52,13 +48,10 @@ func send_ping(src_ip string, src_port string, dst_ip string, dst_port string, i
     
     defer conn.Close()
 
-//    fmt.Println("Send")
     _ ,err = conn.Write(b.Bytes())
     if err != nil {
         fmt.Println("Write: " , err)
     }
-
-//    fmt.Println("Done ")
 }
 
 func tunnel_ping(timeout int) {
@@ -125,7 +118,7 @@ func tunnel_ping(timeout int) {
         if ok && t < timeout {
             tunnels[tid] = tmp[tid] + 1
         } else {
-            fmt.Printf("sending GUE ping %s:%s -> %s:%s -> %d -> %s\n", src[0], src[1], dst[0], dst[1], tid, verify[tid])
+            fmt.Printf("  sending GUE ping %s:%s -> %s:%s (%d, '%s')\n", src[0], src[1], dst[0], dst[1], tid, verify[tid])
             send_ping(src[0], src[1], dst[0], dst[1], tid, verify[tid])
 
             tunnels[tid] = 1
@@ -210,6 +203,4 @@ func main() {
 
         time.Sleep(1 * time.Second)
     }
-
-//    return 0
 }
