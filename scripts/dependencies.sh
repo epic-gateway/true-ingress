@@ -10,7 +10,8 @@ PACKAGES="clang \
     python3-pip \
     linux-headers-$(uname -r) \
     libelf-dev \
-    zlib1g-dev vagrant"
+    zlib1g-dev \
+    vagrant"
 
 #set -e
 
@@ -19,5 +20,6 @@ echo "# Install minimal dependencies"
 echo "============================="
 sudo apt -y update
 sudo apt install -y ${PACKAGES}
+sudo snap install go
 
 echo "# DONE"
