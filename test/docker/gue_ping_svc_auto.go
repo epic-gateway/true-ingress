@@ -62,36 +62,28 @@ func send_ping(src_ip string, src_port string, dst_ip string, dst_port string, i
 }
 
 func tunnel_ping(timeout int) {
-    fmt.Println("ping check")
+    fmt.Println("Ping check")
 
+    // set old tunnel list aside
     var tmp = map[int]int{}
-    for index, element := range tunnels{        
+    for index, element := range tunnels {
          tmp[index] = element
     }
-    fmt.Println(tmp)
     tunnels = map[int]int{}
-//    fmt.Println(tunnels)
 
-//    fmt.Println("Services:")
+    // get current tunnel list
     cmd := "/tmp/.acnodal/bin/cli_service get all | grep 'VERIFY' | grep -v 'TABLE'"
-//    cmd := "../../src/cli_service get all | grep 'VERIFY' | grep -v 'TABLE'"
     out, err := exec.Command("bash", "-c", cmd).Output()
     if err != nil {
         fmt.Println("Error")
-        //log.Fatal(err)
         return
     }
-//    fmt.Printf("%s\n", out)
     var services = strings.Split(string(out), "\n")
-//    fmt.Printf("%q\n", services[:len(services)-1])
 
     // read services for GUE HEADER info (group-id, service-id, key)"
     var verify = map[int]string{}
     for _, service := range services[:len(services)-1] {
-//        fmt.Println(service)
-//        continue
         var params = strings.Split(service, " ")
-//        fmt.Printf("%q\n", params)
 
         if params[0] != "VERIFY" {
             continue
@@ -99,50 +91,35 @@ func tunnel_ping(timeout int) {
 
         gid64, _ := strconv.ParseInt(strings.Split(params[8], "{")[1], 16, 32)
         gid := int(gid64)
-//        fmt.Println(gid)
         pwd := strings.Split(params[4], "'")[1]
-//        fmt.Println(pwd)
-//        fmt.Printf("id [%d], password [%s]\n", gid, pwd)
         verify[gid]=pwd
     }
-//    fmt.Println(verify)
 
     // read tunnels for outer header assembly
     if len(verify) == 0 {
         return
     }
 
-//    fmt.Println("Tunnels:")
     cmd = "/tmp/.acnodal/bin/cli_tunnel get all | grep 'TUN' | grep -v 'TABLE'"
-//    cmd = "../../src/cli_tunnel get all | grep 'TUN' | grep -v 'TABLE'"
     out, err = exec.Command("bash", "-c", cmd).Output()
     if err != nil {
         fmt.Println("Error")
         //log.Fatal(err1)
         return
     }
-//    fmt.Printf("%s\n", out)
     var tnls = strings.Split(string(out), "\n")
-//    fmt.Printf("%q\n", tnls[:len(tnls)-1])
 
     for _, tunnel := range tnls[:len(tnls)-1] {
-//        fmt.Println(tunnel)
         var params = strings.Split(tunnel, "\t")
-//        fmt.Printf("%q\n", params)
 
         if params[0] != "TUN" {
             continue
         }
 
         tid, _ := strconv.Atoi(strings.Trim(params[1], " "))
-        //fmt.Printf("tunnel-id %d -> pwd '%s'\n", tid, verify[tid])
-
         ep := strings.Split(params[2], "->")
-//        fmt.Printf("%q\n", ep)
         src := strings.Split(strings.Trim(ep[0], " "), ":")
-//        fmt.Printf("%q\n", src)
         dst := strings.Split(strings.Trim(ep[1], " "), ":")
-//        fmt.Printf("%q\n", dst)
 
         t, ok := tmp[tid]
         if ok && t < timeout {
@@ -187,11 +164,12 @@ func session_sweep(expire int) {
             if session_ttl[key] >= expire {
                 to_del := strings.Split(strings.Split(strings.Split(key, "(")[1], ")")[0], ",")
 
-                delete(session_hash, key)
-                delete(session_ttl, key)
                 fmt.Printf("  delete %s%s%s\n", to_del[0], to_del[1], to_del[2])
                 cmd := fmt.Sprintf("/tmp/.acnodal/bin/cli_gc del %s%s%s\n", to_del[0], to_del[1], to_del[2])
                 exec.Command("bash", "-c", cmd).Output()
+
+                delete(session_hash, key)
+                delete(session_ttl, key)
             } else {
                 session_ttl[key] += 1
             }
