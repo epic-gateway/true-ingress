@@ -4,7 +4,7 @@ ENV DEBIAN_FRONTEND noninteractive
 
 # Install dependencies
 RUN apt-get update \
-    && apt-get install -y sudo python3 python3-pip vim iputils-ping iptables iproute2 tcpdump wget curl net-tools traceroute nmap iperf3 mtr ethtool \
+    && apt-get install -y sudo python3 python3-pip vim iputils-ping iptables iproute2 tcpdump wget curl net-tools traceroute nmap iperf3 mtr ethtool golang-go \
     && rm -rf /var/lib/apt/lists/*
 
 # Install python modules
