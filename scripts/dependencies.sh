@@ -20,6 +20,6 @@ echo "# Install minimal dependencies"
 echo "============================="
 sudo apt -y update
 sudo apt install -y ${PACKAGES}
-sudo snap install go
+sudo snap install go --classic
 
 echo "# DONE"
