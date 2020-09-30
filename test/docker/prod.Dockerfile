@@ -35,6 +35,7 @@ RUN mkdir -p /tmp/.acnodal/cfg
 RUN mkdir -p /tmp/.acnodal/log
 
 WORKDIR /tmp/.acnodal/bin
+ENV PATH="${WORKDIR}:${PATH}"
 
 # Copy eBPF
 COPY --from=builder /usr/src/pfc/src/*.o ./
