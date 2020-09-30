@@ -29,6 +29,9 @@ echo "# HTTP.START [2/${STEPS}] : Create files in ${HOME}"
 
 docker exec -it ${NODE} bash -c "echo -e \"HELLO '${SERVICE_ID}' from '${NODE}' listening on ${IP}:${PORT}\" > ${HOME}/hello"
 
+docker exec -it ${NODE} bash -c "dd if=/dev/zero of=${HOME}/data_100M.bin count=100 bs=1048576" > /dev/null 2>&1
+docker exec -it ${NODE} bash -c "dd if=/dev/zero of=${HOME}/data_50M.bin count=50 bs=1048576" > /dev/null 2>&1
+docker exec -it ${NODE} bash -c "dd if=/dev/zero of=${HOME}/data_20M.bin count=20 bs=1048576" > /dev/null 2>&1
 docker exec -it ${NODE} bash -c "dd if=/dev/zero of=${HOME}/data_10M.bin count=10 bs=1048576" > /dev/null 2>&1
 docker exec -it ${NODE} bash -c "dd if=/dev/zero of=${HOME}/data_5M.bin count=5 bs=1048576" > /dev/null 2>&1
 docker exec -it ${NODE} bash -c "dd if=/dev/zero of=${HOME}/data_2M.bin count=2 bs=1048576" > /dev/null 2>&1
