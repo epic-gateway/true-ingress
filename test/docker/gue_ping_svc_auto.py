@@ -13,8 +13,6 @@ def usage(argv):
     print("\nExample : %s 10 10 60" % argv[0])
 
 tunnels={}
-encaps={}
-nats={}
 session_hash={}
 session_ttl={}
 sweep_counter=0
