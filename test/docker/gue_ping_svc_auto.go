@@ -58,7 +58,7 @@ func tunnel_ping(timeout int) {
     fmt.Println("Ping check")
 
     // set old tunnel list aside
-    var tmp = map[int]int{}
+    tmp := map[int]int{}
     for index, element := range tunnels {
          tmp[index] = element
     }
@@ -71,12 +71,12 @@ func tunnel_ping(timeout int) {
         fmt.Println("Error")
         return
     }
-    var services = strings.Split(string(out), "\n")
+    services := strings.Split(string(out), "\n")
 
     // read services for GUE HEADER info (group-id, service-id, key)"
-    var verify = map[int]string{}
+    verify := map[int]string{}
     for _, service := range services[:len(services)-1] {
-        var params = strings.Split(service, " ")
+        params := strings.Split(service, " ")
 
         if params[0] != "VERIFY" {
             continue
@@ -100,10 +100,10 @@ func tunnel_ping(timeout int) {
         //log.Fatal(err1)
         return
     }
-    var tnls = strings.Split(string(out), "\n")
+    tnls := strings.Split(string(out), "\n")
 
     for _, tunnel := range tnls[:len(tnls)-1] {
-        var params = strings.Split(tunnel, "\t")
+        params := strings.Split(tunnel, "\t")
 
         if params[0] != "TUN" {
             continue
@@ -136,10 +136,10 @@ func session_sweep(expire int) {
         fmt.Println("Error")
         return
     }
-    var services = strings.Split(string(out), "\n")
+    services := strings.Split(string(out), "\n")
     
     for _, service := range services[:len(services)-1] {
-        var params = strings.Split(service, " ")
+        params := strings.Split(service, " ")
 
         if params[0] != "ENCAP" {
             continue
