@@ -16,7 +16,7 @@ echo "PFC: TUNNEL PING: NODE='${NODE}' SERVICE_ID='${SERVICE_ID}' PROTO='${PROTO
 #echo "docker exec -itd ${NODE} bash -c nping -c0 --delay ${DELAY}s --udp --source-port ${LOCAL_PORT} --dest-port ${REMOTE_PORT} ${REMOTE_IP}"
 #docker exec -itd ${NODE} bash -c "sleep 3 ; nping -c0 --delay ${DELAY}s --udp --source-port ${LOCAL_PORT} --dest-port ${REMOTE_PORT} ${REMOTE_IP}"
 
-docker exec -itd ${NODE} bash -c "python3 /tmp/.acnodal/bin/gue_ping_tun.py eth1 ${DELAY} ${REMOTE_IP} ${REMOTE_PORT} ${LOCAL_PORT} ${SERVICE_ID}"
+docker exec -itd ${NODE} bash -c "python3 gue_ping_tun.py eth1 ${DELAY} ${REMOTE_IP} ${REMOTE_PORT} ${LOCAL_PORT} ${SERVICE_ID}"
 
 echo -e "\n==============================================="
 echo "# TUNNEL PING: DONE"

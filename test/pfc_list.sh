@@ -4,6 +4,6 @@
 
 set -Eeo pipefail
 
-/tmp/.acnodal/bin/cli_tunnel get all
-/tmp/.acnodal/bin/cli_service get all
+cli_tunnel get all
+cli_service get all
     

@@ -42,7 +42,7 @@ TUNNEL_ID=${GROUP_ID}
 ((TUNNEL_ID <<= 16))
 ((TUNNEL_ID += ${SERVICE_ID}))
 LOCAL_TUN_IP=$(ip addr show dev ${NIC} | grep inet | awk '{print $2}' | sed 's/\// /g' | awk '{print $1}')
-LOCAL_TUN_PORT=$(/tmp/.acnodal/bin/port_alloc.sh)
+LOCAL_TUN_PORT=$(port_alloc.sh)
 
 if [ ! "${LOCAL_TUN_PORT}" ] ; then
     exit -1
@@ -56,12 +56,12 @@ if [ "${VERBOSE}" ]; then
 fi
 
 ## Setup GUE tunnel from ${NODE} to ${PROXY}
-#                 cli_tunnel set  <id>         <ip-local>      <port-local>      <ip-remote>      <port-remote>
-/tmp/.acnodal/bin/cli_tunnel set ${TUNNEL_ID} ${LOCAL_TUN_IP} ${LOCAL_TUN_PORT} ${REMOTE_TUN_IP} ${REMOTE_TUN_PORT}
+# cli_tunnel set  <id>         <ip-local>      <port-local>      <ip-remote>      <port-remote>
+cli_tunnel set ${TUNNEL_ID} ${LOCAL_TUN_IP} ${LOCAL_TUN_PORT} ${REMOTE_TUN_IP} ${REMOTE_TUN_PORT}
 
 ## Setup service forwarding
-#                 cli_service set  <group-id>  <service-id>  <proto>  <ip-proxy>  <port-proxy>  <ip-ep>       <port-ep>       <tunnel-id> <key>
-/tmp/.acnodal/bin/cli_service set ${GROUP_ID} ${SERVICE_ID} ${PROTO} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${TUNNEL_ID} ${PASSWD}
+# cli_service set  <group-id>  <service-id>  <proto>  <ip-proxy>  <port-proxy>  <ip-ep>       <port-ep>       <tunnel-id> <key>
+cli_service set ${GROUP_ID} ${SERVICE_ID} ${PROTO} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${TUNNEL_ID} ${PASSWD}
 
 if [ "${VERBOSE}" ]; then
     echo "# PFC.ADD : DONE"

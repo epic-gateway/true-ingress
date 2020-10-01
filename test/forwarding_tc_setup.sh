@@ -79,10 +79,10 @@ echo "# FORWARDING.TC.ADD [3/${STEPS}] : Start GUE ping (in background) for serv
 #./gue_ping.sh ${NODE} ${SERVICE_ID} ${PROXY_IFIP} ${TUNNEL_PORT} ${TUNNEL_PORT} ${DELAY}
 if [ ! "${PASSWD}" ] ; then
     echo "Starting gue_ping_tun.py ..."
-    docker exec -itd ${NODE} bash -c "python3 /tmp/.acnodal/bin/gue_ping_tun.py eth1 ${DELAY} ${PROXY_IFIP} ${TUNNEL_PORT} ${TUNNEL_PORT} ${SERVICE_ID}"
+    docker exec -itd ${NODE} bash -c "python3 gue_ping_tun.py eth1 ${DELAY} ${PROXY_IFIP} ${TUNNEL_PORT} ${TUNNEL_PORT} ${SERVICE_ID}"
 else
     echo "Starting gue_ping_svc.py ..."
-    docker exec -itd ${NODE} bash -c "python3 /tmp/.acnodal/bin/gue_ping_svc.py eth1 ${DELAY} ${PROXY_IFIP} ${TUNNEL_PORT} ${TUNNEL_PORT} ${SERVICE_ID} ${PASSWD}"
+    docker exec -itd ${NODE} bash -c "python3 gue_ping_svc.py eth1 ${DELAY} ${PROXY_IFIP} ${TUNNEL_PORT} ${TUNNEL_PORT} ${SERVICE_ID} ${PASSWD}"
 fi
 
 if [ ! ${RESOLVE} ] ; then
