@@ -1,6 +1,5 @@
 #!/bin/bash
-# syntax: $0 [-p] <nic> <group-id> <service-id> <passwd> <remote-tunnel-ip> <remote-tunnel-port> <proto> <proxy-ip> <proxy-port> <backend-ip> <backend-port>
-#       <-p>                    - (Optional) Send one time GUE ping
+# syntax: $0 <nic> <group-id> <service-id> <passwd> <remote-tunnel-ip> <remote-tunnel-port> <proto> <proxy-ip> <proxy-port> <backend-ip> <backend-port>
 #       <nic>                   - Interface to sending one time GUE ping from
 #       <group-id>              - Group ID
 #       <service-id>            - Service ID
@@ -16,15 +15,6 @@
 set -Eeo pipefail
 
 #VERBOSE="1"
-
-# parse args
-while getopts "p" opt; do
-    case "$opt" in
-    p)  PING=1
-        shift
-        ;;
-    esac
-done
 
 NIC=$1
 GROUP_ID=$2
