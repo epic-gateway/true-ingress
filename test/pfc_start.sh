@@ -41,20 +41,20 @@ if [ "${GUE_DELAY}" ]; then
     #nohup bash -c "python3 /tmp/.acnodal/bin/gue_ping_svc_auto.py ${DELAY} &> /tmp/gue_ping.log" &
 #    nohup python3 /tmp/.acnodal/bin/gue_ping_svc_auto.py ${GUE_DELAY} ${SWEEP_DELAY} ${SWEEP_CNT} &
 
-    nohup /tmp/.acnodal/bin/gue_ping_svc_auto ${GUE_DELAY} ${SWEEP_DELAY} ${SWEEP_CNT} &> /tmp/gue_ping.log &
+    nohup gue_ping_svc_auto ${GUE_DELAY} ${SWEEP_DELAY} ${SWEEP_CNT} &> /tmp/gue_ping.log &
     #ps aux | grep "gue_ping"
 fi
 
-/tmp/.acnodal/bin/attach_tc.sh ${NIC}
+attach_tc.sh ${NIC}
 
-/tmp/.acnodal/bin/cli_cfg set ${NIC} 0 0 ${CONF_RX} "${NAME} RX"
-/tmp/.acnodal/bin/cli_cfg set ${NIC} 1 0 ${CONF_TX} "${NAME} TX"
+cli_cfg set ${NIC} 0 0 ${CONF_RX} "${NAME} RX"
+cli_cfg set ${NIC} 1 0 ${CONF_TX} "${NAME} TX"
 # check
 if [ "${VERBOSE}" ]; then
     echo ""
-    /tmp/.acnodal/bin/cli_cfg get all
+    cli_cfg get all
 fi
 
-/tmp/.acnodal/bin/port_init.sh ${PORT_MIN} ${PORT_MAX}
+port_init.sh ${PORT_MIN} ${PORT_MAX}
 
 echo "# PFC.START : DONE"

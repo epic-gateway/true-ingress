@@ -35,7 +35,7 @@ RUN mkdir -p /tmp/.acnodal/cfg
 RUN mkdir -p /tmp/.acnodal/log
 
 WORKDIR /tmp/.acnodal/bin
-ENV PATH="${WORKDIR}:${PATH}"
+ENV PATH="/tmp/.acnodal/bin:${PATH}"
 
 # Copy eBPF
 COPY --from=builder /usr/src/pfc/src/*.o ./
@@ -53,6 +53,8 @@ COPY --from=builder /usr/src/pfc/test/docker/server.py /usr/src/pfc/test/docker/
 # for GUE Ping
 #COPY --from=builder /usr/src/pfc/test/docker/gue_ping*.py ./
 COPY --from=builder /usr/src/pfc/test/docker/gue_ping_svc_auto /usr/src/pfc/src/go/pfc_cli_go ./
+
+RUN chmod +x ./*
 
 # Shell on attach
 CMD ["bash"]

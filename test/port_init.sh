@@ -21,14 +21,13 @@ BASE_DIR="/tmp/.acnodal"
 CFG_DIR="${BASE_DIR}/cfg"
 
 # check basic structure
-ls ${CFG_DIR}
 if [ ! -d "${CFG_DIR}" ] ; then
     echo "# Creating '${CFG_DIR}'"
     mkdir -p ${CFG_DIR}
 fi
 
 if [ -f "${CFG_DIR}/gue_port.cfg" ] ; then
-    if [[ $(wc -l /tmp/.acnodal/cfg/gue_port.cfg | awk '{print $1}') -ne 0 ]] ; then
+    if [[ $(wc -l ${CFG_DIR}/gue_port.cfg | awk '{print $1}') -ne 0 ]] ; then
         echo "# Port list already initialized"
         exit 1
     else

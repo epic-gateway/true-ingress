@@ -21,7 +21,7 @@ else
     #sudo tc qdisc del dev ${NIC} clsact
 fi
 
-./show_tc.sh ${NIC} ${DIRECTION}
+show_tc.sh ${NIC} ${DIRECTION}
 
 # unmount maps? not to mess with other eBPF?
 sudo umount /sys/fs/bpf/
