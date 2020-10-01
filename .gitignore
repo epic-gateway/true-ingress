@@ -59,6 +59,7 @@ cli_tunnel
 cli_service
 cli_gc
 test/docker/gue_ping_svc_auto
+src/go/pfc_cli_go
 
 # tracing userspace programs
 
