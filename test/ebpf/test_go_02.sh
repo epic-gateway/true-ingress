@@ -146,18 +146,18 @@ if [ "${VERBOSE}" ]; then
     docker exec -it ${NODE} bash -c "pfc_cli_go add ${NODE_NIC} ${GROUP_ID} ${SERVICE_ID} ${PASSWD} ${SERVICE_PROTO} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${PROXY_TUN_IP} ${PROXY_TUN_PORT}"
 
     docker exec -it ${PROXY} bash -c "pfc_cli_go add ${PROXY_NIC} ${GROUP_ID} ${SERVICE_ID2} ${PASSWD2} ${SERVICE_PROTO2} ${PROXY_IP} ${PROXY_PORT2} ${SERVICE_IP2} ${SERVICE_PORT2} 0.0.0.0 0"
-    PROXY_TUN_PORT2=$(docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get ${TUNNEL_ID2}" | grep ${TUNNEL_ID2} | awk '{print $3}' | sed 's/:/ /g' | awk '{print $2}')
+    PROXY_TUN_PORT2=$(docker exec -it ${PROXY} bash -c "cli_tunnel get ${TUNNEL_ID2}" | grep ${TUNNEL_ID2} | awk '{print $3}' | sed 's/:/ /g' | awk '{print $2}')
     docker exec -it ${NODE} bash -c "pfc_cli_go add ${NODE_NIC} ${GROUP_ID} ${SERVICE_ID2} ${PASSWD2} ${SERVICE_PROTO2} ${PROXY_IP} ${PROXY_PORT2} ${SERVICE_IP2} ${SERVICE_PORT2} ${PROXY_TUN_IP} ${PROXY_TUN_PORT2}"
 
     docker exec -it ${PROXY} bash -c "pfc_cli_go list"
     docker exec -it ${NODE} bash -c "pfc_cli_go list"
 else
     docker exec -it ${PROXY} bash -c "pfc_cli_go add ${PROXY_NIC} ${GROUP_ID} ${SERVICE_ID} ${PASSWD} ${SERVICE_PROTO} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} 0.0.0.0 0" > /dev/null
-    PROXY_TUN_PORT=$(docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get ${TUNNEL_ID}" | grep ${TUNNEL_ID} | awk '{print $3}' | sed 's/:/ /g' | awk '{print $2}')
+    PROXY_TUN_PORT=$(docker exec -it ${PROXY} bash -c "cli_tunnel get ${TUNNEL_ID}" | grep ${TUNNEL_ID} | awk '{print $3}' | sed 's/:/ /g' | awk '{print $2}')
     docker exec -it ${NODE} bash -c "pfc_cli_go add ${NODE_NIC} ${GROUP_ID} ${SERVICE_ID} ${PASSWD} ${SERVICE_PROTO} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${PROXY_TUN_IP} ${PROXY_TUN_PORT}" > /dev/null
 
     docker exec -it ${PROXY} bash -c "pfc_cli_go add ${PROXY_NIC} ${GROUP_ID} ${SERVICE_ID2} ${PASSWD2} ${SERVICE_PROTO2} ${PROXY_IP} ${PROXY_PORT2} ${SERVICE_IP2} ${SERVICE_PORT2} 0.0.0.0 0" > /dev/null
-    PROXY_TUN_PORT2=$(docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get ${TUNNEL_ID2}" | grep ${TUNNEL_ID2} | awk '{print $3}' | sed 's/:/ /g' | awk '{print $2}')
+    PROXY_TUN_PORT2=$(docker exec -it ${PROXY} bash -c "cli_tunnel get ${TUNNEL_ID2}" | grep ${TUNNEL_ID2} | awk '{print $3}' | sed 's/:/ /g' | awk '{print $2}')
     docker exec -it ${NODE} bash -c "pfc_cli_go add ${NODE_NIC} ${GROUP_ID} ${SERVICE_ID2} ${PASSWD2} ${SERVICE_PROTO2} ${PROXY_IP} ${PROXY_PORT2} ${SERVICE_IP2} ${SERVICE_PORT2} ${PROXY_TUN_IP} ${PROXY_TUN_PORT2}" > /dev/null
 fi
 

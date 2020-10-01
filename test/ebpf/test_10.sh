@@ -52,18 +52,18 @@ echo "######################################################"
 
 # configure PFC instances operation mode
 # cli_cfg set <idx> <id> <flags> <name>
-docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set eth1 0 2 9 'NODE2 RX' && ./cli_cfg set eth1 1 2 8 'NODE2 TX' && ./cli_cfg get all"
-docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set eth1 0 5 9 'EGW RX' && ./cli_cfg set eth1 1 5 9 'EGW TX' && ./cli_cfg get all"
+docker exec -it ${NODE} bash -c "cli_cfg set eth1 0 2 9 'NODE2 RX' && cli_cfg set eth1 1 2 8 'NODE2 TX' && cli_cfg get all"
+docker exec -it ${PROXY} bash -c "cli_cfg set eth1 0 5 9 'EGW RX' && cli_cfg set eth1 1 5 9 'EGW TX' && cli_cfg get all"
 
 # configure GUE tunnel from ${NODE} to ${PROXY}
 # cli_tunnel set <id> <ip-local> <port-local> <ip-remote> <port-remote>
-docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_tunnel set ${SERVICE_ID} 172.2.0.3 6080 172.1.0.3 6080 && ./cli_tunnel get all"
-docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_tunnel set ${SERVICE_ID} 172.1.0.3 6080 0 0 && ./cli_tunnel get all"
+docker exec -it ${NODE} bash -c "cli_tunnel set ${SERVICE_ID} 172.2.0.3 6080 172.1.0.3 6080 && cli_tunnel get all"
+docker exec -it ${PROXY} bash -c "cli_tunnel set ${SERVICE_ID} 172.1.0.3 6080 0 0 && cli_tunnel get all"
 
 # configure service forwarding
 # cli_service set <service-id> <group-id> <proto> <ip-proxy> <port-proxy> <ip-ep> <port-ep> <tunnel-id> <key>
-docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin && ./cli_service set 2 2 tcp ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_ID} ${PASSWD} && ./cli_service get all"
-docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_service set 2 2 tcp ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_ID} ${PASSWD} && ./cli_service get all"
+docker exec -it ${NODE} bash -c "cli_service set 2 2 tcp ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_ID} ${PASSWD} && cli_service get all"
+docker exec -it ${PROXY} bash -c "cli_service set 2 2 tcp ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_ID} ${PASSWD} && cli_service get all"
 
 echo "############################################"
 echo "# PFC configured. Hit <ENTER> to run test. #"
@@ -73,7 +73,7 @@ echo "############################################"
 
 # wait for GUE ping resolved
 sleep 5
-docker exec -it ${PROXY} bash -c "/tmp/.acnodal/bin/cli_tunnel get all"
+docker exec -it ${PROXY} bash -c "cli_tunnel get all"
 
 # check traces before
 tail -n60 /sys/kernel/debug/tracing/trace
@@ -91,8 +91,8 @@ tail -n60 /sys/kernel/debug/tracing/trace
 
 #read
 
-#docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin ; ./detach_tc.sh eth1"
-#docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin ; ./detach_tc.sh eth1"
+#docker exec -it ${PROXY} bash -c "detach_tc.sh eth1"
+#docker exec -it ${NODE} bash -c "detach_tc.sh eth1"
 
 echo "#################################################"
 echo "# TC detached. Hit <ENTER> to cleanup topology. #"

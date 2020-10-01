@@ -60,8 +60,8 @@ tail -n60 /sys/kernel/debug/tracing/trace
 
 #read
 
-#docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin ; ./detach_tc.sh eth1"
-#docker exec -it ${NODE} bash -c "cd /tmp/.acnodal/bin ; ./detach_tc.sh eth1"
+#docker exec -it ${PROXY} bash -c "detach_tc.sh eth1"
+#docker exec -it ${NODE} bash -c "detach_tc.sh eth1"
 
 echo "#################################################"
 echo "# TC detached. Hit <ENTER> to cleanup topology. #"

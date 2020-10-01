@@ -18,8 +18,8 @@ echo "########################################################"
 
 #read
 
-#docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin ; ./attach_tc.sh eth0"
-docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin ; ./attach_tc.sh eth1"
+#docker exec -it ${PROXY} bash -c "attach_tc.sh eth0"
+docker exec -it ${PROXY} bash -c "attach_tc.sh eth1"
 
 echo "###############################################"
 echo "# Test done. Hit <ENTER> to run test on eth0 (no config). #"
@@ -49,10 +49,10 @@ tail -n60 /sys/kernel/debug/tracing/trace
 
 # create config
 # set <idx> <id> <flags> <name>
-#docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin ; ./attach_tc.sh eth0"
-#docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin ; ./attach_tc.sh eth1"
-#docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set eth0 0 1 8 'ETH0' && ./cli_cfg set eth0 1 1 8 'ETH0' && ./cli_cfg get all"
-docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set eth1 0 1 8 'ETH1' && ./cli_cfg set eth1 1 1 8 'ETH1' && ./cli_cfg get all"
+#docker exec -it ${PROXY} bash -c "attach_tc.sh eth0"
+#docker exec -it ${PROXY} bash -c "attach_tc.sh eth1"
+#docker exec -it ${PROXY} bash -c "cli_cfg set eth0 0 1 8 'ETH0' && cli_cfg set eth0 1 1 8 'ETH0' && cli_cfg get all"
+docker exec -it ${PROXY} bash -c "cli_cfg set eth1 0 1 8 'ETH1' && cli_cfg set eth1 1 1 8 'ETH1' && cli_cfg get all"
 
 echo "###############################################"
 echo "# Test done. Hit <ENTER> to run test on eth0 (config). #"
@@ -86,10 +86,10 @@ echo "########################################################"
 
 #read
 
-docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin ; ./attach_tc.sh eth0"
-#docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin ; ./attach_tc.sh eth1"
-#docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set eth0 0 1 8 'ETH0' && ./cli_cfg set eth0 1 1 8 'ETH0' && ./cli_cfg get all"
-#docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set eth1 0 1 8 'ETH1' && ./cli_cfg set eth1 1 1 8 'ETH1' && ./cli_cfg get all"
+docker exec -it ${PROXY} bash -c "attach_tc.sh eth0"
+#docker exec -it ${PROXY} bash -c "attach_tc.sh eth1"
+#docker exec -it ${PROXY} bash -c "cli_cfg set eth0 0 1 8 'ETH0' && cli_cfg set eth0 1 1 8 'ETH0' && cli_cfg get all"
+#docker exec -it ${PROXY} bash -c "cli_cfg set eth1 0 1 8 'ETH1' && cli_cfg set eth1 1 1 8 'ETH1' && cli_cfg get all"
 
 echo "###############################################"
 echo "# Test done. Hit <ENTER> to run test on eth0 (no config). #"
@@ -119,8 +119,8 @@ tail -n60 /sys/kernel/debug/tracing/trace
 
 # create config
 # set <idx> <id> <flags> <name>
-docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set eth0 0 1 8 'ETH0' && ./cli_cfg set eth0 1 1 8 'ETH0' && ./cli_cfg get all"
-#docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin && ./cli_cfg set eth1 0 1 8 'ETH1' && ./cli_cfg set eth1 1 1 8 'ETH1' && ./cli_cfg get all"
+docker exec -it ${PROXY} bash -c "cli_cfg set eth0 0 1 8 'ETH0' && cli_cfg set eth0 1 1 8 'ETH0' && cli_cfg get all"
+#docker exec -it ${PROXY} bash -c "cli_cfg set eth1 0 1 8 'ETH1' && cli_cfg set eth1 1 1 8 'ETH1' && cli_cfg get all"
 
 echo "###############################################"
 echo "# Test done. Hit <ENTER> to run test on eth0 (config). #"
@@ -169,8 +169,8 @@ echo "#################################################"
 
 read
 
-docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin ; ./detach_tc.sh eth0"
-#docker exec -it ${PROXY} bash -c "cd /tmp/.acnodal/bin ; ./detach_tc.sh eth1"
+docker exec -it ${PROXY} bash -c "detach_tc.sh eth0"
+#docker exec -it ${PROXY} bash -c "detach_tc.sh eth1"
 
 echo "#################################################"
 echo "# TC detached. Hit <ENTER> to cleanup topology. #"

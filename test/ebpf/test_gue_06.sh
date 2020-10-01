@@ -39,13 +39,13 @@ PASS=0
 for (( i=1; i<=100; i++ ))
 do
     if [ "${VERBOSE}" ]; then
-        docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/pfc_start.sh ${NODE_NIC} "${NODE}" 9 8 ${NODE_PORT_MIN} ${NODE_PORT_MAX} ${DELAY}"
+        docker exec -it ${NODE} bash -c "pfc_start.sh ${NODE_NIC} "${NODE}" 9 8 ${NODE_PORT_MIN} ${NODE_PORT_MAX} ${DELAY}"
 
         #docker exec -it ${NODE} bash -c "ps aux" | grep "gue_ping" | grep -v "grep"
         #echo "---"
         ps aux | grep "gue_ping" | grep -v "grep"
     else
-        docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/pfc_start.sh ${NODE_NIC} "${NODE}" 9 8 ${NODE_PORT_MIN} ${NODE_PORT_MAX} ${DELAY}" > /dev/null
+        docker exec -it ${NODE} bash -c "pfc_start.sh ${NODE_NIC} "${NODE}" 9 8 ${NODE_PORT_MIN} ${NODE_PORT_MAX} ${DELAY}" > /dev/null
     fi
 
     PID=$(ps aux | grep "gue_ping" | grep -v "grep")
@@ -59,9 +59,9 @@ do
     fi
 
     if [ "${VERBOSE}" ]; then
-        docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/pfc_stop.sh ${NODE_NIC}"
+        docker exec -it ${NODE} bash -c "pfc_stop.sh ${NODE_NIC}"
     else
-        docker exec -it ${NODE} bash -c "/tmp/.acnodal/bin/pfc_stop.sh ${NODE_NIC}" > /dev/null
+        docker exec -it ${NODE} bash -c "pfc_stop.sh ${NODE_NIC}" > /dev/null
     fi
 done
 
