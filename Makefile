@@ -1,4 +1,4 @@
-SOURCES = $(wildcard src) test/docker
+SOURCES = $(wildcard src) test/docker src/go
 CLEAN = $(addsuffix _clean,$(SOURCES))
 
 .PHONY: clean $(SOURCES) $(CLEAN) check test prod-img
@@ -40,6 +40,7 @@ check:
 
 go:
 	$(MAKE) -C test/docker go
+	$(MAKE) -C src/go go
 
 $(SOURCES):
 	$(MAKE) -C $@

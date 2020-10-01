@@ -52,7 +52,7 @@ COPY --from=builder /usr/src/pfc/test/docker/server.py /usr/src/pfc/test/docker/
 
 # for GUE Ping
 #COPY --from=builder /usr/src/pfc/test/docker/gue_ping*.py ./
-COPY --from=builder /usr/src/pfc/test/docker/gue_ping_svc_auto ./
+COPY --from=builder /usr/src/pfc/test/docker/gue_ping_svc_auto /usr/src/pfc/src/go/pfc_cli_go ./
 
 # Shell on attach
 CMD ["bash"]
