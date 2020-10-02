@@ -5,6 +5,21 @@
 NIC=$1
 DIRECTION=$2
 
+function lookup()
+{
+    if [ -f "./$1" ] ; then
+        FILE="./$1"
+    elif [ -f "$1" ] ; then
+        FILE="$1"
+    elif [ -f $(which $1) ] ; then
+        FILE=$(which $1)
+#    else
+#        echo "Cannot find '${BINARY}_${DIRECTION}_tc.o'"
+#        exit 1
+    fi
+    echo "${FILE}"
+}
+
 if [ ! "${NIC}" ] ; then
     NIC=$(ip route | grep default | awk '{print $5}')
 fi
@@ -21,7 +36,7 @@ else
     #sudo tc qdisc del dev ${NIC} clsact
 fi
 
-show_tc.sh ${NIC} ${DIRECTION}
+$(lookup show_tc.sh) ${NIC} ${DIRECTION}
 
 # unmount maps? not to mess with other eBPF?
 sudo umount /sys/fs/bpf/
