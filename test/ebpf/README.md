@@ -11,6 +11,7 @@ Simple tests using Go API (`src/go/pfc_cli_go`) to setup forwarding instead of b
 
 ### test_go_01.sh
 
+Variation to `test_simple_2gw_01.sh`.
 Test creating single forwarding on **EGW** for service running on **Node1**.
 
 Run:

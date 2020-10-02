@@ -33,3 +33,34 @@ You can optionally specify docker image name otherwise default name from _test/c
 ### Push to Registry
 
     make push TAG=registry.gitlab.com/acnodal/packet-forwarding-component/pfc:demo202008031445
+
+
+## Additional scripts
+
+### gue_ping_svc_auto.go
+
+Go version of PFC daemon which:
+- periodically sends GUE ping for all configured tunnels
+- periodically check dynamic client sessions and remove expired
+
+### gue_ping_svc_auto.py
+
+Python version of PFC daemon which:
+- periodically sends GUE ping for all configured tunnels
+- periodically check dynamic client sessions and remove expired
+
+### server.py
+
+Python HTTP server implementation which can serve content of local files.
+Can be used as demo TCP service.
+
+
+### udp_server.py
+
+Python UDP server implementation which can serve content of local files.
+Can be used as demo UDP service.
+
+
+### udp_client.py
+
+Python UDP client to send request with file name and store incomming response into file.
