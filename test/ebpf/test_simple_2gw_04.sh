@@ -141,8 +141,6 @@ else
     # check traces before
 #    tail -n60 /sys/kernel/debug/tracing/trace
 
-    # generate ICMP ECHO REQUEST + RESPONSE packets
-    # syntax: $0     <docker>  <ip>        <port>
     TMP=$(./${SERVICE_TYPE}_check.sh ${CLIENT} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_ID})
     if [ "${VERBOSE}" ]; then
         echo "${TMP}"
