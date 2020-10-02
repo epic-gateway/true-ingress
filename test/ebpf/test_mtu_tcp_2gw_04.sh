@@ -6,7 +6,7 @@
 # Send HTTP request from client to *proxy ip:port*.
 # usage: $0 [-v|-V]
 
-set -Eeo pipefail
+#set -Eeo pipefail
 
 # parse args
 while getopts "vV" opt; do

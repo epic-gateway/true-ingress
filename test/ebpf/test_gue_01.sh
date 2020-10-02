@@ -4,7 +4,7 @@
 # Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*.
 # usage: $0 [-v|-V]
 
-set -Eeo pipefail
+#set -Eeo pipefail
 
 # parse args
 while getopts "vV" opt; do
