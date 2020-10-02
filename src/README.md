@@ -4,6 +4,7 @@
 
 | Directory name         | Description                                                                    |
 | ---------------------- | ------------------------------------------------------------------------------ |
+|    go                  | PFC Go API is located here                                                     |
 |    pfc_ingress_tc.c    | PFC RX TC program                                                              |
 |    pfc_egress_tc.c     | PFC TX TC program                                                              |
 |    attach_tc.sh        | Attach TC binary to network interface                                          |
@@ -13,6 +14,7 @@
 |    cli_cfg.c           | CLI to configure basic setup of PFC                                            |
 |    cli_tunnel.c        | CLI to configure GUE tunnel local and remote endpoint                          |
 |    cli_service.c       | CLI to configure service specific info (group-id, service-id, key, ips, ports) |
+|    cli_gc.c            | streamlined cli_service to display dynamic sessions                            |
 
 
 ## Description
@@ -240,6 +242,8 @@ Logged messages can be found:
     less /sys/kernel/debug/tracing/trace
 
 However this looks unreliable, some information seems to be missing occasionaly.
+
+> Note: To check BPF loading error after build try `make attach` and then  `make dettach`.
 
 #### Detach
 
