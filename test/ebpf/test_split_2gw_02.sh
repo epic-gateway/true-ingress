@@ -12,13 +12,12 @@ set -Eeo pipefail
 while getopts "vV" opt; do
     case "$opt" in
     v)  VERBOSE=1
-        shift
         ;;
     V)  export VERBOSE=1
-        shift
         ;;
     esac
 done
+shift $((OPTIND-1))
 
 cd ..
 
@@ -191,16 +190,15 @@ else
     # check traces before
 #    tail -n60 /sys/kernel/debug/tracing/trace
 
-    # generate ICMP ECHO REQUEST + RESPONSE packets
-    # syntax: $0     <docker>  <ip>        <port>
+    echo "Sequential downloading"
     TMP=$(./${SERVICE_TYPE}_check.sh ${CLIENT} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_ID})
     if [ "${VERBOSE}" ]; then
         echo "${TMP}"
     fi
     if [ "$(echo "${TMP}" | grep ${SERVICE_NAME})" ] ; then
-        echo -e "\nService '${SERVICE_NAME}' : \e[32mPASS\e[0m\n"
+        echo -e "Service '${SERVICE_NAME}' : \e[32mPASS\e[0m\n"
     else
-        echo -e "\nService '${SERVICE_NAME}' : \e[31mFAILED\e[0m\n"
+        echo -e "Service '${SERVICE_NAME}' : \e[31mFAILED\e[0m\n"
         RETURN=1
     fi
 
@@ -209,9 +207,9 @@ else
         echo "${TMP}"                                                                                                                                                                                                                                                         
     fi                                                                                                                                                                                                                                                                        
     if [ "$(echo "${TMP}" | grep ${SERVICE_NAME})" ] ; then
-        echo -e "\nService '${SERVICE_NAME}' : \e[32mPASS\e[0m\n"
+        echo -e "Service '${SERVICE_NAME}' : \e[32mPASS\e[0m\n"
     else
-        echo -e "\nService '${SERVICE_NAME}' : \e[31mFAILED\e[0m\n"
+        echo -e "Service '${SERVICE_NAME}' : \e[31mFAILED\e[0m\n"
         RETURN=1
     fi
 

@@ -22,8 +22,7 @@ TESTS=" \
 test_split_2gw_01.sh \
 test_split_2gw_02.sh \
 test_split_2gw_03.sh \
-test_split_2gw_04.sh \
-test_split_2gw_05.sh"
+test_split_2gw_04.sh"
 
 a=($TESTS)
 for (( i=0; i<${#a[@]}; i++ ))
