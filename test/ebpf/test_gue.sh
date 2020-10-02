@@ -20,12 +20,7 @@ RETURN=0
 
 TESTS=" \
 test_gue_01.sh \
-test_gue_02.sh \
-test_gue_03.sh \
-test_gue_04.sh \
-test_gue_05.sh \
-test_gue_06.sh \
-test_gue_07.sh"
+test_gue_02.sh"
 
 a=($TESTS)
 for (( i=0; i<${#a[@]}; i++ ))
