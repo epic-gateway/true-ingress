@@ -6,7 +6,7 @@
 # Send HTTP request from client to *proxy ip:port*.
 # usage: $0 [-v|-V]
 
-set -Eeo pipefail
+#set -Eeo pipefail
 
 # parse args
 while getopts "vV" opt; do
@@ -126,7 +126,7 @@ else
 fi
 
 # INFRA: verify result
-echo "Waiting for GUE ping..."
+echo -e "\nWaiting for GUE ping..."
 for (( i=1; i<10; i++ ))
 do
     if [ "$(docker exec -it ${PROXY} bash -c "cli_tunnel get ${TUNNEL_ID}" | grep "TUN" | grep ${TUNNEL_ID} | grep -v "0.0.0.0:0")" ] ; then
@@ -136,8 +136,8 @@ do
     sleep 1
 done
 
-#docker exec -it ${PROXY} bash -c "cli_gc get all"
-docker exec -it ${NODE} bash -c "cli_gc get all"
+#docker exec -it ${PROXY} bash -c "cli_gc get all | grep 'ENCAP ('"
+docker exec -it ${NODE} bash -c "cli_gc get all | grep 'ENCAP ('"
 
 if [ ! "$(docker exec -it ${PROXY} bash -c "cli_tunnel get ${TUNNEL_ID}" | grep "TUN" | grep ${TUNNEL_ID} | grep -v "0.0.0.0:0")" ] ; then
     echo -e "\nGUE Ping for '${SERVICE_NAME}' \e[31mFAILED\e[0m\n"
@@ -146,16 +146,15 @@ else
     # check traces before
 #    tail -n60 /sys/kernel/debug/tracing/trace
 
-    # generate ICMP ECHO REQUEST + RESPONSE packets
-    # syntax: $0     <docker>  <ip>        <port>
-    TMP=$(./${SERVICE_TYPE}_check.sh ${CLIENT} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_ID} 5555)
+    echo -e "\nCreating session #1 (expiration set to ${SWEEP_DELAY}x${SWEEP_COUNT} s)"
+    TMP=$(./${SERVICE_TYPE}_check.sh ${CLIENT} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_ID})
     if [ "${VERBOSE}" ]; then
         echo "${TMP}"
     fi
     if [ "$(echo "${TMP}" | grep ${SERVICE_NAME})" ] ; then
-        echo -e "\nService '${SERVICE_NAME}' : \e[32mPASS\e[0m\n"
+        echo -e "Service '${SERVICE_NAME}' : \e[32mPASS\e[0m\n"
     else
-        echo -e "\nService '${SERVICE_NAME}' : \e[31mFAILED\e[0m\n"
+        echo -e "Service '${SERVICE_NAME}' : \e[31mFAILED\e[0m\n"
         RETURN=1
     fi
 
@@ -163,30 +162,32 @@ else
 #    tail -n60 /sys/kernel/debug/tracing/trace
 fi
 
-#docker exec -it ${PROXY} bash -c "cli_gc get all"
-docker exec -it ${NODE} bash -c "cli_gc get all"
+#docker exec -it ${PROXY} bash -c "cli_gc get all | grep 'ENCAP ('"
+docker exec -it ${NODE} bash -c "cli_gc get all | grep 'ENCAP ('"
 
+echo -e "\nWaiting 3s"
 sleep 3
 
-#docker exec -it ${PROXY} bash -c "cli_gc get all"
-docker exec -it ${NODE} bash -c "cli_gc get all"
+#docker exec -it ${PROXY} bash -c "cli_gc get all | grep 'ENCAP ('"
+docker exec -it ${NODE} bash -c "cli_gc get all | grep 'ENCAP ('"
 
+echo -e "\nRefreshing session #1"
 TMP=$(./${SERVICE_TYPE}_check.sh ${CLIENT} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_ID} 5555)
 if [ "${VERBOSE}" ]; then
     echo "${TMP}"
 fi
 if [ "$(echo "${TMP}" | grep ${SERVICE_NAME})" ] ; then
-    echo -e "\nService '${SERVICE_NAME}' : \e[32mPASS\e[0m\n"
+    echo -e "Service '${SERVICE_NAME}' : \e[32mPASS\e[0m\n"
 else
-    echo -e "\nService '${SERVICE_NAME}' : \e[31mFAILED\e[0m\n"
+    echo -e "Service '${SERVICE_NAME}' : \e[31mFAILED\e[0m\n"
     RETURN=1
 fi
 
 for (( i=1; i<10; i++ ))
 do
-    echo "[$i/10]"
-    #docker exec -it ${PROXY} bash -c "cli_gc get all"
-    docker exec -it ${NODE} bash -c "cli_gc get all"
+    echo "[$i/10] Sessions:"
+    #docker exec -it ${PROXY} bash -c "cli_gc get all | grep 'ENCAP ('"
+    docker exec -it ${NODE} bash -c "cli_gc get all | grep 'ENCAP ('"
     sleep 1
 done
 
@@ -204,7 +205,7 @@ if [ "${VERBOSE}" ]; then
 
     ./topo_cleanup.sh ${TOPO}
 else
-    echo "Shutdown '${TOPO}' topology..."
+    echo -e "\nShutdown '${TOPO}' topology..."
     docker exec -it ${PROXY} bash -c "pfc_delete.sh ${GROUP_ID} ${SERVICE_ID}" > /dev/null
     docker exec -it ${NODE} bash -c "pfc_delete.sh ${GROUP_ID} ${SERVICE_ID}" > /dev/null
 

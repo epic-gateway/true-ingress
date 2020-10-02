@@ -20,7 +20,8 @@ RETURN=0
 
 TESTS=" \
 test_ses_2gw_01.sh \
-test_ses_2gw_02.sh"
+test_ses_2gw_02.sh \
+test_ses_2gw_03.sh"
 
 a=($TESTS)
 for (( i=0; i<${#a[@]}; i++ ))

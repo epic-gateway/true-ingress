@@ -147,7 +147,7 @@ else
 #    tail -n60 /sys/kernel/debug/tracing/trace
 
     echo -e "\nCreating session #1 (expiration set to ${SWEEP_DELAY}x${SWEEP_COUNT} s)"
-    TMP=$(./${SERVICE_TYPE}_check.sh ${CLIENT} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_ID})
+    TMP=$(./${SERVICE_TYPE}_check.sh ${CLIENT} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_ID} 5555)
     if [ "${VERBOSE}" ]; then
         echo "${TMP}"
     fi
@@ -162,17 +162,16 @@ else
 #    tail -n60 /sys/kernel/debug/tracing/trace
 fi
 
-#docker exec -it ${PROXY} bash -c "cli_gc get all | grep 'ENCAP ('"
-docker exec -it ${NODE} bash -c "cli_gc get all | grep 'ENCAP ('"
+for (( i=1; i<10; i++ ))
+do
+    echo "[$i/10] Sessions:"
+    #docker exec -it ${PROXY} bash -c "cli_gc get all | grep 'ENCAP ('"
+    docker exec -it ${NODE} bash -c "cli_gc get all | grep 'ENCAP ('"
+    sleep 1
+done
 
-echo "Waiting 3s"
-sleep 3
-
-#docker exec -it ${PROXY} bash -c "cli_gc get all | grep 'ENCAP ('"
-docker exec -it ${NODE} bash -c "cli_gc get all | grep 'ENCAP ('"
-
-echo -e "\nCreating session #2 (expiration set to ${SWEEP_DELAY}x${SWEEP_COUNT} s)"
-TMP=$(./${SERVICE_TYPE}_check.sh ${CLIENT} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_ID})
+echo -e "\nRecreating session #1"
+TMP=$(./${SERVICE_TYPE}_check.sh ${CLIENT} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_ID} 5555)
 if [ "${VERBOSE}" ]; then
     echo "${TMP}"
 fi
