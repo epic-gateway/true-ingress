@@ -7,7 +7,7 @@ import (
 	"os"
 	"strconv"
 
-	"acnodal.io/pfc"
+	pfc "gitlab.com/acnodal/packet-forwarding-component/src/go/pfc"
 )
 
 func main() {
