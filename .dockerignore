@@ -1,3 +1,4 @@
+.git/
 *.o
 src/cli_cfg
 src/cli_tunnel

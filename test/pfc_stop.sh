@@ -13,11 +13,11 @@ if [ "${VERBOSE}" ]; then
 fi
 
 # detach eBPF from interface
-/tmp/.acnodal/bin/detach_tc.sh ${NIC}
+/opt/acnodal/bin/detach_tc.sh ${NIC}
 
 # clean GUE port pool
-rm -rf /tmp/.acnodal/cfg/gue_port.cfg
-ls /tmp/.acnodal/cfg/
+rm -rf /opt/acnodal/cfg/gue_port.cfg
+ls /opt/acnodal/cfg/
 
 # stop GUE ping daemon
 #ps aux | grep "gue_ping"
