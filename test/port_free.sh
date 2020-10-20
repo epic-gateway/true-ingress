@@ -14,7 +14,7 @@ fi
 
 PORT=$1
 
-BASE_DIR="/tmp/.acnodal"
+BASE_DIR="/opt/acnodal"
 CFG_DIR="${BASE_DIR}/cfg"
 
 if [ ! -f "${CFG_DIR}/gue_port.cfg" ] ; then

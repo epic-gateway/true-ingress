@@ -259,7 +259,7 @@ Set of tests for attaching and detaching TC programs to **EGW** and **NODE**.
 
 ## PFC interface scripts
 
-Located on docker image under /tmp/.acnodal/bin/
+Located on docker image under /opt/acnodal/bin/
 
 ### pfc_start.sh
 

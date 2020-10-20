@@ -65,7 +65,7 @@ func tunnel_ping(timeout int) {
 	tunnels = map[int]int{}
 
 	// get current tunnel list
-	cmd := "/tmp/.acnodal/bin/cli_service get all | grep 'VERIFY' | grep -v 'TABLE'"
+	cmd := "/opt/acnodal/bin/cli_service get all | grep 'VERIFY' | grep -v 'TABLE'"
 	out, err := exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
 		fmt.Println("Error")
@@ -93,7 +93,7 @@ func tunnel_ping(timeout int) {
 		return
 	}
 
-	cmd = "/tmp/.acnodal/bin/cli_tunnel get all | grep 'TUN' | grep -v 'TABLE'"
+	cmd = "/opt/acnodal/bin/cli_tunnel get all | grep 'TUN' | grep -v 'TABLE'"
 	out, err = exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
 		fmt.Println("Error")
@@ -130,7 +130,7 @@ func tunnel_ping(timeout int) {
 func session_sweep(expire int) {
 	fmt.Println("Sweep check")
 
-	cmd := "/tmp/.acnodal/bin/cli_gc get all | grep 'ENCAP' | grep -v 'TABLE'"
+	cmd := "/opt/acnodal/bin/cli_gc get all | grep 'ENCAP' | grep -v 'TABLE'"
 	out, err := exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
 		fmt.Println("Error")
@@ -158,7 +158,7 @@ func session_sweep(expire int) {
 				to_del := strings.Split(strings.Split(strings.Split(key, "(")[1], ")")[0], ",")
 
 				fmt.Printf("  delete %s%s%s\n", to_del[0], to_del[1], to_del[2])
-				cmd := fmt.Sprintf("/tmp/.acnodal/bin/cli_gc del %s%s%s\n", to_del[0], to_del[1], to_del[2])
+				cmd := fmt.Sprintf("/opt/acnodal/bin/cli_gc del %s%s%s\n", to_del[0], to_del[1], to_del[2])
 				exec.Command("bash", "-c", cmd).Output()
 
 				delete(session_hash, key)

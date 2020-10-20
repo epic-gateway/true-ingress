@@ -13,13 +13,13 @@ func Version() string {
 }
 
 func Check() (bool, string) {
-	cmd := "test -d /tmp/.acnodal/bin/"
+	cmd := "test -d /opt/acnodal/bin/"
 	_, err := exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
 		return false, "PFC not installed"
 	}
 
-	cmd = "ls -l /tmp/.acnodal/bin/*.o"
+	cmd = "ls -l /opt/acnodal/bin/*.o"
 	_, err = exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
 		return false, "PFC not compiled"

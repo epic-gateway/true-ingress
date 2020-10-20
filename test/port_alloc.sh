@@ -6,7 +6,7 @@
 
 set -Eeo pipefail
 
-BASE_DIR="/tmp/.acnodal"
+BASE_DIR="/opt/acnodal"
 CFG_DIR="${BASE_DIR}/cfg"
 
 
@@ -15,7 +15,7 @@ if [ ! -f "${CFG_DIR}/gue_port.cfg" ] ; then
     exit 1
 fi
 
-if [[ $(wc -l /tmp/.acnodal/cfg/gue_port.cfg | awk '{print $1}') -eq 0 ]] ; then
+if [[ $(wc -l /opt/acnodal/cfg/gue_port.cfg | awk '{print $1}') -eq 0 ]] ; then
     >&2 echo "# Port list is empty"
     exit 1
 fi

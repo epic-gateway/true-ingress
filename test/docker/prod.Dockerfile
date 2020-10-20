@@ -30,12 +30,12 @@ RUN make build
 #
 FROM system as prod
 
-RUN mkdir -p /tmp/.acnodal/bin
-RUN mkdir -p /tmp/.acnodal/cfg
-RUN mkdir -p /tmp/.acnodal/log
+RUN mkdir -p /opt/acnodal/bin
+RUN mkdir -p /opt/acnodal/cfg
+RUN mkdir -p /opt/acnodal/log
 
-WORKDIR /tmp/.acnodal/bin
-ENV PATH="/tmp/.acnodal/bin:${PATH}"
+WORKDIR /opt/acnodal/bin
+ENV PATH="/opt/acnodal/bin:${PATH}"
 
 # Copy eBPF
 COPY --from=builder /usr/src/pfc/src/*.o ./

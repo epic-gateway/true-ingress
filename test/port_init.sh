@@ -17,7 +17,7 @@ fi
 MIN=$1
 MAX=$2
 
-BASE_DIR="/tmp/.acnodal"
+BASE_DIR="/opt/acnodal"
 CFG_DIR="${BASE_DIR}/cfg"
 
 # check basic structure

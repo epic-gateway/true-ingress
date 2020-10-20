@@ -4,7 +4,7 @@
 
 set -Eeo pipefail
 
-BASE_DIR="/tmp/.acnodal"
+BASE_DIR="/opt/acnodal"
 CFG_DIR="${BASE_DIR}/cfg"
 
 
@@ -13,4 +13,4 @@ if [ ! -f "${CFG_DIR}/gue_port.cfg" ] ; then
     exit 1
 fi
 
-cat /tmp/.acnodal/cfg/gue_port.cfg
+cat /opt/acnodal/cfg/gue_port.cfg

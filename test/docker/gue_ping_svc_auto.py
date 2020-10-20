@@ -30,7 +30,7 @@ def tunnel_ping(timeout):
     tunnels.clear()
     #print(tmp)
 
-    ret = os.popen("/tmp/.acnodal/bin/cli_service get all | grep 'VERIFY'").read()
+    ret = os.popen("/opt/acnodal/bin/cli_service get all | grep 'VERIFY'").read()
     services = ret.split("\n")[1:-1]
     #print(services)
 
@@ -48,7 +48,7 @@ def tunnel_ping(timeout):
     if len(verify) == 0:
         return
 
-    ret = os.popen("/tmp/.acnodal/bin/cli_tunnel get all | grep 'TUN'").read()
+    ret = os.popen("/opt/acnodal/bin/cli_tunnel get all | grep 'TUN'").read()
     tnls = ret.split("\n")[1:-1]
     #print(tnls)
 
@@ -67,7 +67,7 @@ def tunnel_ping(timeout):
             tunnels[tid] = tmp[tid] + 1
         else:
             #print("sending %s:%s -> %s:%s -> %d -> %s" % (ifaces[src[0]], src[1], dst[0], dst[1], tid, verify[tid]))
-            ret = os.popen("python3 /tmp/.acnodal/bin/gue_ping_svc_once.py %s %s %s %s %d %d '%s'" %
+            ret = os.popen("python3 /opt/acnodal/bin/gue_ping_svc_once.py %s %s %s %s %d %d '%s'" %
                        (ifaces[src[0]], dst[0], dst[1], src[1], tid >> 16, tid & 0xFFFF, verify[tid])).read()
             #print(ret)
             tunnels[tid] = 1
@@ -77,8 +77,8 @@ def session_sweep(expire):
     global session_hash
     global session_ttl
 
-    #ret = os.popen("/tmp/.acnodal/bin/cli_service get all | grep 'ENCAP'").read()
-    ret = os.popen("/tmp/.acnodal/bin/cli_gc get all | grep 'ENCAP'").read()
+    #ret = os.popen("/opt/acnodal/bin/cli_service get all | grep 'ENCAP'").read()
+    ret = os.popen("/opt/acnodal/bin/cli_gc get all | grep 'ENCAP'").read()
     services = ret.split("\n")[1:-1]
     #print(services)
 
@@ -103,7 +103,7 @@ def session_sweep(expire):
                 del session_hash[key]
                 del session_ttl[key]
                 print("cli_gc del %s%s%s" % (to_del[0], to_del[1], to_del[2]))
-                ret = os.popen("/tmp/.acnodal/bin/cli_gc del %s%s%s" % (to_del[0], to_del[1], to_del[2])).read()
+                ret = os.popen("/opt/acnodal/bin/cli_gc del %s%s%s" % (to_del[0], to_del[1], to_del[2])).read()
             else:
                 session_ttl[key] += 1
                 #print("%s  ->  %d/%d" % (key, session_ttl[key], expire))
