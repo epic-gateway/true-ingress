@@ -13,25 +13,13 @@ func Version() string {
 }
 
 func Check() (bool, string) {
-	cmd := "test -d /opt/acnodal/bin/"
-	_, err := exec.Command("bash", "-c", cmd).Output()
-	if err != nil {
-		return false, "PFC not installed"
-	}
-
-	cmd = "ls -l /opt/acnodal/bin/*.o"
-	_, err = exec.Command("bash", "-c", cmd).Output()
+	// see if we can run one of our executables
+	bytes, err := exec.Command("/opt/acnodal/bin/pfc_cli_go", "version").Output()
 	if err != nil {
 		return false, "PFC not compiled"
 	}
 
-	cmd = "ls /sys/fs/bpf/tc/globals"
-	_, err = exec.Command("bash", "-c", cmd).Output()
-	if err != nil {
-		return false, "PFC not running"
-	}
-
-	return true, ""
+	return true, string(bytes)
 }
 
 type Tunnel struct {

@@ -28,7 +28,7 @@ func main() {
 	case "check":
 		check, err := pfc.Check()
 		if check {
-			fmt.Println("PFC ready")
+			fmt.Printf("PFC ready: %s\n", err)
 		} else {
 			fmt.Println(err)
 		}
