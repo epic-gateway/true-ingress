@@ -27,7 +27,7 @@ init-dependencies:
 init: init-submodules init-dependencies
 
 test:
-	$(MAKE) -C test/basic
+	$(MAKE) -C test/ebpf
 
 attach:
 	$(MAKE) -C src attach
