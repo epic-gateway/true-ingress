@@ -14,8 +14,7 @@ fi
 
 PORT=$1
 
-BASE_DIR="/opt/acnodal"
-CFG_DIR="${BASE_DIR}/cfg"
+CFG_DIR="/etc/pfc"
 
 if [ ! -f "${CFG_DIR}/gue_port.cfg" ] ; then
     >&2 echo "Port lidt not initialized!"

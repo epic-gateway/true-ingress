@@ -17,13 +17,13 @@ fi
 MIN=$1
 MAX=$2
 
-BASE_DIR="/opt/acnodal"
-CFG_DIR="${BASE_DIR}/cfg"
+CFG_DIR="/etc/pfc"
 
 # check basic structure
 if [ ! -d "${CFG_DIR}" ] ; then
     echo "# Creating '${CFG_DIR}'"
     mkdir -p ${CFG_DIR}
+    chmod 755 ${CFG_DIR}
 fi
 
 if [ -f "${CFG_DIR}/gue_port.cfg" ] ; then
