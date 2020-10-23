@@ -67,10 +67,10 @@ Once you clone project locally, run following command from main folder:
 And it will downoad and install all dependencies for you. Once initialized, your system should be ready (unless new dependency is added). It may take few minutes.
 
 > Note: After installing docker among other dependencies you may need to reboot your system.
+> Note: type `make help` to get list of allowed operations.
+> Note: `make init` creates also [system docker image](test/docker/README.md#system-image)
 
 Now you are ready to proceed with building sources.
-
-> Note: `make init` creates also [system docker image](test/docker/README.md#system-image)
 
 ### Regular build
 
@@ -95,17 +95,65 @@ When binaries and docker image are ready, you can run some tests.
 
 ### Test
 
-First let's put compiled binaries into docker image:
+First let's put all compiled binaries and helper scripts into docker image:
 
-    make prod-img
+    make docker
 
-> Note: first execution will build the docker image and will take several minutes, subsequent executions take only few seconds.
-> Note: `make [all]` will build sources including update of prod-image in single step.
+> Note: first execution will build the docker image and will take several minutes, subsequent executions will take only few seconds.
 
 And then you can build testing topology and run basic test:
 
     make test
 
-For detailed information about testing topology and additional test cases proceed to [test](test/) folder. 
+> Note: `make test` executed `make docker` on your behalf.
 
-> Note: type `make help` to get list of allowed operations.
+There are alot more tests.
+For detailed information about testing topology and additional test cases proceed to [test](test/) folder.
+
+### Install
+
+On order to run PFC on your local setup create pfc.tar.bz2:
+
+    make tar
+
+Copy this archive to machine where you want to execute it and unpack to desired location e.g.:
+
+    tar -jvxf pfc.tar.bz2 -C /opt/pfc/
+
+Don't forget to add new location to your PATH:
+
+    export PATH="/opt/pfc/bin:${PATH}"
+
+#### Attach to eth0
+
+Now the PFC is installed, you can attach it to interface eth0:
+
+    sudo pfc_start.sh eth0 "PFC-TEST" 9 9 5000 6000 10 2 3
+
+Where:
+
+    syntax: $0 <nic> <name> <conf-rx> <conf-tx> <port-min> <port-max> [<gue-delay>] [<sweep-delay>] [<sweep-count>]
+        <nic>             - Interface to bind PFC to
+        <name>            - Instance name
+        <conf-rx>         - PFC Inress configuration flags
+        <conf-tx>         - PFC Egress configuration flags
+        <port-min>        - Gue tunnel port range lower bound
+        <port-max>        - Gue tunnel port range upper bound
+        <gue-delay>       - (Optional) Interval of sending GUE pings (in seconds)
+        <sweep-delay>     - (Optional) Interval of checking stale session (in seconds)
+        <sweep-count>     - (Optional) Number of inactivity cycles before expiration
+
+> Note: Ingress and Egress configuration flags are described [here](src/README.md)
+
+If root doesn't share your PATH update yet, use:
+
+    sudo env "PATH=$PATH" pfc_start.sh eth0 "PFC-TEST" 9 9 5000 6000 10 2 3
+
+#### Detach from eth0
+
+    sudo pfc_stop.sh eth0
+
+or
+
+    sudo env "PATH=$PATH" pfc_stop.sh eth0
+
