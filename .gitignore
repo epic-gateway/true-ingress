@@ -38,6 +38,12 @@
 *.x86_64
 *.hex
 
+# Archives/Packages
+*.tar
+*.bz2
+*.gz
+pkg
+
 # Debug files
 *.dSYM/
 *.su
