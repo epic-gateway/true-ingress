@@ -24,11 +24,11 @@ In _common.cfg_ is defined as:
 
 Simple way from top level makefile:
 
-    make prod-img
+    make docker
 
 You can optionally specify docker image name otherwise default name from _test/common.cfg_ will be used.
 
-    make prod-img TAG=pfc:demo202008031445
+    make docker TAG=pfc:demo202008031445
 
 ### Push to Registry
 
