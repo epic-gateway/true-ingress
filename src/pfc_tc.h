@@ -759,7 +759,7 @@ int gue_encap_v4(struct __sk_buff *skb, struct tunnel *tun, struct service *svc)
             bpf_print("ERROR: FIB lookup failed: ARP entry missing\n", rc);
             return TC_ACT_UNSPEC;
         case BPF_FIB_LKUP_RET_FWD_DISABLED :
-            bpf_print("ERROR: FIB lookup failed: Forwaring disabled\n", rc);
+            bpf_print("ERROR: FIB lookup failed: Forwarding disabled\n", rc);
             return TC_ACT_UNSPEC;
         default :
             bpf_print("ERROR: FIB lookup failed: %d\n", rc);
