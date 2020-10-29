@@ -27,6 +27,26 @@ make_endpoint(struct endpoint *ref,
     return ref;
 }
 ////////////////////////////////
+// Encap-key (EP + IfIndex)
+struct proxy_encap_key {
+    struct endpoint ep;             /* Destination */
+    __u32           ifindex;        /* if-index of proxy container */
+};
+
+static inline struct proxy_encap_key *
+make_proxy_encap_key(struct proxy_encap_key *ref,
+              __u32  ip,
+              __u16  port,
+              __u16  proto,
+              __u32  ifindex)
+{
+    ref->ep.ip      = bpf_htonl(ip);
+    ref->ep.port    = bpf_htons(port);
+    ref->ep.proto   = bpf_htons(proto);
+    ref->ifindex    = bpf_htonl(ifindex);
+    return ref;
+}
+////////////////////////////////
 // Tunnel
 struct tunnel {
     __u32  ip_local;              /* outer: sender IP address (configured) */
@@ -84,13 +104,16 @@ struct verify {
     struct endpoint dnat;
     struct endpoint snat;
     __u32  tunnel_id;
+    __u32  ifindex;
 };
 
 static inline struct verify *
 make_verify(struct verify   *ref,
             struct endpoint *dnat,
             struct endpoint *snat,
-            __u32  tunnel_id)
+            __u32  tunnel_id,
+            __u32  ifindex
+           )
 {
     ref->dnat.ip    = dnat->ip;
     ref->dnat.port  = dnat->port;
@@ -99,6 +122,7 @@ make_verify(struct verify   *ref,
     ref->snat.port  = snat->port;
     ref->snat.proto = snat->proto;
     ref->tunnel_id  = tunnel_id;
+    ref->ifindex    = bpf_htonl(ifindex);
     return ref;
 }
 
@@ -123,6 +147,11 @@ make_service(struct service  *ref,
     ref->hash       = 0;
     return ref;
 }
+
+// Tunnel
+struct mac {
+    __u8   value[6];         // MAC address
+};
 ////////////////////////////////
 // "Empty"
 //struct empty {

@@ -48,6 +48,14 @@ struct bpf_elf_map SEC("maps") map_encap = {
     .pinning        = PIN_GLOBAL_NS,
 };
 
+struct bpf_elf_map SEC("maps") map_proxy_encap = {
+    .type           = BPF_MAP_TYPE_HASH,
+    .size_key       = sizeof(struct proxy_encap_key),
+    .size_value     = sizeof(struct service),
+    .max_elem       = MAX_TUNNEL_ENTRIES,
+    .pinning        = PIN_GLOBAL_NS,
+};
+
 ////////////////////////////////
 // TABLE-VERIFY     SID -> KEY
 
@@ -66,6 +74,17 @@ struct bpf_elf_map SEC("maps") map_tunnel = {
     .type           = BPF_MAP_TYPE_HASH,
     .size_key       = sizeof(__u32),
     .size_value     = sizeof(struct tunnel),
+    .max_elem       = MAX_TUNNEL_ENTRIES,
+    .pinning        = PIN_GLOBAL_NS,
+};
+
+////////////////////////////////
+// TABE-PROXY veth-ifindex -> MAC
+
+struct bpf_elf_map SEC("maps") map_proxy = {
+    .type           = BPF_MAP_TYPE_HASH,
+    .size_key       = sizeof(__u32),
+    .size_value     = sizeof(struct mac),
     .max_elem       = MAX_TUNNEL_ENTRIES,
     .pinning        = PIN_GLOBAL_NS,
 };
