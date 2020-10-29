@@ -90,10 +90,14 @@ docker exec -it ${PROXY} bash -c "ip netns exec proxy${PROXY_IP} ping -c1 1.1.1.
 
 # PFC >>>> Attach PFC to eth on EGW
 #docker exec -it ${PROXY} bash -c "pfc_start.sh ${PROXY_NIC} "${PROXY}" 9 9 ${PROXY_PORT_MIN} ${PROXY_PORT_MAX}"
-docker exec -it ${PROXY} bash -c "attach_tc.sh ${PROXY_NIC} ingress"
+CHECK=$(docker exec -it ${PROXY} bash -c "tc qdisc show dev ${PROXY_NIC} | grep clsact")
+if [ ! "${CHECK}" ]; then
+    docker exec -it ${PROXY} bash -c "sudo tc qdisc add dev ${PROXY_NIC} clsact"
+fi
+docker exec -it ${PROXY} bash -c "tc filter add dev ${PROXY_NIC} ingress bpf direct-action object-file pfc_ingress_tc.o sec .text"
 
 docker exec -it ${PROXY} bash -c "cli_cfg set ${PROXY_NIC} 0 0 9 \"${PROXY}-ETH RX\""
-docker exec -it ${PROXY} bash -c "cli_cfg set ${PROXY_NIC} 1 0 9 \"${PROXY}-ETH TX\""
+#docker exec -it ${PROXY} bash -c "cli_cfg set ${PROXY_NIC} 1 0 9 \"${PROXY}-ETH TX\""
 
 docker exec -it ${PROXY} bash -c "port_init.sh ${PROXY_PORT_MIN} ${PROXY_PORT_MAX}"
 # <<<<
