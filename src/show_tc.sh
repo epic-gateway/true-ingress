@@ -12,7 +12,7 @@ fi
 
 for NIC in $NICS
 do
-    NUM=$(ip link | grep "${NIC}" | awk '{print $1}' | sed 's/://')
+    NUM=$(ip link show "${NIC}" | grep "mtu" | awk '{print $1}' | sed 's/://')
     if [ "${DIRECTION}" ] ; then
         echo "${NIC} (${NUM})"
         OUT=$(tc filter show dev ${NIC} ${DIRECTION} | grep "pfc_${DIRECTION}_tc.o")
