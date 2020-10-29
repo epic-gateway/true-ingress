@@ -26,12 +26,7 @@ RETURN=0
 TOPO=basic.cfg
 
 # INFRA >>>> setup topology
-if [ "${VERBOSE}" ]; then
-    ./topo_setup.sh ${TOPO}
-else
-    echo "Starting '${TOPO}' topology..."
-    ./topo_setup.sh ${TOPO} > /dev/null
-fi
+./topo_setup.sh ${TOPO}
 # <<<<
 
 # TEST CONFIG >>>>
@@ -63,35 +58,10 @@ DELAY=10
 
 #set -x
 
-# INFRA >>>> Setup PROXY NS1 -> create namespace, attach veth1, add it to bridge, assign public ip 5.5.5.5
-./proxy_add.sh ${PROXY} "5.5.5.5" 5.5.5.5 br0 1
-# <<<<
-
-# PFC >>>> attach TAGging BPF to veth ingress
-docker exec -it ${PROXY} bash -c "sudo tc qdisc add dev veth1 clsact"
-docker exec -it ${PROXY} bash -c "tc -d filter add dev veth1 ingress bpf direct-action object-file pfc_tag_rx_tc.o sec .text ; echo $?"
-#docker exec -it ${PROXY} bash -c "tc filter add dev veth1 egress  bpf direct-action object-file pfc_tag_tx_tc.o sec .text"
-# <<<<
-
-# INFRA: Setup PROXY NS2 ---
-#./proxy_add.sh ${PROXY} "6.6.6.6" 6.6.6.6 br0 2
-# ...
-
-# DEBUG: >>>>
-docker exec -it ${PROXY} bash -c "ip netns list"
-docker exec -it ${PROXY} bash -c "brctl show"
-docker exec -it ${PROXY} bash -c "show_tc.sh"
-
-docker exec -it ${PROXY} bash -c "ip netns exec proxy${PROXY_IP} ping -c1 172.1.0.3"
-docker exec -it ${PROXY} bash -c "ip netns exec proxy${PROXY_IP} ping -c1 172.1.0.4"
-docker exec -it ${PROXY} bash -c "ip netns exec proxy${PROXY_IP} ping -c1 1.1.1.1"
-# <<<<
-
 
 # PFC >>>> Attach PFC to eth on EGW
 #docker exec -it ${PROXY} bash -c "pfc_start.sh ${PROXY_NIC} "${PROXY}" 9 9 ${PROXY_PORT_MIN} ${PROXY_PORT_MAX}"
-CHECK=$(docker exec -it ${PROXY} bash -c "tc qdisc show dev ${PROXY_NIC} | grep clsact")
-if [ ! "${CHECK}" ]; then
+if [ ! "$(docker exec -it ${PROXY} bash -c \"tc qdisc show dev ${PROXY_NIC} | grep clsact\")" ]; then
     docker exec -it ${PROXY} bash -c "sudo tc qdisc add dev ${PROXY_NIC} clsact"
 fi
 docker exec -it ${PROXY} bash -c "tc filter add dev ${PROXY_NIC} ingress bpf direct-action object-file pfc_ingress_tc.o sec .text"
@@ -107,8 +77,7 @@ docker exec -it ${PROXY} bash -c "port_init.sh ${PROXY_PORT_MIN} ${PROXY_PORT_MA
 DEFAULT_IFINDEX=$(docker exec -it ${PROXY} bash -c "ip link show ${PROXY_NIC}" | grep mtu | awk '{print $1}' | sed 's/://')
 echo "[${DEFAULT_IFINDEX}]"
 
-CHECK=$(docker exec -it ${PROXY} bash -c "tc qdisc show dev br0 | grep clsact")
-if [ ! "${CHECK}" ]; then
+if [ ! "$(docker exec -it ${PROXY} bash -c \"tc qdisc show dev br0 | grep clsact\")" ]; then
     docker exec -it ${PROXY} bash -c "sudo tc qdisc add dev br0 clsact"
 fi
 docker exec -it ${PROXY} bash -c "tc filter add dev br0 ingress bpf direct-action object-file pfc_egress_tc.o sec .text"
@@ -122,18 +91,18 @@ docker exec -it ${PROXY} bash -c "cli_cfg set br0 1 ${DEFAULT_IFINDEX} 9 'EGW-BR
 #docker exec -it ${NODE} bash -c "pfc_start.sh ${NODE_NIC} "${NODE}" 9 8 ${NODE_PORT_MIN} ${NODE_PORT_MAX} ${DELAY}"
 docker exec -itd ${NODE} bash -c "gue_ping_svc_auto ${DELAY} 10 3 &> /tmp/gue_ping.log"
 
-docker exec -it ${NODE} bash -c "attach_tc.sh ${NODE_NIC}"
+#docker exec -it ${NODE} bash -c "attach_tc.sh ${NODE_NIC}"
+if [ ! "$(docker exec -it ${NODE} bash -c \"tc qdisc show dev ${NODE_NIC} | grep clsact\")" ]; then
+    docker exec -it ${NODE} bash -c "sudo tc qdisc add dev ${NODE_NIC} clsact"
+fi
+docker exec -it ${NODE} bash -c "tc filter add dev ${NODE_NIC} ingress bpf direct-action object-file pfc_ingress_tc.o sec .text"
+docker exec -it ${NODE} bash -c "tc filter add dev ${NODE_NIC} egress bpf direct-action object-file pfc_egress_tc.o sec .text"
 
 docker exec -it ${NODE} bash -c "cli_cfg set ${NODE_NIC} 0 0 9 \"${NODE} RX\""
 docker exec -it ${NODE} bash -c "cli_cfg set ${NODE_NIC} 1 0 8 \"${NODE} TX\""
 
 docker exec -it ${NODE} bash -c "port_init.sh ${NODE_PORT_MIN} ${NODE_PORT_MAX}"
 # <<<<
-
-# DEBUG >>>>
-docker exec -it ${PROXY} bash -c "show_tc.sh ; cli_cfg get all"
-# <<<<
-
 
 # DEBUG >>>>
 docker exec -it ${PROXY} bash -c "show_tc.sh ; cli_cfg get all"
@@ -158,16 +127,15 @@ docker exec -it ${PROXY} bash -c "ip netns exec proxy${PROXY_IP} ping -c1 1.1.1.
 
 # get egw interface IP
 PROXY_TUN_IP=$(docker exec -it ${PROXY} bash -c "ip addr show dev ${PROXY_NIC}" | grep inet | awk '{print $2}' | sed 's/\// /g' | awk '{print $1}')
-
+# get egw interface IP
+NODE_TUN_IP=$(docker exec -it ${NODE} bash -c "ip addr show dev ${NODE_NIC}" | grep inet | awk '{print $2}' | sed 's/\// /g' | awk '{print $1}')
+# compute tunnel-id as group-id "+" servie-id
 TUNNEL_ID=${GROUP_ID}
 ((TUNNEL_ID <<= 16))
 ((TUNNEL_ID += ${SERVICE_ID}))
 
-PROXY_TUN_PORT="?"
-NODE_TUN_PORT="?"
-
-# get egw interface IP
-NODE_TUN_IP=$(docker exec -it ${NODE} bash -c "ip addr show dev ${NODE_NIC}" | grep inet | awk '{print $2}' | sed 's/\// /g' | awk '{print $1}')
+PROXY_TUN_PORT=$(docker exec -it ${PROXY} bash -c "port_alloc.sh")
+NODE_TUN_PORT=$(docker exec -it ${NODE} bash -c "port_alloc.sh")
 
 echo "Setup forwarding..."
 echo "  ${SERVICE_NAME}"
@@ -175,7 +143,28 @@ echo "    Proxy   : ${PROXY}  ${SERVICE_PROTO}:${PROXY_IP}:${PROXY_PORT} -> ${NO
 echo "    Service : (${GROUP_ID},${SERVICE_ID}) -> '${PASSWD}'"
 echo "    Tunnel  : ${TUNNEL_ID} (${PROXY_TUN_IP}:${PROXY_TUN_PORT} -> ${NODE_TUN_IP}:${NODE_TUN_PORT})"
 
-# INFRA >>>> setup proxy in the namespace
+
+# INFRA >>>> Setup PROXY NS1 -> create namespace, attach veth1, add it to bridge, assign public ip 5.5.5.5
+./proxy_add.sh ${PROXY} "5.5.5.5" 5.5.5.5 br0 1
+# <<<<
+
+# PFC >>>> attach TAGging BPF to veth ingress
+docker exec -it ${PROXY} bash -c "sudo tc qdisc add dev veth1 clsact"
+docker exec -it ${PROXY} bash -c "tc -d filter add dev veth1 ingress bpf direct-action object-file pfc_tag_rx_tc.o sec .text ; echo $?"
+#docker exec -it ${PROXY} bash -c "tc filter add dev veth1 egress  bpf direct-action object-file pfc_tag_tx_tc.o sec .text"
+# <<<<
+
+# DEBUG: >>>>
+docker exec -it ${PROXY} bash -c "ip netns list"
+docker exec -it ${PROXY} bash -c "brctl show"
+docker exec -it ${PROXY} bash -c "show_tc.sh"
+
+docker exec -it ${PROXY} bash -c "ip netns exec proxy${PROXY_IP} ping -c1 172.1.0.3"
+docker exec -it ${PROXY} bash -c "ip netns exec proxy${PROXY_IP} ping -c1 172.1.0.4"
+docker exec -it ${PROXY} bash -c "ip netns exec proxy${PROXY_IP} ping -c1 1.1.1.1"
+# <<<<
+
+# INFRA >>>> Configure NAT in proxy namespace
 docker exec -it ${PROXY} bash -c "ip netns exec proxy${PROXY_IP} iptables -t nat -A PREROUTING -p ${SERVICE_PROTO} -i vethns1 --destination ${PROXY_IP} --dport ${PROXY_PORT} -j DNAT --to-destination ${SERVICE_IP}:${SERVICE_PORT}"
 docker exec -it ${PROXY} bash -c "ip netns exec proxy${PROXY_IP} iptables -t nat -A POSTROUTING -p ${SERVICE_PROTO} -o vethns1 -s ${SERVICE_IP} --sport ${SERVICE_PORT} -j SNAT --to-source ${PROXY_IP}:${PROXY_PORT}"
 # check
@@ -187,9 +176,13 @@ fi
 
 # PFC >>>> configure forwarding
 # pfc_add.sh     <nic> <group-id> <service-id> <passwd> <remote-tunnel-ip> <remote-tunnel-port> <proto> <proxy-ip> <proxy-port> <backend-ip> <backend-port>
-docker exec -it ${PROXY} bash -c "pfc_add1.sh ${PROXY_NIC} ${GROUP_ID} ${SERVICE_ID} ${PASSWD} 0 0 ${SERVICE_PROTO} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} 4"
-PROXY_TUN_PORT=$(docker exec -it ${PROXY} bash -c "cli_tunnel get ${TUNNEL_ID}" | grep ${TUNNEL_ID} | awk '{print $3}' | sed 's/:/ /g' | awk '{print $2}')
-docker exec -it ${NODE} bash -c "pfc_add1.sh ${NODE_NIC} ${GROUP_ID} ${SERVICE_ID} ${PASSWD} ${PROXY_TUN_IP} ${PROXY_TUN_PORT} ${SERVICE_PROTO} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} 0"
+#docker exec -it ${PROXY} bash -c "pfc_add.sh ${PROXY_NIC} ${GROUP_ID} ${SERVICE_ID} ${PASSWD} 0 0 ${SERVICE_PROTO} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} 4"
+docker exec -it ${PROXY} bash -c "cli_tunnel set ${TUNNEL_ID} ${PROXY_TUN_IP} ${PROXY_TUN_PORT} 0 0"
+docker exec -it ${PROXY} bash -c "cli_service set ${GROUP_ID} ${SERVICE_ID} ${SERVICE_PROTO} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${TUNNEL_ID} ${PASSWD} 4"
+
+#docker exec -it ${NODE} bash -c "pfc_add.sh ${NODE_NIC} ${GROUP_ID} ${SERVICE_ID} ${PASSWD} ${PROXY_TUN_IP} ${PROXY_TUN_PORT} ${SERVICE_PROTO} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT}"
+docker exec -it ${NODE} bash -c "cli_tunnel set ${TUNNEL_ID} ${NODE_TUN_IP} ${NODE_TUN_PORT} ${PROXY_TUN_IP} ${PROXY_TUN_PORT}"
+docker exec -it ${NODE} bash -c "cli_service set ${GROUP_ID} ${SERVICE_ID} ${SERVICE_PROTO} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} ${TUNNEL_ID} ${PASSWD} 0"
 # <<<<
 
 
