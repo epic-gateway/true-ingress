@@ -30,6 +30,8 @@ RUN make build
 #
 FROM system as prod
 
+RUN apt-get update && apt-get install -y bridge-utils
+
 RUN mkdir -p /opt/acnodal/bin
 RUN mkdir -p /opt/acnodal/cfg
 RUN mkdir -p /opt/acnodal/log
