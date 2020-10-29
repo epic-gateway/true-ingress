@@ -81,9 +81,6 @@ int pfc_tx(struct __sk_buff *skb)
 
                 // update TABLE-PROXY
                 bpf_map_update_elem(&map_proxy, &key, &mac_remote, BPF_ANY);
-
-                bpf_print("Redirecting to %u TX\n", cfg->id);
-                return dump_action(bpf_redirect(cfg->id, 0));
             }
 
             bpf_print("GUE Encap Service: group-id %u, service-id %u, tunnel-id %u\n",
@@ -107,6 +104,11 @@ int pfc_tx(struct __sk_buff *skb)
             ASSERT (ret != TC_ACT_SHOT, dump_action(TC_ACT_SHOT), "GUE Encap Failed!\n");
             if (cfg->flags & CFG_TX_DUMP) {
                 dump_pkt(skb);
+            }
+
+            if (cfg->id) {
+                bpf_print("Redirecting to %u TX\n", cfg->id);
+                return dump_action(bpf_redirect(cfg->id, 0));
             }
 
             return dump_action(ret);

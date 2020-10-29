@@ -188,107 +188,8 @@ do
     # bridge up
     docker exec -it ${prxs[i]} bash -c "ip link set br0 up"
 
-    DEFAULT_IFINDEX=$(docker exec -it ${prxs[i]} bash -c "ip link" | grep eth1 | grep -v veth | awk '{print $1}' | sed 's/://')
-    echo "[${DEFAULT_IFINDEX}]"
-
-    # --- Setup NS1 ---
-    docker exec -it ${prxs[i]} bash -c "ip netns add ns5.5.5.5"
-
-    # create veth pair for namespace
-    docker exec -it ${prxs[i]} bash -c "ip link add veth1 type veth peer name vethns1"
-
-    # attach veth to namespace
-    docker exec -it ${prxs[i]} bash -c "ip link set vethns1 netns ns5.5.5.5"
-
-    # EXIST
-    # add veth to bridge
-    docker exec -it ${prxs[i]} bash -c "brctl addif br0 veth1"
-    # veth up
-    docker exec -it ${prxs[i]} bash -c "ip link set veth1 up"
-
-    ##brctl show
-
-    # configure veth in namespace + add deault route to br0
-    docker exec -it ${prxs[i]} bash -c "ip netns exec ns5.5.5.5 ip addr add 5.5.5.5/32 dev vethns1"
-    docker exec -it ${prxs[i]} bash -c "ip netns exec ns5.5.5.5 ip link set vethns1 up"
-    docker exec -it ${prxs[i]} bash -c "ip netns exec ns5.5.5.5 ip route add default dev vethns1"
-    docker exec -it ${prxs[i]} bash -c "ip netns exec ns5.5.5.5 echo 1 > /proc/sys/net/ipv4/ip_forward"
-    docker exec -it ${prxs[i]} bash -c "ip netns exec ns5.5.5.5 cat /proc/sys/net/ipv4/ip_forward"
-    docker exec -it ${prxs[i]} bash -c "ip netns exec ns5.5.5.5 ip route get 172.1.0.2"
-
-#    docker exec -it ${prxs[i]} bash -c "ip netns exec ns5.5.5.5 echo 'net.ipv4.conf.all.proxy_arp=1' >> /etc/sysctl.conf"
-#    docker exec -it ${prxs[i]} bash -c "ip netns exec ns5.5.5.5 echo 'net.ipv4.conf.vethns1.proxy_arp=1' >> /etc/sysctl.conf"
-
-    # configure proxy ip in Lo
-#    docker exec -it ${prxs[i]} bash -c "ip netns exec ns5.5.5.5 ip addr add 5.5.5.5/32 dev lo"
-#    docker exec -it ${prxs[i]} bash -c "ip netns exec ns5.5.5.5 ip link set lo up"
-
-    # set route on host to steer PROXY-IP into br0
-    docker exec -it ${prxs[i]} bash -c "ip route add 5.5.5.5/32 dev br0"
-
-    #check
-    docker exec -it ${prxs[i]} bash -c "ip netns exec ns5.5.5.5 ping -c1 172.1.0.3"
-#    docker exec -it ${prxs[i]} bash -c "ip netns exec ns5.5.5.5 ping -c1 172.1.0.4"
-#    docker exec -it ${prxs[i]} bash -c "ip netns exec ns5.5.5.5 ping -c1 1.1.1.1"
-
-    docker exec -it ${prxs[i]} bash -c "sudo tc qdisc add dev veth1 clsact"
-    docker exec -it ${prxs[i]} bash -c "tc -d filter add dev veth1 ingress bpf direct-action object-file /opt/acnodal/bin/pfc_tag_rx_tc.o sec .text ; echo $?"
-    docker exec -it ${prxs[i]} bash -c "tc filter add dev veth1 egress  bpf direct-action object-file /opt/acnodal/bin/pfc_tag_tx_tc.o sec .text"
-#    docker exec -it ${prxs[i]} bash -c "tc -d filter add dev veth1 ingress bpf direct-action object-file /opt/acnodal/bin/pfc_egress_tc.o sec .text ; echo $?"
-##    docker exec -it ${prxs[i]} bash -c "cli_cfg set veth1 0 ${DEFAULT_IFINDEX} 9 'VETH1 RX'"
-#    docker exec -it ${prxs[i]} bash -c "cli_cfg set veth1 1 ${DEFAULT_IFINDEX} 9 'VETH1 TX'"
-
-    # --- Setup NS1 ---
-    docker exec -it ${prxs[i]} bash -c "ip netns add ns6.6.6.6"
-
-    # create veth pair for namespace
-    docker exec -it ${prxs[i]} bash -c "ip link add veth2 type veth peer name vethns2"
-
-    # attach veth to namespace
-    docker exec -it ${prxs[i]} bash -c "ip link set vethns2 netns ns6.6.6.6"
-
-    # EXIST
-    # add veth to bridge
-    docker exec -it ${prxs[i]} bash -c "brctl addif br0 veth2"
-    # veth up
-    docker exec -it ${prxs[i]} bash -c "ip link set veth2 up"
-
-    ##brctl show
-
-    # configure veth in namespace + add deault route to br0
-    docker exec -it ${prxs[i]} bash -c "ip netns exec ns6.6.6.6 ip addr add 6.6.6.6/24 dev vethns2"
-    docker exec -it ${prxs[i]} bash -c "ip netns exec ns6.6.6.6 ip link set vethns2 up"
-    docker exec -it ${prxs[i]} bash -c "ip netns exec ns6.6.6.6 ip route add default dev vethns2"
-    docker exec -it ${prxs[i]} bash -c "ip netns exec ns6.6.6.6 echo 1 > /proc/sys/net/ipv4/ip_forward"
-    docker exec -it ${prxs[i]} bash -c "ip netns exec ns6.6.6.6 cat /proc/sys/net/ipv4/ip_forward"
-
-#    docker exec -it ${prxs[i]} bash -c "ip netns exec ns5.5.5.5 echo 'net.ipv4.conf.all.proxy_arp=1' >> /etc/sysctl.conf"
-#    docker exec -it ${prxs[i]} bash -c "ip netns exec ns5.5.5.5 echo 'net.ipv4.conf.vethns2.proxy_arp=1' >> /etc/sysctl.conf"
-
-    docker exec -it ${prxs[i]} bash -c "ip netns exec ns6.6.6.6 ping -c3 172.1.0.3"
-#    docker exec -it ${prxs[i]} bash -c "ip netns exec ns6.6.6.6 ping -c3 172.1.0.4"
-
-    # configure proxy ip in Lo
-#    docker exec -it ${prxs[i]} bash -c "ip netns exec ns6.6.6.6 ip addr add 6.6.6.6/32 dev lo"
-#    docker exec -it ${prxs[i]} bash -c "ip netns exec ns6.6.6.6 ip link set lo up"
-
-    # set route on host to steer PROXY-IP into br0
-    docker exec -it ${prxs[i]} bash -c "ip route add 6.6.6.6/32 dev br0"
-
-    #check
-#    docker exec -it ${prxs[i]} bash -c "ip netns exec ns6.6.6.6 ping -c1 172.1.0.4"
-#    docker exec -it ${prxs[i]} bash -c "ip netns exec ns6.6.6.6 ping -c1 1.1.1.1"
-
-    docker exec -it ${prxs[i]} bash -c "sudo tc qdisc add dev veth2 clsact"
-    docker exec -it ${prxs[i]} bash -c "tc -d filter add dev veth2 ingress bpf direct-action object-file /opt/acnodal/bin/pfc_tag_rx_tc.o sec .text ; echo $?"
-    docker exec -it ${prxs[i]} bash -c "tc filter add dev veth2 egress  bpf direct-action object-file /opt/acnodal/bin/pfc_tag_tx_tc.o sec .text"
-#    docker exec -it ${prxs[i]} bash -c "tc -d filter add dev veth2 ingress bpf direct-action object-file /opt/acnodal/bin/pfc_egress_tc.o sec .text ; echo $?"
-##    docker exec -it ${prxs[i]} bash -c "cli_cfg set veth2 0 ${DEFAULT_IFINDEX} 9 'VETH2 RX'"
-#    docker exec -it ${prxs[i]} bash -c "cli_cfg set veth2 1 ${DEFAULT_IFINDEX} 9 'VETH2 TX'"
-
-    # <<<<<<
-
-    docker exec -it ${prxs[i]} bash -c "show_tc.sh"
+#    DEFAULT_IFINDEX=$(docker exec -it ${prxs[i]} bash -c "ip link" | grep eth1 | grep -v veth | awk '{print $1}' | sed 's/://')
+#    echo "[${DEFAULT_IFINDEX}]"
 #    docker exec -it ${prxs[i]} bash -c "cli_cfg get all"
 
     # add default route
@@ -296,7 +197,6 @@ do
 
     if [ "${VERBOSE}" ]; then
         echo ""
-        docker exec -it ${prxs[i]} bash -c "brctl show"
         docker exec -it ${prxs[i]} bash -c "ip addr"
     fi
 
@@ -397,18 +297,15 @@ do
     done
 done
 
-echo -e "\n==========================================="
-echo "# TOPO($1).START [8/${STEPS}] : Reachability Check"
-echo "==========================================="
+#echo -e "\n==========================================="
+#echo "# TOPO($1).START [8/${STEPS}] : Reachability Check"
+#echo "==========================================="
 
-for (( i=0; i<${#PROXY_IP[@]}; i++ ))      # need one route per proxy/with own NAT box IP
-do
-    ./test_icmp.sh ${PROXY_IP[i]} "${CLIENTS} ${SERVERS} ${NATS}"
-    echo "=========="
-done
-
-docker exec -it egw bash -c "ip netns exec ns5.5.5.5 ping -c1 172.1.0.4"
-docker exec -it egw bash -c "ip netns exec ns5.5.5.5 ping -c1 1.1.1.1"
+#for (( i=0; i<${#PROXY_IP[@]}; i++ ))      # need one route per proxy/with own NAT box IP
+#do
+#    ./test_icmp.sh ${PROXY_IP[i]} "${CLIENTS} ${SERVERS} ${NATS}"
+#    echo "=========="
+#done
 
 echo -e "\n==========================================="
 echo "# TOPO($1).START : DONE"
