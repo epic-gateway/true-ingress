@@ -54,7 +54,7 @@ void usage(char *prog) {
     fprintf(stderr,"ERR: Too little arguments\n");
     fprintf(stderr,"Usage:\n");
     fprintf(stderr,"    %s get all|<service-id> <group-id>\n", prog);
-    fprintf(stderr,"    %s set all|<service-id> <group-id> <proto> <ip-proxy> <port-proxy> <ip-ep> <port-ep> <tunnel-id> <key>\n", prog);
+    fprintf(stderr,"    %s set all|<service-id> <group-id> <proto> <ip-proxy> <port-proxy> <ip-ep> <port-ep> <tunnel-id> <key> <ifindex>\n", prog);
     fprintf(stderr,"    %s del all|<service-id> <group-id>\n", prog);
 }
 
@@ -165,7 +165,7 @@ bool map_nat_delall(int map_fd) {
 //};
 ////////////////////
 void map_verify_print_header() {
-    printf("TABLE-VERIFY:\n\tgid+sid -> security key\t\tproxy-ip:port\t\tbackend-ip:port\t\ttunnel-id\n");
+    printf("TABLE-VERIFY:\n\tgid+sid -> security key\t\tproxy-ip:port\t\tbackend-ip:port\t\ttunnel-id\tifindex\n");
     printf("--------------------------------------------------------------------------\n");
 }
 
@@ -191,7 +191,7 @@ bool map_verify_get(int map_fd, struct identity *key, struct verify *value) {
                 get_proto_name(ntohs(value->dnat.proto)), inet_ntoa(dnat_ip), ntohs(value->dnat.port));
         printf("\t(%s, %s, %u)",
                 get_proto_name(ntohs(value->snat.proto)), inet_ntoa(snat_ip), ntohs(value->snat.port));
-        printf("\t%u", value->tunnel_id);
+        printf("\t%u\t%x", value->tunnel_id, ntohl(value->ifindex));
         printf("\t\t{%08x (%04x, %04x)} -> ", ntohl(*(__u32*)key), ntohs(key->service_id), ntohs(key->group_id));
         __u64 *ptr = (__u64 *)value->value;
         printf("{\'%llx%llx\' {%04x, %08x, %04x} {%04x, %08x, %04x} %08x}\n", ptr[0], ptr[1],
@@ -272,7 +272,17 @@ void map_encap_print_header() {
     printf("--------------------------------------------------------------------------\n");
 }
 
+void map_proxy_encap_print_header() {
+    printf("TABLE-PENCAP:\n\t\tdestination ifindex -> tunnel-id\tgid+sid\t\tkey\n");
+    printf("--------------------------------------------------------------------------\n");
+}
+
 void map_encap_print_footer() {
+    //printf("--------------------------------------------------------------------------\n");
+    printf("\n");
+}
+
+void map_proxy_encap_print_footer() {
     //printf("--------------------------------------------------------------------------\n");
     printf("\n");
 }
@@ -296,6 +306,25 @@ bool map_encap_get(int map_fd, struct endpoint *key, struct service *value) {
     return true;
 }
 
+bool map_proxy_encap_get(int map_fd, struct proxy_encap_key *key, struct service *value) {
+    struct in_addr from;
+    from.s_addr = ntohl(key->ep.ip);
+
+    if (bpf_map_lookup_elem(map_fd, key, value)) {
+        fprintf(stderr, "ENCAP.PGET {%s, %s, %u, %u}\t\tERR (%d) \'%s\'\n",
+                get_proto_name(ntohs(key->ep.proto)), inet_ntoa(from), ntohs(key->ep.port), ntohl(key->ifindex), errno, strerror(errno));
+
+        return false;
+    } else {
+        printf("PENCAP (%s, %s, %u)\t%u -> ", get_proto_name(ntohs(key->ep.proto)), inet_ntoa(from), ntohs(key->ep.port), ntohl(key->ifindex));
+        printf("%u\t\t(%u, %u)\t\'%16.16s\'\t%u", ntohl(value->tunnel_id), ntohs(value->identity.service_id), ntohs(value->identity.group_id), (char*)value->key.value, value->hash);
+        printf("\t\t(%04x, %08x, %04x) -> ", key->ep.proto, key->ep.ip, key->ep.port);
+        __u64 *ptr = (__u64 *)value->key.value;
+        printf("(%08x\t(%04x, %04x)\t\'%llx%llx\'\n", value->tunnel_id, value->identity.service_id, value->identity.group_id, ptr[0], ptr[1]);
+    }
+    return true;
+}
+
 bool map_encap_getall(int map_fd) {
     struct endpoint prev_key, key;
     struct service value;
@@ -313,6 +342,23 @@ bool map_encap_getall(int map_fd) {
     return true;
 }
 
+bool map_proxy_encap_getall(int map_fd) {
+    struct proxy_encap_key prev_key, key;
+    struct service value;
+
+    map_proxy_encap_print_header();
+    while (bpf_map_get_next_key(map_fd, &prev_key, &key) == 0) {
+        if (!map_proxy_encap_get(map_fd, &key, &value)) {
+            break;
+        }
+
+        prev_key=key;
+    }
+    map_proxy_encap_print_footer();
+
+    return true;
+}
+
 bool map_encap_set(int map_fd, struct endpoint *key, struct service *value) {
     struct in_addr from;
     from.s_addr = ntohl(key->ip);
@@ -324,6 +370,22 @@ bool map_encap_set(int map_fd, struct endpoint *key, struct service *value) {
         return false;
     } else {
         printf("ENCAP.SET {%s, %s, %u}\t\tOK\n", get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port));
+    }
+
+    return true;
+}
+
+bool map_proxy_encap_set(int map_fd, struct proxy_encap_key *key, struct service *value) {
+    struct in_addr from;
+    from.s_addr = ntohl(key->ep.ip);
+
+    if (bpf_map_update_elem(map_fd, key, value, 0)) {
+        fprintf(stderr, "ENCAP.PSET {%s, %s, %u, %u}\t\tERR (%d) \'%s\'\n",
+                get_proto_name(ntohs(key->ep.proto)), inet_ntoa(from), ntohs(key->ep.port), ntohl(key->ifindex), errno, strerror(errno));
+
+        return false;
+    } else {
+        printf("ENCAP.PSET {%s, %s, %u, %u}\t\tOK\n", get_proto_name(ntohs(key->ep.proto)), inet_ntoa(from), ntohs(key->ep.port), ntohl(key->ifindex));
     }
 
     return true;
@@ -345,11 +407,40 @@ bool map_encap_del(int map_fd, struct endpoint *key) {
     return true;
 }
 
+bool map_proxy_encap_del(int map_fd, struct proxy_encap_key *key) {
+    struct in_addr from;
+    from.s_addr = ntohl(key->ep.ip);
+
+    if (bpf_map_delete_elem(map_fd, key)) {
+        fprintf(stderr, "ENCAP.PDEL {%s, %s, %u, %u}\t\tERR (%d) \'%s\'\n",
+                get_proto_name(ntohs(key->ep.proto)), inet_ntoa(from), ntohs(key->ep.port), ntohl(key->ifindex), errno, strerror(errno));
+
+        return false;
+    } else {
+        printf("ENCAP.PDEL {%s, %s, %u, %u}\t\tOK\n", get_proto_name(ntohs(key->ep.proto)), inet_ntoa(from), ntohs(key->ep.port), ntohl(key->ifindex));
+    }
+
+    return true;
+}
+
 bool map_encap_delall(int map_fd) {
     struct endpoint prev_key, key;
 
     while (bpf_map_get_next_key(map_fd, &prev_key, &key) == 0) {
         if (!map_encap_del(map_fd, &key)) {
+            break;
+        }
+        //prev_key=key;
+    }
+
+    return true;
+}
+
+bool map_proxy_encap_delall(int map_fd) {
+    struct proxy_encap_key prev_key, key;
+
+    while (bpf_map_get_next_key(map_fd, &prev_key, &key) == 0) {
+        if (!map_proxy_encap_del(map_fd, &key)) {
             break;
         }
         //prev_key=key;
@@ -383,6 +474,11 @@ int main(int argc, char **argv)
 
     int map_encap_fd = open_bpf_map_file("/sys/fs/bpf/tc/globals/map_encap");
     if (map_encap_fd < 0) {
+        return 1;
+    }
+
+    int map_proxy_encap_fd = open_bpf_map_file("/sys/fs/bpf/tc/globals/map_proxy_encap");
+    if (map_proxy_encap_fd < 0) {
         return 1;
     }
 
@@ -420,12 +516,17 @@ int main(int argc, char **argv)
         __u32 tid = atoi(argv[9]);
         
         strncpy((char*)pwd.value, argv[10], SECURITY_KEY_SIZE);
-        map_encap_set(map_encap_fd, &ep_to, make_service(&svc, tid, make_identity(&id, atoi(argv[2]), atoi(argv[3])), make_verify(&pwd, &ep_from, &ep_to, tid)));
+        map_encap_set(map_encap_fd, &ep_to, make_service(&svc, tid, make_identity(&id, atoi(argv[2]), atoi(argv[3])), make_verify(&pwd, &ep_from, &ep_to, tid, atoi(argv[11]))));
+        struct proxy_encap_key ekey;
+        map_proxy_encap_set(map_proxy_encap_fd,
+                            make_proxy_encap_key(&ekey, to.s_addr, atoi(argv[8]), proto, atoi(argv[11])),
+                            &svc);
 
         map_verify_set(map_verify_fd, &id, &pwd);
     } else if (!strncmp(argv[1], "get", 4)) {
         if (!strncmp(argv[2], "all", 4)) {
             map_encap_getall(map_encap_fd);
+            map_proxy_encap_getall(map_proxy_encap_fd);
             map_nat_getall(map_nat_fd);
             map_verify_getall(map_verify_fd);
         } else {
@@ -448,12 +549,14 @@ int main(int argc, char **argv)
             struct service svc;
 
             map_encap_get(map_encap_fd, &pwd.snat, &svc);
+//            map_proxy_encap_get(map_proxy_encap_fd, &pwd.snat, &svc);
         }
     } else if (!strncmp(argv[1], "del", 4)) {
         if (!strncmp(argv[2], "all", 4)) {
             map_verify_delall(map_verify_fd);
             map_nat_delall(map_nat_fd);
             map_encap_delall(map_encap_fd);
+            map_proxy_encap_delall(map_proxy_encap_fd);
         } else {
             if (argc < 4) {
                 usage(argv[0]);
@@ -473,6 +576,7 @@ int main(int argc, char **argv)
             map_nat_del(map_nat_fd, &pwd.snat);
 
             map_encap_del(map_encap_fd, &pwd.snat);
+//            map_proxy_encap_del(map_proxy_encap_fd, &pwd.snat);
             map_verify_del(map_verify_fd, &id);
         }
     } else {
