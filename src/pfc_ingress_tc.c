@@ -28,6 +28,8 @@ int pfc_rx(struct __sk_buff *skb)
     bpf_print("PFC RX <<<< # %u, ifindex %u, len %u\n", pktnum, skb->ifindex, skb->len);
     bpf_print("  gso_segs %u\n", skb->gso_segs);
 //    bpf_print("  gso_size %u\n", skb->gso_size);
+    bpf_print("  ingress_ifindex %u\n", skb->ingress_ifindex);
+    bpf_print("  mark %u\n", skb->mark);
 
     // get config
     __u32 key = skb->ifindex;
@@ -55,8 +57,10 @@ int pfc_rx(struct __sk_buff *skb)
     // check packet for DECAP
     if (cfg->flags & CFG_RX_GUE) {
         // is GUE endpoint?
+        bpf_print("Decap key %lx\n", *(__u64*)&ep);
+
         if (bpf_map_lookup_elem(&map_decap, &ep)) {
-            //bpf_print("Parsing GUE header\n");
+            bpf_print("Parsing GUE header\n");
             void *data_end = (void *)(long)skb->data_end;
             // control or data
             struct guehdr *gue = hdr.payload;
@@ -116,31 +120,44 @@ int pfc_rx(struct __sk_buff *skb)
                     dump_pkt(skb);
                 }
 
-                bpf_print("Create/refresh tracking record:\n");
-                // get client
-                //ASSERT(parse_headers(skb, &hdr) != TC_ACT_SHOT, dump_action(TC_ACT_UNSPEC), "ERROR: SRC EP parsing failed!\n");
-                //parse_src_ep(&ep, &hdr);
-                //ASSERT(parse_src_ep1(skb, &ep, &hdr) != TC_ACT_SHOT, dump_action(TC_ACT_UNSPEC), "ERROR: SRC EP parsing failed!\n");
-                struct endpoint sep = { 0 }, dep = { 0 };
-                ASSERT(parse_ep(skb, &sep, &dep) != TC_ACT_SHOT, dump_action(TC_ACT_UNSPEC), "ERROR: SRC EP parsing failed!\n");
-                bpf_print("  Parsed Source EP: ip %x, port %u, proto %u\n", sep.ip, bpf_ntohs(sep.port), bpf_ntohs(sep.proto));
-                bpf_print("  KEY: %lx\n", *(__u64*)&sep);
+                if (verify->ifindex) {  // EGW
+                    __u32 ifindex = bpf_ntohl(verify->ifindex);
+                    bpf_print("Redirecting to proxy instance ifindex %u TX\n", ifindex);
 
-//                __u32 *tmp = (__u32 *)&svc;
-//                bpf_print("%x %x %x\n", tmp[0], tmp[1], tmp[2]);
-//                bpf_print("%x %x %x\n", tmp[3], tmp[4], tmp[5]);
-                bpf_print("  VALUE: group-id %u, service-id %u, tunnel-id %u\n",
-                          bpf_ntohs(svc.identity.service_id), bpf_ntohs(svc.identity.group_id), bpf_ntohl(svc.tunnel_id));
-                bpf_print("         hash %x\n", svc.hash);
-//                bpf_print("VALUE: service-id %x, group-id %x, tunnel-id %x\n",
-//                          svc.identity.service_id, svc.identity.group_id, svc.tunnel_id);
-                __u64 *ptr = (__u64 *)svc.key.value;
-                bpf_print("    key %lx%lx\n", ptr[0], ptr[1]);
+                    // update TABLE-PROXY
+                    struct mac *mac_remote = bpf_map_lookup_elem(&map_proxy, &ifindex);
+                    ASSERT(mac_remote != 0, dump_action(TC_ACT_UNSPEC), "ERROR: Proxy MAC for ifindex %u not found!\n", ifindex);
 
-                // update TABLE-ENCAP
-                bpf_map_update_elem(&map_encap, &sep, &svc, BPF_ANY);
-                // update TABLE-NAT (in case of DSR)
-                bpf_map_update_elem(&map_nat, &sep, &verify->dnat, BPF_ANY);
+                    // Update destination MAC
+                    int ret = bpf_skb_store_bytes(skb, 0, mac_remote->value, 6, BPF_F_INVALIDATE_HASH);
+                    if (ret < 0) {
+                        bpf_print("bpf_skb_store_bytes: %d\n", ret);
+                        return TC_ACT_SHOT;
+                    }
+
+                    if (cfg->flags & CFG_TX_DUMP) {
+                        dump_pkt(skb);
+                    }
+
+                    return dump_action(bpf_redirect(ifindex, 0));
+                } else {                // NODE
+                    bpf_print("Create/refresh tracking record:\n");
+                    struct endpoint sep = { 0 }, dep = { 0 };
+                    ASSERT(parse_ep(skb, &sep, &dep) != TC_ACT_SHOT, dump_action(TC_ACT_UNSPEC), "ERROR: SRC EP parsing failed!\n");
+                    bpf_print("  Parsed Source EP: ip %x, port %u, proto %u\n", sep.ip, bpf_ntohs(sep.port), bpf_ntohs(sep.proto));
+                    bpf_print("  KEY: %lx\n", *(__u64*)&sep);
+
+                    bpf_print("  VALUE: group-id %u, service-id %u, tunnel-id %u\n",
+                            bpf_ntohs(svc.identity.service_id), bpf_ntohs(svc.identity.group_id), bpf_ntohl(svc.tunnel_id));
+                    bpf_print("         hash %x\n", svc.hash);
+                    __u64 *ptr = (__u64 *)svc.key.value;
+                    bpf_print("    key %lx%lx\n", ptr[0], ptr[1]);
+
+                    // update TABLE-ENCAP
+                    bpf_map_update_elem(&map_encap, &sep, &svc, BPF_ANY);
+                    // update TABLE-NAT (in case of DSR)
+                    bpf_map_update_elem(&map_nat, &sep, &verify->dnat, BPF_ANY);
+                }
 
                 return dump_action(TC_ACT_OK);
             }
