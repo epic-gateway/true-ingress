@@ -28,7 +28,7 @@ if [ ! "${NIC}" ] ; then
 fi
 
 echo "Loading PFC(TC) to ${NIC}..."
-CHECK=`tc qdisc show | grep clsact | grep ${NIC}`
+CHECK=`tc qdisc show dev ${NIC} | grep clsact`
 if [ "${CHECK}" ]; then
     echo "### Using existing clsact qdisc ###"
 else
