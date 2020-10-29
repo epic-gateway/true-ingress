@@ -13,7 +13,7 @@ if [ ! -f "${CFG_DIR}/gue_port.cfg" ] ; then
     exit 1
 fi
 
-if [[ $(wc -l /opt/acnodal/cfg/gue_port.cfg | awk '{print $1}') -eq 0 ]] ; then
+if [[ $(wc -l "${CFG_DIR}/gue_port.cfg" | awk '{print $1}') -eq 0 ]] ; then
     >&2 echo "# Port list is empty"
     exit 1
 fi
