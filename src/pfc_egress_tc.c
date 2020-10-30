@@ -61,9 +61,22 @@ int pfc_tx(struct __sk_buff *skb)
     if (cfg->flags & CFG_TX_PROXY) {
         bpf_print("Is PROXY\n");
 
+        ///
+        struct proxy_encap_key test_ekey = { { 0 }, 0 };
+        struct service *xxx = bpf_map_lookup_elem(&map_proxy_encap, &test_ekey);
+        if (xxx) {
+            bpf_print("There\'s some MAGIC!\n");
+        } else {
+            bpf_print("There's no MAGIC anymore!\n");
+            struct service test_svc = { 0 };
+            bpf_map_update_elem(&map_proxy_encap, &test_ekey, &test_svc, BPF_ANY);
+        }
+        ///
+
         // is Service endpoint?
         struct proxy_encap_key ekey = { dep, bpf_ntohl(skb->mark) };
-        bpf_print("encap KEY: %lx %x\n", *(__u64*)&dep, skb->mark);
+        __u32 *ptr = (__u32*)&ekey;
+        bpf_print("encap KEY: %x%x%x\n", ptr[0], ptr[1], ptr[2]);
         struct service *svc = bpf_map_lookup_elem(&map_proxy_encap, &ekey);
         if (svc) {
             if (cfg->id) {

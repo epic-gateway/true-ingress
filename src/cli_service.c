@@ -232,7 +232,8 @@ bool map_proxy_encap_get(int map_fd, struct proxy_encap_key *key, struct service
     } else {
         printf("PENCAP (%s, %s, %u)\t%u -> ", get_proto_name(ntohs(key->ep.proto)), inet_ntoa(from), ntohs(key->ep.port), ntohl(key->ifindex));
         printf("%u\t\t(%u, %u)\t\'%16.16s\'\t%u", ntohl(value->tunnel_id), ntohs(value->identity.service_id), ntohs(value->identity.group_id), (char*)value->key.value, value->hash);
-        printf("\t\t(%04x, %08x, %04x) -> ", key->ep.proto, key->ep.ip, key->ep.port);
+        __u32 *ptrk = (__u32 *)key;
+        printf("\t\t(%x%x%x) -> ", ptrk[0], ptrk[1], ptrk[2]);
         __u64 *ptr = (__u64 *)value->key.value;
         printf("(%08x\t(%04x, %04x)\t\'%llx%llx\'\n", value->tunnel_id, value->identity.service_id, value->identity.group_id, ptr[0], ptr[1]);
     }
