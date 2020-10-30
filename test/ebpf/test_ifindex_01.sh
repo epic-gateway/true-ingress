@@ -120,11 +120,6 @@ else
 fi
 # <<<<
 
-# DEBUG >>>>
-docker exec -it ${PROXY} bash -c "ip netns exec proxy${PROXY_IP} ping -c1 172.1.0.4"
-docker exec -it ${PROXY} bash -c "ip netns exec proxy${PROXY_IP} ping -c1 1.1.1.1"
-# <<<<
-
 # get egw interface IP
 PROXY_TUN_IP=$(docker exec -it ${PROXY} bash -c "ip addr show dev ${PROXY_NIC}" | grep inet | awk '{print $2}' | sed 's/\// /g' | awk '{print $1}')
 # get egw interface IP
@@ -139,7 +134,7 @@ NODE_TUN_PORT=$(docker exec -it ${NODE} bash -c "port_alloc.sh")
 
 echo "Setup forwarding..."
 echo "  ${SERVICE_NAME}"
-echo "    Proxy   : ${PROXY}  ${SERVICE_PROTO}:${PROXY_IP}:${PROXY_PORT} -> ${NODE}  ${SERVICE_PROTO}:${SERVICE_IP}:${SERVICE_PORT} (proxy container ifindex 4)"
+echo "    Proxy   : ${PROXY}  ${SERVICE_PROTO}:${PROXY_IP}:${PROXY_PORT} (proxy container ifindex ${PROXY_IFINDEX}) -> ${NODE}  ${SERVICE_PROTO}:${SERVICE_IP}:${SERVICE_PORT}"
 echo "    Service : (${GROUP_ID},${SERVICE_ID}) -> '${PASSWD}'"
 echo "    Tunnel  : ${TUNNEL_ID} (${PROXY_TUN_IP}:${PROXY_TUN_PORT} -> ${NODE_TUN_IP}:${NODE_TUN_PORT})"
 
@@ -175,26 +170,22 @@ fi
 # >>>>
 
 # PFC >>>> configure forwarding
+PROXY_IFINDEX=$(docker exec -it ${PROXY} bash -c "ip link show veth1" | grep mtu | awk '{print $1}' | sed 's/://')
+
 # pfc_add.sh     <nic> <group-id> <service-id> <passwd> <remote-tunnel-ip> <remote-tunnel-port> <proto> <proxy-ip> <proxy-port> <backend-ip> <backend-port>
 #docker exec -it ${PROXY} bash -c "pfc_add.sh ${PROXY_NIC} ${GROUP_ID} ${SERVICE_ID} ${PASSWD} 0 0 ${SERVICE_PROTO} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} 4"
 docker exec -it ${PROXY} bash -c "cli_tunnel set ${TUNNEL_ID} ${PROXY_TUN_IP} ${PROXY_TUN_PORT} 0 0"
-#docker exec -it ${PROXY} bash -c "cli_service set ${GROUP_ID} ${SERVICE_ID} ${SERVICE_PROTO} 0.0.0.0 0 ${SERVICE_IP} ${SERVICE_PORT} ${TUNNEL_ID} ${PASSWD} 4"
-echo "docker exec -it ${PROXY} bash -c \"cli_service set-gw ${GROUP_ID} ${SERVICE_ID} ${PASSWD} ${TUNNEL_ID} ${SERVICE_PROTO} ${SERVICE_IP} ${SERVICE_PORT} 4\""
-docker exec -it ${PROXY} bash -c "cli_service set-gw ${GROUP_ID} ${SERVICE_ID} ${PASSWD} ${TUNNEL_ID} ${SERVICE_PROTO} ${SERVICE_IP} ${SERVICE_PORT} 4"
+docker exec -it ${PROXY} bash -c "cli_service set-gw ${GROUP_ID} ${SERVICE_ID} ${PASSWD} ${TUNNEL_ID} ${SERVICE_PROTO} ${SERVICE_IP} ${SERVICE_PORT} ${PROXY_IFINDEX}"
 
 #docker exec -it ${NODE} bash -c "pfc_add.sh ${NODE_NIC} ${GROUP_ID} ${SERVICE_ID} ${PASSWD} ${PROXY_TUN_IP} ${PROXY_TUN_PORT} ${SERVICE_PROTO} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT}"
 docker exec -it ${NODE} bash -c "cli_tunnel set ${TUNNEL_ID} ${NODE_TUN_IP} ${NODE_TUN_PORT} ${PROXY_TUN_IP} ${PROXY_TUN_PORT}"
-#docker exec -it ${NODE} bash -c "cli_service set ${GROUP_ID} ${SERVICE_ID} ${SERVICE_PROTO} 0.0.0.0 0 0.0.0.0 0 ${TUNNEL_ID} ${PASSWD} 0"
-echo "docker exec -it ${NODE} bash -c \"cli_service set-node ${GROUP_ID} ${SERVICE_ID} ${PASSWD} ${TUNNEL_ID}\""
 docker exec -it ${NODE} bash -c "cli_service set-node ${GROUP_ID} ${SERVICE_ID} ${PASSWD} ${TUNNEL_ID}"
 # <<<<
 
 
 # DEBUG >>>>
-docker exec -it ${PROXY} bash -c "pfc_list.sh"
-docker exec -it ${NODE} bash -c "pfc_list.sh"
-
-docker exec -it ${PROXY} bash -c "cli_tunnel get all"
+docker exec -it ${PROXY} bash -c "cli_tunnel get all ; cli_service get all"
+docker exec -it ${NODE} bash -c "cli_tunnel get all ; cli_service get all"
 # <<<<
 
 
