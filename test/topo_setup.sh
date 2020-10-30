@@ -177,23 +177,13 @@ do
     # ======
     # create bridge
     docker exec -it ${prxs[i]} bash -c "brctl addbr br0"
-    # add default interface
-#    docker exec -it ${prxs[i]} bash -c "brctl addif br0 eth1"
-
-    # move IP address from eth1 to br0
-#    IFADDR=$(docker exec -it ${prxs[i]} bash -c "ip addr show eth1" | grep inet | awk '{print $2}')
-#    docker exec -it ${prxs[i]} bash -c "ip addr del ${IFADDR} dev eth1"
-#    docker exec -it ${prxs[i]} bash -c "ip addr add ${IFADDR} dev br0"
 
     # bridge up
     docker exec -it ${prxs[i]} bash -c "ip link set br0 up"
 
-#    DEFAULT_IFINDEX=$(docker exec -it ${prxs[i]} bash -c "ip link" | grep eth1 | grep -v veth | awk '{print $1}' | sed 's/://')
-#    echo "[${DEFAULT_IFINDEX}]"
-#    docker exec -it ${prxs[i]} bash -c "cli_cfg get all"
-
     # add default route
-    docker exec -it ${prxs[i]} bash -c "ip route add default via 172.1.0.1"
+    docker exec -it ${prxs[i]} bash -c "ip route"
+    #docker exec -it ${prxs[i]} bash -c "ip route add default via 172.1.0.1"
 
     if [ "${VERBOSE}" ]; then
         echo ""
