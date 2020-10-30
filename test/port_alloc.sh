@@ -18,5 +18,7 @@ if [[ $(wc -l "${CFG_DIR}/gue_port.cfg" | awk '{print $1}') -eq 0 ]] ; then
     exit 1
 fi
 
-head -n1 ${CFG_DIR}/gue_port.cfg
-sed -i '1d' ${CFG_DIR}/gue_port.cfg
+PORT=$(head -n1 ${CFG_DIR}/gue_port.cfg)
+sudo sed -i '1d' ${CFG_DIR}/gue_port.cfg
+
+echo ${PORT}
