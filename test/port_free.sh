@@ -17,7 +17,12 @@ PORT=$1
 CFG_DIR="/etc/pfc"
 
 if [ ! -f "${CFG_DIR}/gue_port.cfg" ] ; then
-    >&2 echo "Port lidt not initialized!"
+    >&2 echo "Port list not initialized!"
+    exit 1
+fi
+
+if [ "$(grep -w ${PORT} ${CFG_DIR}/gue_port.cfg)" ] ; then
+    >&2 echo "Port list already there!"
     exit 1
 fi
 

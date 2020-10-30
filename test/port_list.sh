@@ -11,4 +11,4 @@ if [ ! -f "${CFG_DIR}/gue_port.cfg" ] ; then
     exit 1
 fi
 
-cat /opt/acnodal/cfg/gue_port.cfg
+cat ${CFG_DIR}/gue_port.cfg
