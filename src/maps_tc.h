@@ -12,10 +12,10 @@
 
 
 #define MAX_TUNNEL_ENTRIES      1024    /* service records */
-#define MAX_SERVICE_ENTRIES     1024
+#define MAX_SERVICE_ENTRIES     65535
 
 ////////////////////////////////
-// TABLE-NAT        EP -> EP
+// TABLE-NAT        EP -> EP (8B)
 
 struct bpf_elf_map SEC("maps") map_nat = {
     .type           = BPF_MAP_TYPE_HASH,
@@ -26,38 +26,40 @@ struct bpf_elf_map SEC("maps") map_nat = {
 };
 
 ////////////////////////////////
-// TABLE-DECAP      EP -> REF count
+// TABLE-DECAP      EP -> REF count (4B)
 
 struct bpf_elf_map SEC("maps") map_decap = {
     .type           = BPF_MAP_TYPE_HASH,
     .size_key       = sizeof(struct endpoint),
 //    .size_value     = sizeof(struct empty),
     .size_value     = sizeof(__u32),
-    .max_elem       = MAX_TUNNEL_ENTRIES,
+    .max_elem       = MAX_SERVICE_ENTRIES,
     .pinning        = PIN_GLOBAL_NS,
 };
 
 ////////////////////////////////
-// TABLE-ENCAP      EP -> SERVICE
+// TABLE-ENCAP      EP -> SERVICE (52B)
 
 struct bpf_elf_map SEC("maps") map_encap = {
     .type           = BPF_MAP_TYPE_HASH,
     .size_key       = sizeof(struct endpoint),
     .size_value     = sizeof(struct service),
-    .max_elem       = MAX_TUNNEL_ENTRIES,
+    .max_elem       = MAX_SERVICE_ENTRIES,
     .pinning        = PIN_GLOBAL_NS,
 };
 
+
+// 56B
 struct bpf_elf_map SEC("maps") map_proxy_encap = {
     .type           = BPF_MAP_TYPE_HASH,
     .size_key       = sizeof(struct proxy_encap_key),
     .size_value     = sizeof(struct service),
-    .max_elem       = MAX_TUNNEL_ENTRIES,
+    .max_elem       = MAX_SERVICE_ENTRIES,
     .pinning        = PIN_GLOBAL_NS,
 };
 
 ////////////////////////////////
-// TABLE-VERIFY     SID -> KEY
+// TABLE-VERIFY     SID -> KEY (40B)
 
 struct bpf_elf_map SEC("maps") map_verify = {
     .type           = BPF_MAP_TYPE_HASH,
@@ -68,24 +70,24 @@ struct bpf_elf_map SEC("maps") map_verify = {
 };
 
 ////////////////////////////////
-// TABLE-TUNNEL tunnel-id -> GUE
+// TABLE-TUNNEL tunnel-id -> GUE (18B)
 
 struct bpf_elf_map SEC("maps") map_tunnel = {
     .type           = BPF_MAP_TYPE_HASH,
     .size_key       = sizeof(__u32),
     .size_value     = sizeof(struct tunnel),
-    .max_elem       = MAX_TUNNEL_ENTRIES,
+    .max_elem       = MAX_SERVICE_ENTRIES,
     .pinning        = PIN_GLOBAL_NS,
 };
 
 ////////////////////////////////
-// TABE-PROXY veth-ifindex -> MAC
+// TABE-PROXY veth-ifindex -> MAC (6B)
 
 struct bpf_elf_map SEC("maps") map_proxy = {
     .type           = BPF_MAP_TYPE_HASH,
     .size_key       = sizeof(__u32),
     .size_value     = sizeof(struct mac),
-    .max_elem       = MAX_TUNNEL_ENTRIES,
+    .max_elem       = MAX_SERVICE_ENTRIES,
     .pinning        = PIN_GLOBAL_NS,
 };
 
