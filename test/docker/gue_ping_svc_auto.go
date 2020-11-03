@@ -68,7 +68,8 @@ func tunnel_ping(timeout int) {
 	cmd := "/opt/acnodal/bin/cli_service get all | grep 'VERIFY' | grep -v 'TABLE'"
 	out, err := exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
-		fmt.Println("Error")
+		fmt.Println(out)
+		fmt.Println(err)
 		return
 	}
 	services := strings.Split(string(out), "\n")
@@ -96,8 +97,8 @@ func tunnel_ping(timeout int) {
 	cmd = "/opt/acnodal/bin/cli_tunnel get all | grep 'TUN' | grep -v 'TABLE'"
 	out, err = exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
-		fmt.Println("Error")
-		//log.Fatal(err1)
+		fmt.Println(out)
+		fmt.Println(err)
 		return
 	}
 	tnls := strings.Split(string(out), "\n")
@@ -133,7 +134,8 @@ func session_sweep(expire int) {
 	cmd := "/opt/acnodal/bin/cli_gc get all | grep 'ENCAP' | grep -v 'TABLE'"
 	out, err := exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
-		fmt.Println("Error")
+		fmt.Println(out)
+		fmt.Println(err)
 		return
 	}
 	services := strings.Split(string(out), "\n")
@@ -191,7 +193,9 @@ func main() {
 
 	for {
 		// GUE ping
-		tunnel_ping(tun_delay)
+		if tun_delay > 0 {
+			tunnel_ping(tun_delay)
+		}
 
 		// Session expiration
 		if counter < sweep_delay {
