@@ -20,10 +20,8 @@
 int tag_tx(struct __sk_buff *skb)
 {
     bpf_print("TAG TX <<<< ifindex %u, len %u\n", skb->ifindex, skb->len);
-    bpf_print("  ingress_ifindex %u\n", skb->ingress_ifindex);
-    bpf_print("  mark %u\n", skb->mark);
-
-    dump_pkt(skb);
+    skb->mark = skb->ifindex;
+    bpf_print("  tagged %u\n", skb->mark);
 
     return dump_action(TC_ACT_UNSPEC);
 }

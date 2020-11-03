@@ -26,10 +26,8 @@ int pfc_rx(struct __sk_buff *skb)
 {
     __u32 pktnum = stats_update(skb->ifindex, STAT_IDX_RX, skb);
     bpf_print("PFC RX <<<< # %u, ifindex %u, len %u\n", pktnum, skb->ifindex, skb->len);
-    bpf_print("  gso_segs %u\n", skb->gso_segs);
+//    bpf_print("  gso_segs %u\n", skb->gso_segs);
 //    bpf_print("  gso_size %u\n", skb->gso_size);
-    bpf_print("  ingress_ifindex %u\n", skb->ingress_ifindex);
-    bpf_print("  mark %u\n", skb->mark);
 
     // get config
     __u32 key = skb->ifindex;
@@ -57,10 +55,10 @@ int pfc_rx(struct __sk_buff *skb)
     // check packet for DECAP
     if (cfg->flags & CFG_RX_GUE) {
         // is GUE endpoint?
-        bpf_print("Decap key %lx\n", *(__u64*)&ep);
+        //bpf_print("Decap key %lx\n", *(__u64*)&ep);
 
         if (bpf_map_lookup_elem(&map_decap, &ep)) {
-            bpf_print("Parsing GUE header\n");
+            //bpf_print("Parsing GUE header\n");
             void *data_end = (void *)(long)skb->data_end;
             // control or data
             struct guehdr *gue = hdr.payload;
@@ -141,17 +139,17 @@ int pfc_rx(struct __sk_buff *skb)
 
                     return dump_action(bpf_redirect(ifindex, 0));
                 } else {                // NODE
-                    bpf_print("Create/refresh tracking record:\n");
+                    //bpf_print("Create/refresh tracking record\n");
                     struct endpoint sep = { 0 }, dep = { 0 };
                     ASSERT(parse_ep(skb, &sep, &dep) != TC_ACT_SHOT, dump_action(TC_ACT_UNSPEC), "ERROR: SRC EP parsing failed!\n");
-                    bpf_print("  Parsed Source EP: ip %x, port %u, proto %u\n", sep.ip, bpf_ntohs(sep.port), bpf_ntohs(sep.proto));
-                    bpf_print("  KEY: %lx\n", *(__u64*)&sep);
+                    //bpf_print("  Parsed Source EP: ip %x, port %u, proto %u\n", sep.ip, bpf_ntohs(sep.port), bpf_ntohs(sep.proto));
+                    //bpf_print("  KEY: %lx\n", *(__u64*)&sep);
 
-                    bpf_print("  VALUE: group-id %u, service-id %u, tunnel-id %u\n",
-                            bpf_ntohs(svc.identity.service_id), bpf_ntohs(svc.identity.group_id), bpf_ntohl(svc.tunnel_id));
-                    bpf_print("         hash %x\n", svc.hash);
-                    __u64 *ptr = (__u64 *)svc.key.value;
-                    bpf_print("    key %lx%lx\n", ptr[0], ptr[1]);
+                    //bpf_print("  VALUE: group-id %u, service-id %u, tunnel-id %u\n",
+                    //        bpf_ntohs(svc.identity.service_id), bpf_ntohs(svc.identity.group_id), bpf_ntohl(svc.tunnel_id));
+                    //bpf_print("         hash %x\n", svc.hash);
+                    //__u64 *ptr = (__u64 *)svc.key.value;
+                    //bpf_print("    key %lx%lx\n", ptr[0], ptr[1]);
 
                     // update TABLE-ENCAP
                     bpf_map_update_elem(&map_encap, &sep, &svc, BPF_ANY);
