@@ -38,13 +38,16 @@ int pfc_rx(struct __sk_buff *skb)
     // log hello
     bpf_print("ID %s(%u) Flags %x\n", cfg->name, cfg->id, cfg->flags);
 
-    // parse packet
-    struct headers hdr = { 0 };
-    ASSERT(parse_headers(skb, &hdr) != TC_ACT_SHOT, dump_action(TC_ACT_OK), "Uninteresting packet type, IGNORING\n", dump_pkt(skb));
-
     // dump packet
     if (cfg->flags & CFG_RX_DUMP) {
         dump_pkt(skb);
+    }
+
+    // parse packet
+    struct headers hdr = { 0 };
+//    ASSERT(parse_headers(skb, &hdr) != TC_ACT_SHOT, dump_action(TC_ACT_OK), "Uninteresting packet type, IGNORING\n", dump_pkt(skb));
+    if (parse_headers(skb, &hdr) == TC_ACT_SHOT) {
+        return dump_action(TC_ACT_UNSPEC);
     }
 
     // start processing
@@ -157,7 +160,7 @@ int pfc_rx(struct __sk_buff *skb)
                     bpf_map_update_elem(&map_nat, &sep, &verify->dnat, BPF_ANY);
                 }
 
-                return dump_action(TC_ACT_OK);
+                return dump_action(TC_ACT_UNSPEC);
             }
         }
     }

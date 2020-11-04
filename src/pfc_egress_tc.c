@@ -38,13 +38,16 @@ int pfc_tx(struct __sk_buff *skb)
     // log hello
     bpf_print("ID %s(%u) Flags %x\n", cfg->name, cfg->id, cfg->flags);
 
-    // parse packet
-    struct headers hdr = { 0 };
-    ASSERT(parse_headers(skb, &hdr) != TC_ACT_SHOT, dump_action(TC_ACT_OK), "Uninteresting packet type, IGNORING\n", dump_pkt(skb));
-
     // dump packet
     if (cfg->flags & CFG_TX_DUMP) {
         dump_pkt(skb);
+    }
+
+    // parse packet
+    struct headers hdr = { 0 };
+//    ASSERT(parse_headers(skb, &hdr) != TC_ACT_SHOT, dump_action(TC_ACT_OK), "Uninteresting packet type, IGNORING\n", dump_pkt(skb));
+    if (parse_headers(skb, &hdr) == TC_ACT_SHOT) {
+        return dump_action(TC_ACT_UNSPEC);
     }
 
     // start processing
@@ -109,7 +112,7 @@ int pfc_tx(struct __sk_buff *skb)
                 return dump_action(bpf_redirect(cfg->id, 0));
             }
 
-            return dump_action(ret);
+            return dump_action(TC_ACT_UNSPEC);
         }
 
         // check output mode
@@ -149,7 +152,7 @@ int pfc_tx(struct __sk_buff *skb)
                     dump_pkt(skb);
                 }
 
-                return dump_action(TC_ACT_OK);
+                return dump_action(TC_ACT_UNSPEC);
             }
         } else {
             //bpf_print("Output mode: Regular (GUE Encap)\n");
@@ -185,7 +188,7 @@ int pfc_tx(struct __sk_buff *skb)
                     dump_pkt(skb);
                 }
 
-                return dump_action(ret);
+                return dump_action(TC_ACT_UNSPEC);
             }
         }
     }
