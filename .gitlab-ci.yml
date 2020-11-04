@@ -1,5 +1,8 @@
 image: ubuntu:20.04
 
+variables:
+  GIT_SUBMODULE_STRATEGY: normal
+
 before_script:
   - scripts/dependencies.sh
 
