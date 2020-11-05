@@ -93,7 +93,7 @@ int pfc_tx(struct __sk_buff *skb)
             ASSERT(tun, dump_action(TC_ACT_UNSPEC), "ERROR: tunnel-id %u not found\n", key);
             ASSERT(tun->ip_remote, dump_action(TC_ACT_SHOT), "ERROR: tunnel remote endpoint not resolved\n");
 
-            __u32 *mac = (__u32 *)&tun->mac_remote[2];
+            __u32 *mac = (__u32 *)&tun->mac_remote.value[2];
             bpf_print("GUE Encap Tunnel: id %u\n", key);
             bpf_print("    FROM %x:%u\n", tun->ip_local, bpf_ntohs(tun->port_local));
             bpf_print("    TO   %x:%u\t(%x)\n", tun->ip_remote, bpf_ntohs(tun->port_remote), bpf_ntohl(*mac));
@@ -174,7 +174,7 @@ int pfc_tx(struct __sk_buff *skb)
                 ASSERT(tun, dump_action(TC_ACT_UNSPEC), "ERROR: tunnel-id %u not found\n", key);
                 ASSERT(tun->ip_remote, dump_action(TC_ACT_SHOT), "ERROR: tunnel remote endpoint not resolved\n");
 
-                __u32 *mac = (__u32 *)&tun->mac_remote[2];
+                __u32 *mac = (__u32 *)&tun->mac_remote.value[2];
                 bpf_print("GUE Encap Tunnel: id %u\n", key);
                 bpf_print("    FROM %x:%u\n", tun->ip_local, bpf_ntohs(tun->port_local));
                 bpf_print("    TO   %x:%u\t(%x)\n", tun->ip_remote, bpf_ntohs(tun->port_remote), bpf_ntohl(*mac));

@@ -65,7 +65,7 @@ void usage(char *prog) {
 // TABLE-TUNNEL
 ////////////////////
 void map_tunnel_print_header() {
-    printf("TABLE-TUNNEL:\n   \ttunnel-id\t\tlocal-ip:port -> \tremote-ip:port\n");
+    printf("TABLE-TUNNEL:\n   \ttunnel-id\t\tlocal-ip:port -> \tremote-ip:port\t\tMAC\n");
     printf("--------------------------------------------------------------------------\n");
 }
 
@@ -83,7 +83,9 @@ void map_tunnel_print_record(__u32 id, struct tunnel *value) {
     printf("TUN\t%8u\t%16s:%-5u -> ", id,
             inet_ntoa(local), ntohs(value->port_local));
     printf("%16s:%-5u", inet_ntoa(remote), ntohs(value->port_remote));
-    printf("\t\t%02x:%02x:%02x:%02x:%02x:%02x", value->mac_remote[0], value->mac_remote[1], value->mac_remote[2], value->mac_remote[3], value->mac_remote[4], value->mac_remote[5]);
+    printf("\t%02x:%02x:%02x:%02x:%02x:%02x",
+           value->mac_remote.value[0], value->mac_remote.value[1], value->mac_remote.value[2],
+           value->mac_remote.value[3], value->mac_remote.value[4], value->mac_remote.value[5]);
     printf("\t\t(%08x:%04x -> %08x:%04x)\n",
             value->ip_local, ntohs(value->port_local),
             value->ip_remote, ntohs(value->port_remote));

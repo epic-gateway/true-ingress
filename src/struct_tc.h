@@ -26,6 +26,13 @@ make_endpoint(struct endpoint *ref,
     ref->proto   = bpf_htons(proto);
     return ref;
 }
+
+////////////////////////////////
+// MAC
+struct mac {
+    __u8   value[6];         // MAC address
+};
+
 ////////////////////////////////
 // Encap-key (EP + IfIndex)
 struct proxy_encap_key {
@@ -53,7 +60,7 @@ struct tunnel {
     __u16  port_local;            /* outer: sender port  (configured)*/
     __u32  ip_remote;             /* outer: target IP address */          // can be NAT, filled from GUE control packet
     __u16  port_remote;           /* outer: target port */                // can be NAT, filled from GUE control packet
-    __u8   mac_remote[6];         // discovered MAC address
+    struct mac   mac_remote;         // discovered MAC address
 };
 
 static inline struct tunnel *
@@ -67,12 +74,7 @@ make_tunnel(struct tunnel *ref,
     ref->port_local    = bpf_htons(port_local);
     ref->ip_remote     = bpf_htonl(ip_remote);
     ref->port_remote   = bpf_htons(port_remote);
-    ref->mac_remote[0] = 0;
-    ref->mac_remote[1] = 0;
-    ref->mac_remote[2] = 0;
-    ref->mac_remote[3] = 0;
-    ref->mac_remote[4] = 0;
-    ref->mac_remote[5] = 0;
+    __builtin_memset(&ref->mac_remote, 0, sizeof(ref->mac_remote));
     return ref;
 }
 ////////////////////////////////
@@ -147,11 +149,6 @@ make_service(struct service  *ref,
     ref->hash       = 0;
     return ref;
 }
-
-// Tunnel
-struct mac {
-    __u8   value[6];         // MAC address
-};
 ////////////////////////////////
 // "Empty"
 //struct empty {

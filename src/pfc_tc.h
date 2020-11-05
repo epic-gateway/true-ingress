@@ -548,12 +548,7 @@ int update_tunnel_from_guec(__u32 tunnel_id, struct headers *hdr)
     bpf_print("GUE Control: Updating tunnel-id %u remote to %x:%u\n", tunnel_id, ep.ip, bpf_ntohs(ep.port));
     tun->ip_remote = ep.ip;
     tun->port_remote = ep.port;
-    tun->mac_remote[0] = hdr->eth->h_source[0];
-    tun->mac_remote[1] = hdr->eth->h_source[1];
-    tun->mac_remote[2] = hdr->eth->h_source[2];
-    tun->mac_remote[3] = hdr->eth->h_source[3];
-    tun->mac_remote[4] = hdr->eth->h_source[4];
-    tun->mac_remote[5] = hdr->eth->h_source[5];
+     __builtin_memcpy(&tun->mac_remote, hdr->eth->h_source, ETH_ALEN);
 
     return TC_ACT_SHOT;
 }
@@ -733,7 +728,7 @@ int gue_encap_v4(struct __sk_buff *skb, struct tunnel *tun, struct service *svc)
     }
 
     // Resolve destination MAC
-    __u32 *ptr = (__u32 *)&tun->mac_remote[2];
+    __u32 *ptr = (__u32 *)&tun->mac_remote.value[2];
     if (*ptr == 0) {
         bpf_print("Performing MAC lookup\n");
         struct bpf_fib_lookup fib_params = { 0 };
@@ -768,13 +763,13 @@ int gue_encap_v4(struct __sk_buff *skb, struct tunnel *tun, struct service *svc)
 
         __u32 *dst = (__u32 *)&fib_params.dmac[2];
         bpf_print("  Updating MAC to %x\n", bpf_ntohl(*dst));
-        __builtin_memcpy(tun->mac_remote, fib_params.dmac, ETH_ALEN);
+        __builtin_memcpy(&tun->mac_remote, fib_params.dmac, ETH_ALEN);
     }
 
     // Update destination MAC
-    ret = bpf_skb_store_bytes(skb, 0, tun->mac_remote, 6, BPF_F_INVALIDATE_HASH);
+    ret = bpf_skb_store_bytes(skb, 0, &tun->mac_remote, 6, BPF_F_INVALIDATE_HASH);
     if (ret < 0) {
-        bpf_print("bpf_skb_store_bytes: %d\n", ret);
+        bpf_print("bpf_skb_store_bytes(D-MAC): %d\n", ret);
         return TC_ACT_SHOT;
     }
 
