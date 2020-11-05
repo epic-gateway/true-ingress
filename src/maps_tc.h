@@ -38,21 +38,11 @@ struct bpf_elf_map SEC("maps") map_decap = {
 };
 
 ////////////////////////////////
-// TABLE-ENCAP      EP -> SERVICE (52B)
+// TABLE-ENCAP      EP -> SERVICE (56B)
 
 struct bpf_elf_map SEC("maps") map_encap = {
     .type           = BPF_MAP_TYPE_HASH,
-    .size_key       = sizeof(struct endpoint),
-    .size_value     = sizeof(struct service),
-    .max_elem       = MAX_SERVICE_ENTRIES,
-    .pinning        = PIN_GLOBAL_NS,
-};
-
-
-// 56B
-struct bpf_elf_map SEC("maps") map_proxy_encap = {
-    .type           = BPF_MAP_TYPE_HASH,
-    .size_key       = sizeof(struct proxy_encap_key),
+    .size_key       = sizeof(struct encap_key),
     .size_value     = sizeof(struct service),
     .max_elem       = MAX_SERVICE_ENTRIES,
     .pinning        = PIN_GLOBAL_NS,

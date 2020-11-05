@@ -143,21 +143,24 @@ int pfc_rx(struct __sk_buff *skb)
                     return dump_action(bpf_redirect(ifindex, 0));
                 } else {                // NODE
                     //bpf_print("Create/refresh tracking record\n");
-                    struct endpoint sep = { 0 }, dep = { 0 };
-                    ASSERT(parse_ep(skb, &sep, &dep) != TC_ACT_SHOT, dump_action(TC_ACT_UNSPEC), "ERROR: SRC EP parsing failed!\n");
-                    //bpf_print("  Parsed Source EP: ip %x, port %u, proto %u\n", sep.ip, bpf_ntohs(sep.port), bpf_ntohs(sep.proto));
-                    //bpf_print("  KEY: %lx\n", *(__u64*)&sep);
+                    struct encap_key skey = { { 0 } , 0 };
+                    struct endpoint dep = { 0 };
+                    ASSERT(parse_ep(skb, &skey.ep, &dep) != TC_ACT_SHOT, dump_action(TC_ACT_UNSPEC), "ERROR: SRC EP parsing failed!\n");
+                    //bpf_print("  Parsed Source EP: ip %x, port %u, proto %u\n", skey.ep.ip, bpf_ntohs(skey.ep.port), bpf_ntohs(skey.ep.proto));
+                    //bpf_print("  KEY: %lx\n", *(__u64*)&skey.ep);
+                    //__u32 *ptr = (__u32*)&ekey;
+                    //bpf_print("encap KEY: %x%x%x\n", ptr[0], ptr[1], ptr[2]);
 
                     //bpf_print("  VALUE: group-id %u, service-id %u, tunnel-id %u\n",
-                    //        bpf_ntohs(svc.identity.service_id), bpf_ntohs(svc.identity.group_id), bpf_ntohl(svc.tunnel_id));
+                    //        bpf_ntohs(svc.identity.service_id), bpf_ntohs(svc.identity.group_id), bpf_ntohl(svc.key.tunnel_id));
                     //bpf_print("         hash %x\n", svc.hash);
                     //__u64 *ptr = (__u64 *)svc.key.value;
                     //bpf_print("    key %lx%lx\n", ptr[0], ptr[1]);
 
                     // update TABLE-ENCAP
-                    bpf_map_update_elem(&map_encap, &sep, &svc, BPF_ANY);
+                    bpf_map_update_elem(&map_encap, &skey, &svc, BPF_ANY);
                     // update TABLE-NAT (in case of DSR)
-                    bpf_map_update_elem(&map_nat, &sep, &verify->dnat, BPF_ANY);
+                    //bpf_map_update_elem(&map_nat, &skey.ep, &verify->dnat, BPF_ANY);
                 }
 
                 return dump_action(TC_ACT_UNSPEC);

@@ -62,10 +62,10 @@ int pfc_tx(struct __sk_buff *skb)
         bpf_print("Is PROXY\n");
 
         // is Service endpoint?
-        struct proxy_encap_key ekey = { dep, bpf_ntohl(skb->mark) };
+        struct encap_key ekey = { dep, bpf_ntohl(skb->mark) };
         //__u32 *ptr = (__u32*)&ekey;
         //bpf_print("encap KEY: %x%x%x\n", ptr[0], ptr[1], ptr[2]);
-        struct service *svc = bpf_map_lookup_elem(&map_proxy_encap, &ekey);
+        struct service *svc = bpf_map_lookup_elem(&map_encap, &ekey);
         if (svc) {
             if (cfg->id) {
                 __u32 key = skb->mark;
@@ -157,8 +157,8 @@ int pfc_tx(struct __sk_buff *skb)
         } else {
             //bpf_print("Output mode: Regular (GUE Encap)\n");
 
-            //bpf_print("encap KEY: %lx\n", *(__u64*)&dep);
-            struct service *svc = bpf_map_lookup_elem(&map_encap, &dep);
+            struct encap_key ekey = { dep, 0 };
+            struct service *svc = bpf_map_lookup_elem(&map_encap, &ekey);
             if (svc) {
 //                __u32 *tmp = (__u32 *)svc;
 //                bpf_print("%x %x %x\n", tmp[0], tmp[1], tmp[2]);

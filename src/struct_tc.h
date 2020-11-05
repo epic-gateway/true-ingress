@@ -35,13 +35,13 @@ struct mac {
 
 ////////////////////////////////
 // Encap-key (EP + IfIndex)
-struct proxy_encap_key {
+struct encap_key {
     struct endpoint ep;             /* Destination */
     __u32           ifindex;        /* if-index of proxy container */
 };
 
-static inline struct proxy_encap_key *
-make_proxy_encap_key(struct proxy_encap_key *ref,
+static inline struct encap_key *
+make_encap_key(struct encap_key *ref,
               __u32  ip,
               __u16  port,
               __u16  proto,
