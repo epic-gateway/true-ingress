@@ -166,10 +166,10 @@ bool map_encap_get(int map_fd, struct endpoint *key, struct service *value) {
         return false;
     } else if (value->hash != 0) {
         printf("ENCAP (%s, %s, %u) -> ", get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port));
-        printf("%u\t\t(%u, %u)\t\'%16.16s\'\t%u", ntohl(value->tunnel_id), ntohs(value->identity.service_id), ntohs(value->identity.group_id), (char*)value->key.value, value->hash);
+        printf("%u\t\t(%u, %u)\t\'%16.16s\'\t%u", ntohl(value->key.tunnel_id), ntohs(value->identity.service_id), ntohs(value->identity.group_id), (char*)value->key.value, value->hash);
         printf("\t\t(%04x, %08x, %04x) -> ", key->proto, key->ip, key->port);
         __u64 *ptr = (__u64 *)value->key.value;
-        printf("(%08x\t(%04x, %04x)\t\'%llx%llx\'\n", value->tunnel_id, value->identity.service_id, value->identity.group_id, ptr[0], ptr[1]);
+        printf("(%08x\t(%04x, %04x)\t\'%llx%llx\'\n", value->key.tunnel_id, value->identity.service_id, value->identity.group_id, ptr[0], ptr[1]);
     }
     return true;
 }

@@ -103,35 +103,23 @@ make_identity(struct identity *ref,
 
 struct verify {
     __u8   value[SECURITY_KEY_SIZE];        /* GUE security KEY */
-    struct endpoint dnat;
-    struct endpoint snat;
     __u32  tunnel_id;
-    __u32  ifindex;
+    struct encap_key encap;
 };
 
 static inline struct verify *
 make_verify(struct verify   *ref,
-            struct endpoint *dnat,
-            struct endpoint *snat,
             __u32  tunnel_id,
-            __u32  ifindex
-           )
+            struct encap_key *encap)
 {
-    ref->dnat.ip    = dnat->ip;
-    ref->dnat.port  = dnat->port;
-    ref->dnat.proto = dnat->proto;
-    ref->snat.ip    = snat->ip;
-    ref->snat.port  = snat->port;
-    ref->snat.proto = snat->proto;
-    ref->tunnel_id  = tunnel_id;
-    ref->ifindex    = bpf_htonl(ifindex);
+    ref->tunnel_id  = bpf_htonl(tunnel_id);
+    __builtin_memcpy(&ref->encap, encap, sizeof(ref->encap));
     return ref;
 }
 
 ////////////////////////////////
 // Service (GUE Header)
 struct service {
-    __u32           tunnel_id;
     struct identity identity;
     struct verify   key;
     __u32           hash;
@@ -139,11 +127,9 @@ struct service {
 
 static inline struct service *
 make_service(struct service  *ref,
-             __u32            tunnel_id,
              struct identity *identity,
              struct verify   *key)
 {
-    ref->tunnel_id  = bpf_htonl(tunnel_id);
     ref->identity   = *identity;
     ref->key        = *key;
     ref->hash       = 0;

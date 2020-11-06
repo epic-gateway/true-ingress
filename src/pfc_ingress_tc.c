@@ -107,22 +107,19 @@ int pfc_rx(struct __sk_buff *skb)
                 struct verify *verify = bpf_map_lookup_elem(&map_verify, (struct identity *)&gueext->id);
                 ASSERT(verify != 0, dump_action(TC_ACT_UNSPEC), "ERROR: Service id %u not found!\n", bpf_ntohl(gueext->id));
 
-                struct service svc = { 0 };
-                svc.tunnel_id = bpf_htonl(verify->tunnel_id);
+                struct service svc;
+                __builtin_memcpy(&svc.key, verify, sizeof(*verify));  //FIXME?
                 svc.identity = *(struct identity *)&gueext->id;
+//                __builtin_memcpy(&svc.identity, &gueext->id, 4);
                 svc.hash = pktnum;
-                __u64 *left = (__u64 *)svc.key.value;
-                __u64 *right = (__u64 *)gueext->key;
-                left[0] = right[0];
-                left[1] = right[1];
 
                 ASSERT (TC_ACT_OK == gue_decap_v4(skb), dump_action(TC_ACT_SHOT), "GUE Decap Failed!\n");
                 if (cfg->flags & CFG_TX_DUMP) {
                     dump_pkt(skb);
                 }
 
-                if (verify->ifindex) {  // EGW
-                    __u32 ifindex = bpf_ntohl(verify->ifindex);
+                if (verify->encap.ifindex) {  // EGW
+                    __u32 ifindex = bpf_ntohl(verify->encap.ifindex);
                     bpf_print("Redirecting to proxy instance ifindex %u TX\n", ifindex);
 
                     // update TABLE-PROXY

@@ -85,10 +85,10 @@ int pfc_tx(struct __sk_buff *skb)
             }
 
             bpf_print("GUE Encap Service: group-id %u, service-id %u, tunnel-id %u\n",
-                      bpf_ntohs(svc->identity.service_id), bpf_ntohs(svc->identity.group_id), bpf_ntohl(svc->tunnel_id));
+                      bpf_ntohs(svc->identity.service_id), bpf_ntohs(svc->identity.group_id), bpf_ntohl(svc->key.tunnel_id));
             //__u64 *ptr = (__u64 *)svc->key.value;
             //bpf_print("    tunnel KEY %lx%lx\n", ptr[0], ptr[1]);
-            __u32 key = bpf_ntohl(svc->tunnel_id);
+            __u32 key = bpf_ntohl(svc->key.tunnel_id);
             struct tunnel *tun = bpf_map_lookup_elem(&map_tunnel, &key);
             ASSERT(tun, dump_action(TC_ACT_UNSPEC), "ERROR: tunnel-id %u not found\n", key);
             ASSERT(tun->ip_remote, dump_action(TC_ACT_SHOT), "ERROR: tunnel remote endpoint not resolved\n");
@@ -164,12 +164,12 @@ int pfc_tx(struct __sk_buff *skb)
 //                bpf_print("%x %x %x\n", tmp[0], tmp[1], tmp[2]);
 //                bpf_print("%x %x %x\n", tmp[3], tmp[4], tmp[5]);
                 bpf_print("GUE Encap Service: group-id %u, service-id %u, tunnel-id %u\n",
-                          bpf_ntohs(svc->identity.service_id), bpf_ntohs(svc->identity.group_id), bpf_ntohl(svc->tunnel_id));
+                          bpf_ntohs(svc->identity.service_id), bpf_ntohs(svc->identity.group_id), bpf_ntohl(svc->key.tunnel_id));
 //                bpf_print("GUE Encap Service: service-id %x, group-id %x, tunnel-id %x\n",
-//                          svc->identity.service_id, svc->identity.group_id, svc->tunnel_id);
+//                          svc->identity.service_id, svc->identity.group_id, svc->key.tunnel_id);
                 //__u64 *ptr = (__u64 *)svc->key.value;
                 //bpf_print("    tunnel KEY %lx%lx\n", ptr[0], ptr[1]);
-                __u32 key = bpf_ntohl(svc->tunnel_id);
+                __u32 key = bpf_ntohl(svc->key.tunnel_id);
                 struct tunnel *tun = bpf_map_lookup_elem(&map_tunnel, &key);
                 ASSERT(tun, dump_action(TC_ACT_UNSPEC), "ERROR: tunnel-id %u not found\n", key);
                 ASSERT(tun->ip_remote, dump_action(TC_ACT_SHOT), "ERROR: tunnel remote endpoint not resolved\n");

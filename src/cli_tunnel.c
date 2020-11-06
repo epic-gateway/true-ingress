@@ -44,6 +44,8 @@ __u16 get_proto_number(const char *proto) {
 
 const char *get_proto_name(__u16 proto) {
     switch (proto) {
+        case 0:
+            return "NONE";
         case IPPROTO_TCP:
             return "tcp";
         case IPPROTO_UDP:
@@ -170,7 +172,7 @@ bool map_tunnel_delall(int map_fd) {
 // TABLE-DECAP
 ////////////////////
 void map_decap_print_header() {
-    printf("TABLE-DECAP:\n           proto\t\tip:port\t\tref-count\n");
+    printf("TABLE-DECAP:\n           proto\tip:port\t\t\tref-count\n");
     printf("--------------------------------------------------------------------------\n");
 }
 
@@ -183,7 +185,7 @@ void map_decap_print_record(struct endpoint *key, __u32 *value) {
     struct in_addr from;
     from.s_addr = ntohl(key->ip);
 
-    printf("DECAP\t%8s\t%16s:%u\t\t%u", get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port), *value);
+    printf("DECAP\t%8s    %16s:%u\t\t%u", get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port), *value);
     printf("\t\t(%04x  %08x:%04x)\n", key->proto, key->ip, key->port);
 }
 
