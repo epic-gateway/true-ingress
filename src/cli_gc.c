@@ -58,85 +58,6 @@ void usage(char *prog) {
 }
 
 ////////////////////
-// TABLE-NAT
-// struct endpoint -> struct endpoint
-////////////////////
-void map_nat_print_header() {
-    printf("TABLE-NAT:\n\t    proxy-ip:port -> backend-ip:port\n");
-    printf("--------------------------------------------------------------------------\n");
-}
-
-void map_nat_print_footer() {
-    //printf("--------------------------------------------------------------------------\n");
-    printf("\n");
-}
-
-bool map_nat_get(int map_fd, struct endpoint *key, struct endpoint *value) {
-    struct in_addr from, to;
-    from.s_addr = ntohl(key->ip);
-
-    if (bpf_map_lookup_elem(map_fd, key, value)) {
-        fprintf(stderr, "GC.NAT.GET {%s, %s, %u}\t\tERR (%d) \'%s\'\n",
-                get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port), errno, strerror(errno));
-
-        return false;
-    } else {
-        to.s_addr = ntohl(value->ip);
-        printf("NAT {%s, %s, %u} -> ", get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port));
-        printf("{%s, %s, %u}", get_proto_name(ntohs(value->proto)), inet_ntoa(to), ntohs(value->port));
-        printf("\t\t{%04x, %08x, %04x} -> ", key->proto, key->ip, key->port);
-        printf("{%04x, %08x, %04x}\n", value->proto, value->ip, value->port);
-    }
-
-    return true;
-}
-
-bool map_nat_getall(int map_fd) {
-    struct endpoint prev_key, key, value;
-
-    map_nat_print_header();
-    while (bpf_map_get_next_key(map_fd, &prev_key, &key) == 0) {
-        if (!map_nat_get(map_fd, &key, &value)) {
-            break;
-        }
-
-        prev_key=key;
-    }
-    map_nat_print_footer();
-
-    return true;
-}
-
-bool map_nat_del(int map_fd, struct endpoint *key) {
-    struct in_addr from;
-    from.s_addr = ntohl(key->ip);
-
-    if (bpf_map_delete_elem(map_fd, key)) {
-        fprintf(stderr, "NAT.DEL {%s, %s, %u}\t\tERR (%d) \'%s\'\n",
-                get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port), errno, strerror(errno));
-
-        return false;
-    } else {
-        printf("NAT.DEL {%s, %s, %u}\t\tOK\n", get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port));
-    }
-
-    return true;
-}
-
-bool map_nat_delall(int map_fd) {
-    struct endpoint prev_key, key;
-
-    while (bpf_map_get_next_key(map_fd, &prev_key, &key) == 0) {
-        if (!map_nat_del(map_fd, &key)) {
-            break;
-        }
-        //prev_key=key;
-    }
-
-    return true;
-}
-
-////////////////////
 // TABLE-ENCAP
 // struct endpoint -> struct service
 //struct service {
@@ -146,7 +67,7 @@ bool map_nat_delall(int map_fd) {
 //};
 ////////////////////
 void map_encap_print_header() {
-    printf("TABLE-ENCAP:\n\t\tdestination -> tunnel-id\tgid+sid\t\tkey\thash\n");
+    printf("TABLE-ENCAP:\n\tdestination\tifindex -> hash\n");
     printf("--------------------------------------------------------------------------\n");
 }
 
@@ -155,36 +76,29 @@ void map_encap_print_footer() {
     printf("\n");
 }
 
-bool map_encap_get(int map_fd, struct endpoint *key, struct service *value) {
+bool map_encap_get(int map_fd, struct encap_key *key, struct service *value) {
     struct in_addr from;
-    from.s_addr = ntohl(key->ip);
+    from.s_addr = ntohl(key->ep.ip);
 
     if (bpf_map_lookup_elem(map_fd, key, value)) {
-        fprintf(stderr, "GC.ENCAP.GET {%s, %s, %u}\t\tERR (%d) \'%s\'\n",
-                get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port), errno, strerror(errno));
+        fprintf(stderr, "ENCAP.GET {%s, %s, %u, %u}\t\tERR (%d) \'%s\'\n",
+                get_proto_name(ntohs(key->ep.proto)), inet_ntoa(from), ntohs(key->ep.port), ntohl(key->ifindex), errno, strerror(errno));
 
         return false;
-    } else if (value->hash != 0) {
-        printf("ENCAP (%s, %s, %u) -> ", get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port));
-        printf("%u\t\t(%u, %u)\t\'%16.16s\'\t%u", ntohl(value->key.tunnel_id), ntohs(value->identity.service_id), ntohs(value->identity.group_id), (char*)value->key.value, value->hash);
-        printf("\t\t(%04x, %08x, %04x) -> ", key->proto, key->ip, key->port);
-        __u64 *ptr = (__u64 *)value->key.value;
-        printf("(%08x\t(%04x, %04x)\t\'%llx%llx\'\n", value->key.tunnel_id, value->identity.service_id, value->identity.group_id, ptr[0], ptr[1]);
+    } else {
+        printf("ENCAP (%s, %s, %u)  %u -> %u\n", get_proto_name(ntohs(key->ep.proto)), inet_ntoa(from), ntohs(key->ep.port), ntohl(key->ifindex), value->hash);
     }
     return true;
 }
 
-bool map_encap_getall(int map_encap_fd, int map_nat_fd) {
-    struct endpoint prev_key, key, nat;
-    struct service svc;
+bool map_encap_getall(int map_fd) {
+    struct encap_key prev_key, key;
+    struct service value;
 
     map_encap_print_header();
-    while (bpf_map_get_next_key(map_encap_fd, &prev_key, &key) == 0) {
-        if (!map_encap_get(map_encap_fd, &key, &svc)) {
+    while (bpf_map_get_next_key(map_fd, &prev_key, &key) == 0) {
+        if (!map_encap_get(map_fd, &key, &value)) {
             break;
-        }
-        if (svc.hash != 0) {
-            map_nat_get(map_nat_fd, &key, &nat);
         }
 
         prev_key=key;
@@ -194,51 +108,27 @@ bool map_encap_getall(int map_encap_fd, int map_nat_fd) {
     return true;
 }
 
-bool map_encap_del(int map_encap_fd, int map_nat_fd, struct endpoint *key) {
+bool map_encap_del(int map_fd, struct encap_key *key) {
     struct in_addr from;
-    from.s_addr = ntohl(key->ip);
-    struct service value;
-    bool ret = true;
+    from.s_addr = ntohl(key->ep.ip);
 
-    // check
-    if (!map_encap_get(map_encap_fd, key, &value)) {
-        fprintf(stderr, "GC.ENCAP.DEL: Item not found\n");
+    if (bpf_map_delete_elem(map_fd, key)) {
+        fprintf(stderr, "ENCAP.DEL {%s, %s, %u, %u}\t\tERR (%d) \'%s\'\n",
+                get_proto_name(ntohs(key->ep.proto)), inet_ntoa(from), ntohs(key->ep.port), ntohl(key->ifindex), errno, strerror(errno));
+
         return false;
-    }
-
-    if (value.hash == 0) {
-        fprintf(stderr, "GC.ENCAP.DEL: Cannot delete static entry\n");
-        return false;
-    }
-
-    // delete encap entry
-    if (bpf_map_delete_elem(map_encap_fd, key)) {
-        fprintf(stderr, "GC.ENCAP.DEL {%s, %s, %u}\t\tERR (%d) \'%s\'\n",
-                get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port), errno, strerror(errno));
-
-        ret = false;
     } else {
-        printf("GC.ENCAP.DEL {%s, %s, %u}\t\tOK\n", get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port));
+        printf("ENCAP.DEL {%s, %s, %u, %u}\t\tOK\n", get_proto_name(ntohs(key->ep.proto)), inet_ntoa(from), ntohs(key->ep.port), ntohl(key->ifindex));
     }
 
-    // delete nat entry
-    if (bpf_map_delete_elem(map_nat_fd, key)) {
-        fprintf(stderr, "GC.NAT.DEL {%s, %s, %u}\t\tERR (%d) \'%s\'\n",
-                get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port), errno, strerror(errno));
-
-        ret = false;
-    } else {
-        printf("GC.NAT.DEL {%s, %s, %u}\t\tOK\n", get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port));
-    }
-
-    return ret;
+    return true;
 }
 
-bool map_encap_delall(int map_encap_fd, int map_nat_fd) {
-    struct endpoint prev_key, key;
+bool map_encap_delall(int map_fd) {
+    struct encap_key prev_key, key;
 
-    while (bpf_map_get_next_key(map_encap_fd, &prev_key, &key) == 0) {
-        if (!map_encap_del(map_encap_fd, map_nat_fd, &key)) {
+    while (bpf_map_get_next_key(map_fd, &prev_key, &key) == 0) {
+        if (!map_encap_del(map_fd, &key)) {
             break;
         }
         //prev_key=key;
@@ -259,11 +149,6 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    int map_nat_fd = open_bpf_map_file("/sys/fs/bpf/tc/globals/map_nat");
-    if (map_nat_fd < 0) {
-        return 1;
-    }
-
     int map_encap_fd = open_bpf_map_file("/sys/fs/bpf/tc/globals/map_encap");
     if (map_encap_fd < 0) {
         return 1;
@@ -271,14 +156,14 @@ int main(int argc, char **argv)
 
     if (!strncmp(argv[1], "get", 4)) {
         if (!strncmp(argv[2], "all", 4)) {
-            map_encap_getall(map_encap_fd, map_nat_fd);
+            map_encap_getall(map_encap_fd);
         } else {
             if (argc < 5) {
                 usage(argv[0]);
                 return 1;
             }
 
-            struct endpoint key, nat;
+            struct encap_key key;
             struct service svc;
 
             if (inet_aton(argv[3], &from) == 0) {
@@ -286,28 +171,29 @@ int main(int argc, char **argv)
                 return 1;
             }
 
-            make_endpoint(&key, from.s_addr, atoi(argv[4]), get_proto_number(argv[2]));
+            make_encap_key(&key, from.s_addr, atoi(argv[4]), get_proto_number(argv[2]), 0);
 
             map_encap_get(map_encap_fd, &key, &svc);
-            map_nat_get(map_nat_fd, &key, &nat);
         }
     } else if (!strncmp(argv[1], "del", 4)) {
         if (!strncmp(argv[2], "all", 4)) {
-            map_encap_delall(map_encap_fd, map_nat_fd);
+            map_encap_delall(map_encap_fd);
         } else {
             if (argc < 5) {
                 usage(argv[0]);
                 return 1;
             }
 
-            struct endpoint key;
+            struct encap_key key;
 
             if (inet_aton(argv[3], &from) == 0) {
                 fprintf(stderr, "Invalid address %s\n", argv[3]);
                 return 1;
             }
 
-            map_encap_del(map_encap_fd, map_nat_fd, make_endpoint(&key, from.s_addr, atoi(argv[4]), get_proto_number(argv[2])));
+            make_encap_key(&key, from.s_addr, atoi(argv[4]), get_proto_number(argv[2]), 0);
+
+            map_encap_del(map_encap_fd, &key);
         }
     } else {
         fprintf(stderr,"ERR: Unknown operation \'%s\'\n", argv[1]);
