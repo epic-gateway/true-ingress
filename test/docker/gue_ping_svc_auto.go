@@ -125,7 +125,7 @@ func tunnel_ping(timeout int) {
 			tunnels[tid] = 1
 		}
 	}
-	fmt.Println(tunnels)
+	//fmt.Println(tunnels)
 }
 
 func session_sweep(expire int) {
@@ -147,8 +147,9 @@ func session_sweep(expire int) {
 			continue
 		}
 
-		key := strings.Split(service, "->")[0]
-		hash, _ := strconv.Atoi(strings.Split(params[6], "\t")[2])
+		foo := strings.Split(service, "->")
+		key := foo[0]
+		hash, _ := strconv.Atoi(strings.Split(foo[1], " ")[1])
 
 		if hash == 0 { // static record
 			continue
@@ -161,7 +162,11 @@ func session_sweep(expire int) {
 
 				fmt.Printf("  delete %s%s%s\n", to_del[0], to_del[1], to_del[2])
 				cmd := fmt.Sprintf("/opt/acnodal/bin/cli_gc del %s%s%s\n", to_del[0], to_del[1], to_del[2])
-				exec.Command("bash", "-c", cmd).Output()
+				_, err := exec.Command("bash", "-c", cmd).Output()
+				if err != nil {
+					fmt.Println("ERR: [%s] cmd failed:", cmd)
+					fmt.Println(err)
+				}
 
 				delete(session_hash, key)
 				delete(session_ttl, key)
@@ -173,6 +178,7 @@ func session_sweep(expire int) {
 			session_ttl[key] = 1
 		}
 	}
+    //fmt.Printf(">>>  hash size %d, ttl size %d\n", len(session_hash), len(session_ttl))
 }
 
 func main() {
