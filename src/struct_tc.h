@@ -8,6 +8,12 @@
 // #################
 
 ////////////////////////////////
+// MAC
+struct mac {
+    __u8   value[6];         // MAC address
+};
+
+////////////////////////////////
 // Endpoint
 struct endpoint {
     __u32  ip;                      /* Proxy IP */
@@ -26,12 +32,6 @@ make_endpoint(struct endpoint *ref,
     ref->proto   = bpf_htons(proto);
     return ref;
 }
-
-////////////////////////////////
-// MAC
-struct mac {
-    __u8   value[6];         // MAC address
-};
 
 ////////////////////////////////
 // Encap-key (EP + IfIndex)
