@@ -343,7 +343,20 @@ int main(int argc, char **argv)
         struct verify pwd = { 0 };
         __u32 tid = atoi(argv[5]);
         struct encap_key ekey = { 0 };
-        ekey.ifindex = atoi(argv[9]);
+
+        if (argc == 9) {
+            proto = get_proto_number(argv[6]);
+            if( proto == 0) {
+                fprintf(stderr, "Unsupported IP proto \'%s\'\n", argv[6]);
+                return 1;
+            }
+
+            if (inet_aton(argv[7], &to) == 0) {
+                fprintf(stderr, "Invalid address %s\n", argv[7]);
+                return 1;
+            }
+            make_encap_key(&ekey, to.s_addr, atoi(argv[8]), proto, 0);
+        }
         
         strncpy((char*)pwd.value, argv[4], SECURITY_KEY_SIZE);
 
