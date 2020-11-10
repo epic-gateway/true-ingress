@@ -9,7 +9,7 @@ import (
 )
 
 func Version() string {
-	return "Acnodal PFC v0.3"
+	return "Acnodal PFC v0.4"
 }
 
 func Check() (bool, string) {
