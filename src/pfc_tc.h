@@ -548,7 +548,8 @@ int update_tunnel_from_guec(__u32 tunnel_id, struct headers *hdr)
     bpf_print("GUE Control: Updating tunnel-id %u remote to %x:%u\n", tunnel_id, ep.ip, bpf_ntohs(ep.port));
     tun->ip_remote = ep.ip;
     tun->port_remote = ep.port;
-     __builtin_memcpy(&tun->mac_remote, hdr->eth->h_source, ETH_ALEN);
+    __builtin_memcpy(&tun->mac_remote, hdr->eth->h_source, ETH_ALEN);
+    __builtin_memcpy(&tun->mac_local, hdr->eth->h_dest, ETH_ALEN);
 
     return TC_ACT_SHOT;
 }
@@ -730,7 +731,7 @@ int gue_encap_v4(struct __sk_buff *skb, struct tunnel *tun, struct service *svc)
     // Resolve destination MAC
     __u32 *ptr = (__u32 *)&tun->mac_remote.value[2];
     if (*ptr == 0) {
-        bpf_print("Performing MAC lookup\n");
+        bpf_print("Performing dest MAC lookup\n");
         struct bpf_fib_lookup fib_params = { 0 };
 
         fib_params.family       = AF_INET;
@@ -761,15 +762,59 @@ int gue_encap_v4(struct __sk_buff *skb, struct tunnel *tun, struct service *svc)
             return TC_ACT_UNSPEC;
         }
 
-        __u32 *dst = (__u32 *)&fib_params.dmac[2];
-        bpf_print("  Updating MAC to %x\n", bpf_ntohl(*dst));
         __builtin_memcpy(&tun->mac_remote, fib_params.dmac, ETH_ALEN);
+        bpf_print("  Updating dest MAC to %x\n", bpf_ntohl(*ptr));
     }
 
     // Update destination MAC
     ret = bpf_skb_store_bytes(skb, 0, &tun->mac_remote, 6, BPF_F_INVALIDATE_HASH);
     if (ret < 0) {
         bpf_print("bpf_skb_store_bytes(D-MAC): %d\n", ret);
+        return TC_ACT_SHOT;
+    }
+
+    // Resolve source MAC
+    ptr = (__u32 *)&tun->mac_local.value[2];
+    if (*ptr == 0) {
+        bpf_print("Performing src MAC lookup\n");
+        struct bpf_fib_lookup fib_params = { 0 };
+
+        fib_params.family       = AF_INET;
+        fib_params.tos          = h_outer.ip.tos;
+        fib_params.l4_protocol  = IPPROTO_UDP;
+        fib_params.sport        = 0;
+        fib_params.dport        = 0;
+        fib_params.tot_len      = bpf_ntohs(h_outer.ip.tot_len);
+        fib_params.ipv4_src     = bpf_htonl(tun->ip_local);
+        fib_params.ipv4_dst     = bpf_htonl(tun->ip_remote);
+        fib_params.ifindex      = skb->ifindex;
+
+        // flags: 0, BPF_FIB_LOOKUP_DIRECT 1, BPF_FIB_LOOKUP_OUTPUT 2
+        #define MY_BPF_FIB_LOOKUP_DIRECT  1
+        #define MY_BPF_FIB_LOOKUP_OUTPUT  2
+        int rc = bpf_fib_lookup(skb, &fib_params, sizeof(fib_params), MY_BPF_FIB_LOOKUP_DIRECT | MY_BPF_FIB_LOOKUP_OUTPUT);
+        switch (rc) {
+        case BPF_FIB_LKUP_RET_SUCCESS:
+            break;
+        case BPF_FIB_LKUP_RET_NO_NEIGH:
+            bpf_print("ERROR: FIB lookup failed: ARP entry missing\n", rc);
+            return TC_ACT_UNSPEC;
+        case BPF_FIB_LKUP_RET_FWD_DISABLED :
+            bpf_print("ERROR: FIB lookup failed: Forwarding disabled\n", rc);
+            return TC_ACT_UNSPEC;
+        default :
+            bpf_print("ERROR: FIB lookup failed: %d\n", rc);
+            return TC_ACT_UNSPEC;
+        }
+
+        __builtin_memcpy(&tun->mac_local, fib_params.smac, ETH_ALEN);
+        bpf_print("  Updating src MAC to %x\n", bpf_ntohl(*ptr));
+    }
+
+    // Update source MAC
+    ret = bpf_skb_store_bytes(skb, 6, &tun->mac_local, 6, BPF_F_INVALIDATE_HASH);
+    if (ret < 0) {
+        bpf_print("bpf_skb_store_bytes(S-MAC): %d\n", ret);
         return TC_ACT_SHOT;
     }
 
