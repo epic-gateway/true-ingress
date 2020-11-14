@@ -91,10 +91,11 @@ int pfc_rx(struct __sk_buff *skb)
 
                 return dump_action(TC_ACT_SHOT);
             } else {
+                bpf_print("GUE Data: Decap\n");
+
                 ASSERT(gue->hlen != 0, dump_action(TC_ACT_UNSPEC), "Linux GUE (no ext fields)\n");              // FIXME: remove when linux infra not used anymore
                 ASSERT(gue->hlen == 5, dump_action(TC_ACT_SHOT), "Unexpected GUE data HLEN %u\n", gue->hlen);
 
-                bpf_print("GUE Data: Decap\n");
                 struct gueext5hdr *gueext = (struct gueext5hdr *)&gue[1];
                 ASSERT((void*)&gueext[1] <= data_end, dump_action(TC_ACT_SHOT), "ERROR: (GUEext) Invalid packet size\n");
 
@@ -114,9 +115,6 @@ int pfc_rx(struct __sk_buff *skb)
                 svc.hash = pktnum;
 
                 ASSERT (TC_ACT_OK == gue_decap_v4(skb), dump_action(TC_ACT_SHOT), "GUE Decap Failed!\n");
-                if (cfg->flags & CFG_TX_DUMP) {
-                    dump_pkt(skb);
-                }
 
                 if (verify->encap.ifindex) {  // EGW
                     __u32 ifindex = bpf_ntohl(verify->encap.ifindex);
@@ -156,8 +154,35 @@ int pfc_rx(struct __sk_buff *skb)
 
                     // update TABLE-ENCAP
                     bpf_map_update_elem(&map_encap, &skey, &svc, BPF_ANY);
-                    // update TABLE-NAT (in case of DSR)
-                    //bpf_map_update_elem(&map_nat, &skey.ep, &verify->dnat, BPF_ANY);
+
+                    // Update destination MAC
+                    __u64 mac = 0;
+                    int ret = bpf_skb_load_bytes(skb, 0, &mac, 6);
+                    if (ret < 0) {
+                        bpf_print("bpf_skb_load_bytes(D-MAC): %d\n", ret);
+                        return TC_ACT_OK;
+                    }
+                    ret = bpf_skb_store_bytes(skb, 6, &mac, 6, BPF_F_INVALIDATE_HASH);
+                    if (ret < 0) {
+                        bpf_print("bpf_skb_store_bytes(S-MAC): %d\n", ret);
+                        return TC_ACT_SHOT;
+                    }
+
+                    // flags: 0, BPF_FIB_LOOKUP_DIRECT 1, BPF_FIB_LOOKUP_OUTPUT 2
+                    int flags_fib = BPF_FIB_LOOKUP_OUTPUT;
+                    struct bpf_fib_lookup fib_params = { 0 };
+                    ret = fib_lookup(skb, &fib_params, skb->ifindex, flags_fib);
+                    if (ret == TC_ACT_OK) {
+                        ret = bpf_skb_store_bytes(skb, 0, &fib_params.dmac, 6, BPF_F_INVALIDATE_HASH);
+                        if (ret < 0) {
+                            bpf_print("bpf_skb_store_bytes(D-MAC): %d\n", ret);
+                            return TC_ACT_SHOT;
+                        }
+                    }
+                }
+
+                if (cfg->flags & CFG_TX_DUMP) {
+                    dump_pkt(skb);
                 }
 
                 return dump_action(TC_ACT_UNSPEC);
