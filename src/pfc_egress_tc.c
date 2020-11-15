@@ -108,7 +108,7 @@ int pfc_tx(struct __sk_buff *skb)
                 dump_pkt(skb);
             }
 
-            if (via_ifindex) {
+            if (via_ifindex && via_ifindex != skb->ifindex) {
                 bpf_print("Redirecting to %u TX\n", via_ifindex);
                 return dump_action(bpf_redirect(via_ifindex, 0));
             }
@@ -180,7 +180,7 @@ int pfc_tx(struct __sk_buff *skb)
                     dump_pkt(skb);
                 }
 
-                if (via_ifindex && via_ifindex != skb->ifindex) {
+                if ((cfg->flags & CFG_TX_FWD) && via_ifindex && via_ifindex != skb->ifindex) {
                     bpf_print("Redirecting to %u TX\n", via_ifindex);
                     return dump_action(bpf_redirect(via_ifindex, 0));
                 }
