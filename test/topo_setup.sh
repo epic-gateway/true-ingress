@@ -176,6 +176,7 @@ do
     echo -e "\n### Configuring '${prxs[i]}' ###\n"
     # enable packet forwarding
     docker exec -it ${prxs[i]} bash -c "echo 1 > /proc/sys/net/ipv4/ip_forward"
+    docker exec -it ${prxs[i]} bash -c "echo 1 > /proc/sys/net/ipv4/conf/all/log_martians"
 
     echo "Disabling ICMP redirects..."
     docker exec -it ${prxs[i]} bash -c "echo 0 > /proc/sys/net/ipv4/conf/all/send_redirects"
@@ -228,6 +229,8 @@ do
     echo -e "\n### Configuring '${NODE}' ###\n"
     # enable packet forwarding
     docker exec -it ${NODE} bash -c "echo 1 > /proc/sys/net/ipv4/ip_forward"
+    docker exec -it ${NODE} bash -c "echo 1 > /proc/sys/net/ipv4/conf/all/log_martians"
+    docker exec -it ${NODE} bash -c "echo 1 > /proc/sys/net/ipv4/conf/all/proxy_arp"
 
     # create bridge
     docker exec -it ${NODE} bash -c "brctl addbr br0"
