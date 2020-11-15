@@ -61,6 +61,7 @@ struct tunnel {
     __u32  ip_remote;             /* outer: target IP address */          // can be NAT, filled from GUE control packet
     __u16  port_remote;           /* outer: target port */                // can be NAT, filled from GUE control packet
     struct mac   mac_remote;         // discovered MAC address
+    struct mac   mac_local;         // discovered MAC address
 };
 
 static inline struct tunnel *
@@ -74,7 +75,8 @@ make_tunnel(struct tunnel *ref,
     ref->port_local    = bpf_htons(port_local);
     ref->ip_remote     = bpf_htonl(ip_remote);
     ref->port_remote   = bpf_htons(port_remote);
-    __builtin_memset(&ref->mac_remote, 0, sizeof(ref->mac_remote));
+    __builtin_memset(&ref->mac_remote, 0, sizeof(struct mac));
+    __builtin_memset(&ref->mac_local, 0, sizeof(struct mac));
     return ref;
 }
 ////////////////////////////////
@@ -146,10 +148,12 @@ make_service(struct service  *ref,
 
 #define CFG_RX_GUE      1       /* check TABLE_DECAP to match and decapsulate decapsulate GUE */
 #define CFG_RX_DNAT     2       /* check TABLE-NAT to match and perform DNAT */
+#define CFG_RX_FWD      4       /* Forward packet after FIB lookup */
 #define CFG_RX_DUMP     8       /* DUMP intercepted packet */
 
 #define CFG_TX_PROXY    1       /* set in case of EGW (do not set for NODE) */
 #define CFG_TX_SNAT     2       /* check TABLE-NAT to match and perform DNAT */
+#define CFG_TX_FWD      4       /* Forward packet after FIB lookup */
 #define CFG_TX_DUMP     8       /* DUMP intercepted packet */
 
 #define CFG_NAME_SIZE   16

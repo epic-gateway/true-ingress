@@ -12,13 +12,12 @@
 while getopts "vV" opt; do
     case "$opt" in
     v)  VERBOSE=1
-        shift
         ;;
     V)  export VERBOSE=1
-        shift
         ;;
     esac
 done
+shift $((OPTIND-1))
 
 cd ..
 
@@ -34,7 +33,8 @@ CLIENT="client"
 GROUP_ID=1
 
 PROXY="egw"
-PROXY_IP="5.5.5.5"
+PROXY_NS="proxy1"
+PROXY_IP="1.2.3.4"
 
 NODE="node1"
 SERVICE_TYPE="http"
@@ -66,7 +66,7 @@ if [ ! "$(docker exec -it ${PROXY} bash -c \"tc qdisc show dev ${PROXY_NIC} | gr
 fi
 docker exec -it ${PROXY} bash -c "tc filter add dev ${PROXY_NIC} ingress bpf direct-action object-file pfc_ingress_tc.o sec .text"
 
-docker exec -it ${PROXY} bash -c "cli_cfg set ${PROXY_NIC} 0 0 9 \"${PROXY}-ETH RX\""
+docker exec -it ${PROXY} bash -c "cli_cfg set ${PROXY_NIC} 0 0 13 \"${PROXY}-ETH RX\""
 #docker exec -it ${PROXY} bash -c "cli_cfg set ${PROXY_NIC} 1 0 9 \"${PROXY}-ETH TX\""
 
 docker exec -it ${PROXY} bash -c "port_init.sh ${PROXY_PORT_MIN} ${PROXY_PORT_MAX}"
@@ -77,13 +77,24 @@ docker exec -it ${PROXY} bash -c "port_init.sh ${PROXY_PORT_MIN} ${PROXY_PORT_MA
 DEFAULT_IFINDEX=$(docker exec -it ${PROXY} bash -c "ip link show ${PROXY_NIC}" | grep mtu | awk '{print $1}' | sed 's/://')
 echo "[${DEFAULT_IFINDEX}]"
 
-if [ ! "$(docker exec -it ${PROXY} bash -c \"tc qdisc show dev br0 | grep clsact\")" ]; then
-    docker exec -it ${PROXY} bash -c "sudo tc qdisc add dev br0 clsact"
-fi
-docker exec -it ${PROXY} bash -c "tc filter add dev br0 ingress bpf direct-action object-file pfc_egress_tc.o sec .text"
+if [ 1 ] ; then
+    if [ ! "$(docker exec -it ${PROXY} bash -c \"tc qdisc show dev br0 | grep clsact\")" ]; then
+        docker exec -it ${PROXY} bash -c "sudo tc qdisc add dev br0 clsact"
+    fi
+    docker exec -it ${PROXY} bash -c "tc filter add dev br0 ingress bpf direct-action object-file pfc_egress_tc.o sec .text"
 
-##docker exec -it ${PROXY} bash -c "cli_cfg set br0 0 ${DEFAULT_IFINDEX} 9 'EGW-BRx RX'"
-docker exec -it ${PROXY} bash -c "cli_cfg set br0 1 ${DEFAULT_IFINDEX} 9 'EGW-BRx RX'"
+    ##docker exec -it ${PROXY} bash -c "cli_cfg set br0 0 ${DEFAULT_IFINDEX} 9 '${PROXY}-BRx RX'"
+    #docker exec -it ${PROXY} bash -c "cli_cfg set br0 1 ${DEFAULT_IFINDEX} 9 '${PROXY}-BR-R RX'"
+    docker exec -it ${PROXY} bash -c "cli_cfg set br0 1 0 13 '${PROXY}-BR RX'"
+else
+    docker exec -it ${PROXY} bash -c "tc filter add dev ${PROXY_NIC} egress bpf direct-action object-file pfc_egress_tc.o sec .text"
+
+    docker exec -it ${PROXY} bash -c "cli_cfg set ${PROXY_NIC} 1 0 13 \"${PROXY}-ETH TX\""
+fi
+# <<<<
+
+# DEBUG >>>>
+docker exec -it ${PROXY} bash -c "show_tc.sh ; cli_cfg get all"
 # <<<<
 
 
@@ -96,27 +107,41 @@ if [ ! "$(docker exec -it ${NODE} bash -c \"tc qdisc show dev ${NODE_NIC} | grep
     docker exec -it ${NODE} bash -c "sudo tc qdisc add dev ${NODE_NIC} clsact"
 fi
 docker exec -it ${NODE} bash -c "tc filter add dev ${NODE_NIC} ingress bpf direct-action object-file pfc_ingress_tc.o sec .text"
-docker exec -it ${NODE} bash -c "tc filter add dev ${NODE_NIC} egress bpf direct-action object-file pfc_egress_tc.o sec .text"
+docker exec -it ${NODE} bash -c "cli_cfg set ${NODE_NIC} 0 0 13 \"${NODE} RX\""
 
-docker exec -it ${NODE} bash -c "cli_cfg set ${NODE_NIC} 0 0 9 \"${NODE} RX\""
-docker exec -it ${NODE} bash -c "cli_cfg set ${NODE_NIC} 1 0 8 \"${NODE} TX\""
+if [ $FOO ] ; then
+    docker exec -it ${NODE} bash -c "tc filter add dev ${NODE_NIC} egress bpf direct-action object-file pfc_egress_tc.o sec .text"
+    docker exec -it ${NODE} bash -c "cli_cfg set ${NODE_NIC} 1 0 12 \"${NODE} TX\""
+else
+    if [ ! "$(docker exec -it ${NODE} bash -c \"tc qdisc show dev br0 | grep clsact\")" ]; then
+        docker exec -it ${NODE} bash -c "sudo tc qdisc add dev br0 clsact"
+    fi
+    docker exec -it ${NODE} bash -c "tc filter add dev br0 ingress bpf direct-action object-file pfc_egress_tc.o sec .text"
+
+    ##docker exec -it ${NODE} bash -c "cli_cfg set br0 0 ${DEFAULT_IFINDEX} 9 '${NODE}-BRx RX'"
+    #docker exec -it ${NODE} bash -c "cli_cfg set br0 1 ${DEFAULT_IFINDEX} 9 '${NODE}-BR-R RX'"
+    docker exec -it ${NODE} bash -c "cli_cfg set br0 1 0 12 '${NODE}-BR RX'"
+fi
 
 docker exec -it ${NODE} bash -c "port_init.sh ${NODE_PORT_MIN} ${NODE_PORT_MAX}"
 # <<<<
 
 # DEBUG >>>>
 docker exec -it ${PROXY} bash -c "show_tc.sh ; cli_cfg get all"
+docker exec -it ${NODE} bash -c "show_tc.sh ; cli_cfg get all"
 # <<<<
 
 # INFRA >>>> Setup HTTP service on ${NODE}
 if [ "${VERBOSE}" ]; then
     # service_start.sh  <node>  <ip>          <port>          <service-id>   <service>
-    ./service_start.sh ${NODE} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_NAME} ${SERVICE_TYPE}
+#    ./service_start.sh ${NODE} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_NAME} ${SERVICE_TYPE}
+    ./service_start.1.sh ${NODE} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_NAME} ${SERVICE_TYPE}
 else
     echo "Starting service(s)..."
     echo "  ${SERVICE_NAME}"
     echo "    Location '${NODE}', Type '${SERVICE_TYPE}', Endpoint '${SERVICE_PROTO}:${SERVICE_IP}:${SERVICE_PORT}'"
-    ./service_start.sh ${NODE} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_NAME} ${SERVICE_TYPE} > /dev/null
+#    ./service_start.sh ${NODE} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_NAME} ${SERVICE_TYPE} > /dev/null
+    ./service_start.1.sh ${NODE} ${SERVICE_IP} ${SERVICE_PORT} ${SERVICE_NAME} ${SERVICE_TYPE} > /dev/null
 fi
 # <<<<
 
@@ -132,6 +157,37 @@ TUNNEL_ID=${GROUP_ID}
 PROXY_TUN_PORT=$(docker exec -it ${PROXY} bash -c "port_alloc.sh")
 NODE_TUN_PORT=$(docker exec -it ${NODE} bash -c "port_alloc.sh")
 
+echo "[${TUNNEL_ID}]"
+echo "[${PROXY_TUN_IP}]"
+echo "[${PROXY_TUN_PORT}]"
+echo "[${NODE_TUN_IP}]"
+echo "[${NODE_TUN_PORT}]"
+
+# INFRA >>>> Setup PROXY NS1 -> create namespace, attach veth1, add it to bridge, assign public ip 5.5.5.5
+./ns_add.sh ${PROXY} "proxy1" ${PROXY_IP} 1 br0
+#./ns_add.sh ${PROXY} "proxy2" 10.0.0.2 2 br0
+#./ns_add.sh ${PROXY} "proxy3" 10.0.0.3 3 br0
+#./ns_add.sh ${PROXY} "proxy4" 10.0.0.4 4 br0
+#./ns_add.sh ${PROXY} "proxy5" 10.0.0.5 5 br0
+#./ns_add.sh ${PROXY} "proxy6" 10.0.0.6 6 br0
+#./ns_add.sh ${PROXY} "proxy7" 10.0.0.7 7 br0
+#./ns_add.sh ${PROXY} "proxy8" 10.0.0.8 8 br0
+#./ns_add.sh ${PROXY} "proxy9" 10.0.0.9 9 br0
+#./ns_add.sh ${PROXY} "proxy10" 10.0.0.10 10 br0
+
+docker exec -it ${CLIENT} bash -c "ip route add ${PROXY_IP}/32 via ${PROXY_TUN_IP} dev eth1"
+docker exec -it ${CLIENT} bash -c "ping -c1 ${PROXY_IP}"
+# <<<<
+
+# PFC >>>> attach TAGging BPF to veth ingress
+docker exec -it ${PROXY} bash -c "sudo tc qdisc add dev veth1 clsact"
+docker exec -it ${PROXY} bash -c "tc filter add dev veth1 ingress bpf direct-action object-file pfc_tag_rx_tc.o sec .text"
+#docker exec -it ${PROXY} bash -c "tc filter add dev veth1 egress  bpf direct-action object-file pfc_tag_tx_tc.o sec .text"
+# <<<<
+
+# Configure forwarding
+PROXY_IFINDEX=$(docker exec -it ${PROXY} bash -c "ip link show veth1" | grep mtu | awk '{print $1}' | sed 's/://')
+
 echo "Setup forwarding..."
 echo "  ${SERVICE_NAME}"
 echo "    Proxy   : ${PROXY}  ${SERVICE_PROTO}:${PROXY_IP}:${PROXY_PORT} (proxy container ifindex ${PROXY_IFINDEX}) -> ${NODE}  ${SERVICE_PROTO}:${SERVICE_IP}:${SERVICE_PORT}"
@@ -139,38 +195,27 @@ echo "    Service : (${GROUP_ID},${SERVICE_ID}) -> '${PASSWD}'"
 echo "    Tunnel  : ${TUNNEL_ID} (${PROXY_TUN_IP}:${PROXY_TUN_PORT} -> ${NODE_TUN_IP}:${NODE_TUN_PORT})"
 
 
-# INFRA >>>> Setup PROXY NS1 -> create namespace, attach veth1, add it to bridge, assign public ip 5.5.5.5
-./proxy_add.sh ${PROXY} "5.5.5.5" 5.5.5.5 br0 1
-# <<<<
-
-# PFC >>>> attach TAGging BPF to veth ingress
-docker exec -it ${PROXY} bash -c "sudo tc qdisc add dev veth1 clsact"
-docker exec -it ${PROXY} bash -c "tc -d filter add dev veth1 ingress bpf direct-action object-file pfc_tag_rx_tc.o sec .text ; echo $?"
-#docker exec -it ${PROXY} bash -c "tc filter add dev veth1 egress  bpf direct-action object-file pfc_tag_tx_tc.o sec .text"
-# <<<<
-
 # DEBUG: >>>>
 docker exec -it ${PROXY} bash -c "ip netns list"
 docker exec -it ${PROXY} bash -c "brctl show"
 docker exec -it ${PROXY} bash -c "show_tc.sh"
 
-docker exec -it ${PROXY} bash -c "ip netns exec proxy${PROXY_IP} ping -c1 172.1.0.3"
-docker exec -it ${PROXY} bash -c "ip netns exec proxy${PROXY_IP} ping -c1 172.1.0.4"
-docker exec -it ${PROXY} bash -c "ip netns exec proxy${PROXY_IP} ping -c1 1.1.1.1"
+docker exec -it ${PROXY} bash -c "ip route"
+docker exec -it ${PROXY} bash -c "ip netns exec ${PROXY_NS} ip route"
+#docker exec -it ${PROXY} bash -c "ip netns exec ${PROXY_NS} ping -c1 172.1.0.3"
+#docker exec -it ${PROXY} bash -c "ip netns exec ${PROXY_NS} ping -c1 172.1.0.4"
+docker exec -it ${PROXY} bash -c "ip netns exec ${PROXY_NS} ping -c1 1.1.1.1"
 # <<<<
 
 # INFRA >>>> Configure NAT in proxy namespace
-docker exec -it ${PROXY} bash -c "ip netns exec proxy${PROXY_IP} iptables -t nat -A PREROUTING -p ${SERVICE_PROTO} -i vethns1 --destination ${PROXY_IP} --dport ${PROXY_PORT} -j DNAT --to-destination ${SERVICE_IP}:${SERVICE_PORT}"
-docker exec -it ${PROXY} bash -c "ip netns exec proxy${PROXY_IP} iptables -t nat -A POSTROUTING -p ${SERVICE_PROTO} -o vethns1 -s ${SERVICE_IP} --sport ${SERVICE_PORT} -j SNAT --to-source ${PROXY_IP}:${PROXY_PORT}"
+docker exec -it ${PROXY} bash -c "ip netns exec ${PROXY_NS} iptables -t nat -A PREROUTING -p ${SERVICE_PROTO} -i vethns1 --destination ${PROXY_IP} --dport ${PROXY_PORT} -j DNAT --to-destination ${SERVICE_IP}:${SERVICE_PORT}"
+docker exec -it ${PROXY} bash -c "ip netns exec ${PROXY_NS} iptables -t nat -A POSTROUTING -p ${SERVICE_PROTO} -o vethns1 -s ${SERVICE_IP} --sport ${SERVICE_PORT} -j SNAT --to-source ${PROXY_IP}:${PROXY_PORT}"
 # check
 if [ "${VERBOSE}" ]; then
     echo ""
-    docker exec -it ${PROXY} bash -c "ip netns exec proxy${PROXY_IP} iptables -t nat -L PREROUTING -vn --line-numbers"
+    docker exec -it ${PROXY} bash -c "ip netns exec ${PROXY_NS} iptables -t nat -L PREROUTING -vn --line-numbers"
 fi
-# >>>>
-
-# PFC >>>> configure forwarding
-PROXY_IFINDEX=$(docker exec -it ${PROXY} bash -c "ip link show veth1" | grep mtu | awk '{print $1}' | sed 's/://')
+# <<<<
 
 # pfc_add.sh     <nic> <group-id> <service-id> <passwd> <remote-tunnel-ip> <remote-tunnel-port> <proto> <proxy-ip> <proxy-port> <backend-ip> <backend-port>
 #docker exec -it ${PROXY} bash -c "pfc_add.sh ${PROXY_NIC} ${GROUP_ID} ${SERVICE_ID} ${PASSWD} 0 0 ${SERVICE_PROTO} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} 4"
@@ -186,8 +231,53 @@ docker exec -it ${NODE} bash -c "cli_service set-node ${GROUP_ID} ${SERVICE_ID} 
 # DEBUG >>>>
 docker exec -it ${PROXY} bash -c "cli_tunnel get all ; cli_service get all"
 docker exec -it ${NODE} bash -c "cli_tunnel get all ; cli_service get all"
+
+docker exec -it ${PROXY} bash -c "ip addr"
+docker exec -it ${PROXY} bash -c "arp -n"
+docker exec -it ${PROXY} bash -c "ip neigh"
+docker exec -it ${PROXY} bash -c "ip route get to 172.1.0.2"
+docker exec -it ${PROXY} bash -c "ip route get to 172.1.0.2 from 1.1.1.1 iif eth1"
+docker exec -it ${PROXY} bash -c "ip route get to 172.1.0.4 from 172.1.0.3 iif eth1"
+docker exec -it ${PROXY} bash -c "ip route get to 172.1.0.4 from 172.1.0.3 iif br0"
+docker exec -it ${NODE} bash -c "ip addr"
+docker exec -it ${NODE} bash -c "arp -n"
+docker exec -it ${NODE} bash -c "ip route"
+docker exec -it ${NODE} bash -c "ip route get to 1.1.1.1"
+docker exec -it ${NODE} bash -c "ip route get to 1.1.1.1 from 172.1.0.2 iif eth1"
+#docker exec -it ${NODE} bash -c "ping -c1 1.1.1.1"
+#docker exec -it ${NODE} bash -c "sysctl -a" | grep net
+
+# check responses of unexisting ports
+#read
+#./test_udp.sh ${NODE_TUN_IP} 4567 ${CLIENT}
+#./test_tcp.sh ${NODE_TUN_IP} 4567 ${CLIENT}
+
+# check packets from inside proxy continer with local and foreign source
+#read
+#echo ">>>>"
+#sudo iptables -L -v
+#echo "<<<<"
+#docker exec -it ${PROXY} bash -c "ip netns exec ${PROXY_NS} nping -c1 --icmp 172.1.0.3"
+#echo ">>>>"
+#sudo iptables -L -v
+#echo "<<<<"
+#docker exec -it ${PROXY} bash -c "ip netns exec ${PROXY_NS} nping -c1 --icmp 172.1.0.4"
+#echo ">>>>"
+#sudo iptables -L -v
+#echo "<<<<"
+#docker exec -it ${PROXY} bash -c "ip netns exec ${PROXY_NS} nping -c1 --icmp --source-ip 172.1.0.3 172.1.0.4"
+#echo ">>>>"
+#sudo iptables -L -v
+#echo "<<<<"
+#read
+#docker exec -it ${PROXY} bash -c "ip netns exec ${PROXY_NS} curl 172.1.0.4:4001"
+#read
 # <<<<
 
+docker exec -it ${PROXY} bash -c "netstat -i"
+docker exec -it ${PROXY} bash -c "ethtool -S eth1"
+docker exec -it ${PROXY} bash -c "ethtool -S br0"
+docker exec -it ${PROXY} bash -c "ethtool -S veth1"
 
 # TEST >>>> verify result
 echo "Waiting for GUE ping..."
@@ -222,9 +312,15 @@ else
 #    tail -n60 /sys/kernel/debug/tracing/trace
 fi
 
+
+docker exec -it ${PROXY} bash -c "netstat -i"
+docker exec -it ${PROXY} bash -c "ethtool -S eth1"
+docker exec -it ${PROXY} bash -c "ethtool -S br0"
+docker exec -it ${PROXY} bash -c "ethtool -S veth1"
+
 #docker exec -it ${PROXY} bash -c "arp -n"
-#docker exec -it ${PROXY} bash -c "ip netns exec proxy${PROXY_IP} iptables -t nat -L PREROUTING -vn --line-numbers"
-#docker exec -it ${PROXY} bash -c "ip netns exec proxy${PROXY_IP} iptables -t nat -L POSTROUTING -vn --line-numbers"
+#docker exec -it ${PROXY} bash -c "ip netns exec ${PROXY_NS} iptables -t nat -L PREROUTING -vn --line-numbers"
+#docker exec -it ${PROXY} bash -c "ip netns exec ${PROXY_NS} iptables -t nat -L POSTROUTING -vn --line-numbers"
 # <<<<
 
 

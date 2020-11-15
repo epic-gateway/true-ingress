@@ -59,7 +59,7 @@ int pfc_tx(struct __sk_buff *skb)
 
     // check ROLE
     if (cfg->flags & CFG_TX_PROXY) {
-        bpf_print("Is PROXY\n");
+        //bpf_print("Is PROXY\n");
 
         // is Service endpoint?
         struct encap_key ekey = { dep, bpf_ntohl(skb->mark) };
@@ -67,7 +67,7 @@ int pfc_tx(struct __sk_buff *skb)
         //bpf_print("encap KEY: %x%x%x\n", ptr[0], ptr[1], ptr[2]);
         struct service *svc = bpf_map_lookup_elem(&map_encap, &ekey);
         if (svc) {
-            if (cfg->id) {
+            if (skb->mark) {
                 __u32 key = skb->mark;
                 struct mac mac_remote = { 0 };
                 // Update destination MAC
@@ -93,23 +93,24 @@ int pfc_tx(struct __sk_buff *skb)
             ASSERT(tun, dump_action(TC_ACT_UNSPEC), "ERROR: tunnel-id %u not found\n", key);
             ASSERT(tun->ip_remote, dump_action(TC_ACT_SHOT), "ERROR: tunnel remote endpoint not resolved\n");
 
-            __u32 *mac = (__u32 *)&tun->mac_remote.value[2];
             bpf_print("GUE Encap Tunnel: id %u\n", key);
             bpf_print("    FROM %x:%u\n", tun->ip_local, bpf_ntohs(tun->port_local));
-            bpf_print("    TO   %x:%u\t(%x)\n", tun->ip_remote, bpf_ntohs(tun->port_remote), bpf_ntohl(*mac));
+            bpf_print("    TO   %x:%u\n", tun->ip_remote, bpf_ntohs(tun->port_remote));
 
             // fix MSS
             //set_mss(skb, 1400);
 
-            ret = gue_encap_v4(skb, tun, svc);
+            __u32 via_ifindex = 0;
+            ret = gue_encap_v4(skb, tun, svc, &via_ifindex);
             ASSERT (ret != TC_ACT_SHOT, dump_action(TC_ACT_SHOT), "GUE Encap Failed!\n");
+
             if (cfg->flags & CFG_TX_DUMP) {
                 dump_pkt(skb);
             }
 
-            if (cfg->id) {
-                bpf_print("Redirecting to %u TX\n", cfg->id);
-                return dump_action(bpf_redirect(cfg->id, 0));
+            if ((cfg->flags & CFG_TX_FWD) && via_ifindex && via_ifindex != skb->ifindex) {
+                bpf_print("Redirecting to %u TX\n", via_ifindex);
+                return dump_action(bpf_redirect(via_ifindex, 0));
             }
 
             return dump_action(TC_ACT_UNSPEC);
@@ -135,72 +136,57 @@ int pfc_tx(struct __sk_buff *skb)
             }
         }
     } else {
-        bpf_print("Is NODE\n");
+        //bpf_print("Is NODE\n");
 
-        // FIXME: client tracking ...
-        // check output mode
-        if (cfg->flags & CFG_TX_SNAT) {
-            //bpf_print("Output mode: DSR (SNAT)\n");
-
-            //bpf_print("snat KEY: %lx\n", *(__u64*)&dep);
-            struct endpoint *snat = bpf_map_lookup_elem(&map_nat, &dep);
-            if (snat) {
-                bpf_print("SNAT to %x:%u\n", snat->ip, bpf_ntohs(snat->port));
-
-                snat4(skb, &hdr, bpf_htonl(snat->ip), snat->port);
-                if (cfg->flags & CFG_TX_DUMP) {
-                    dump_pkt(skb);
-                }
-
-                return dump_action(TC_ACT_UNSPEC);
-            }
-        } else {
-            //bpf_print("Output mode: Regular (GUE Encap)\n");
-
-            struct encap_key ekey = { dep, 0 };
-            struct service *svc = bpf_map_lookup_elem(&map_encap, &ekey);
-            if (svc) {
+        struct encap_key ekey = { dep, 0 };
+        struct service *svc = bpf_map_lookup_elem(&map_encap, &ekey);
+        if (svc) {
 //                __u32 *tmp = (__u32 *)svc;
 //                bpf_print("%x %x %x\n", tmp[0], tmp[1], tmp[2]);
 //                bpf_print("%x %x %x\n", tmp[3], tmp[4], tmp[5]);
 
-                if (svc->key.encap.ep.proto) {  // DSR mode
-                    bpf_print("DSR: SNAT to %x:%u\n", svc->key.encap.ep.ip, bpf_ntohs(svc->key.encap.ep.port));
+            if (svc->key.encap.ep.proto) {  // DSR mode
+                bpf_print("DSR: SNAT to %x:%u\n", svc->key.encap.ep.ip, bpf_ntohs(svc->key.encap.ep.port));
 
-                    snat4(skb, &hdr, bpf_htonl(svc->key.encap.ep.ip), svc->key.encap.ep.port);
-                    if (cfg->flags & CFG_TX_DUMP) {
-                        dump_pkt(skb);
-                    }
-                } else {    // Regular mode
-                    bpf_print("GUE Encap Service: group-id %u, service-id %u, tunnel-id %u\n",
-                            bpf_ntohs(svc->identity.service_id), bpf_ntohs(svc->identity.group_id), bpf_ntohl(svc->key.tunnel_id));
+                snat4(skb, &hdr, bpf_htonl(svc->key.encap.ep.ip), svc->key.encap.ep.port);
+                if (cfg->flags & CFG_TX_DUMP) {
+                    dump_pkt(skb);
+                }
+            } else {    // Regular mode
+                bpf_print("Regular: GUE Encap Service: group-id %u, service-id %u, tunnel-id %u\n",
+                        bpf_ntohs(svc->identity.service_id), bpf_ntohs(svc->identity.group_id), bpf_ntohl(svc->key.tunnel_id));
 
-    //                bpf_print("GUE Encap Service: service-id %x, group-id %x, tunnel-id %x\n",
-    //                          svc->identity.service_id, svc->identity.group_id, svc->key.tunnel_id);
-                    //__u64 *ptr = (__u64 *)svc->key.value;
-                    //bpf_print("    tunnel KEY %lx%lx\n", ptr[0], ptr[1]);
-                    __u32 key = bpf_ntohl(svc->key.tunnel_id);
-                    struct tunnel *tun = bpf_map_lookup_elem(&map_tunnel, &key);
-                    ASSERT(tun, dump_action(TC_ACT_UNSPEC), "ERROR: tunnel-id %u not found\n", key);
-                    ASSERT(tun->ip_remote, dump_action(TC_ACT_SHOT), "ERROR: tunnel remote endpoint not resolved\n");
+//                bpf_print("GUE Encap Service: service-id %x, group-id %x, tunnel-id %x\n",
+//                          svc->identity.service_id, svc->identity.group_id, svc->key.tunnel_id);
+                //__u64 *ptr = (__u64 *)svc->key.value;
+                //bpf_print("    tunnel KEY %lx%lx\n", ptr[0], ptr[1]);
+                __u32 key = bpf_ntohl(svc->key.tunnel_id);
+                struct tunnel *tun = bpf_map_lookup_elem(&map_tunnel, &key);
+                ASSERT(tun, dump_action(TC_ACT_UNSPEC), "ERROR: tunnel-id %u not found\n", key);
+                ASSERT(tun->ip_remote, dump_action(TC_ACT_SHOT), "ERROR: tunnel remote endpoint not resolved\n");
 
-                    __u32 *mac = (__u32 *)&tun->mac_remote.value[2];
-                    bpf_print("Regular: GUE Encap Tunnel: id %u\n", key);
-                    bpf_print("    FROM %x:%u\n", tun->ip_local, bpf_ntohs(tun->port_local));
-                    bpf_print("    TO   %x:%u\t(%x)\n", tun->ip_remote, bpf_ntohs(tun->port_remote), bpf_ntohl(*mac));
+                bpf_print("Regular: GUE Encap Tunnel: id %u\n", key);
+                bpf_print("    FROM %x:%u\n", tun->ip_local, bpf_ntohs(tun->port_local));
+                bpf_print("    TO   %x:%u\n", tun->ip_remote, bpf_ntohs(tun->port_remote));
 
-                    // fix MSS
-                    //set_mss(skb, 1400);
+                // fix MSS
+                //set_mss(skb, 1400);
 
-                    ret = gue_encap_v4(skb, tun, svc);
-                    ASSERT (ret != TC_ACT_SHOT, dump_action(TC_ACT_SHOT), "GUE Encap Failed!\n");
-                    if (cfg->flags & CFG_TX_DUMP) {
-                        dump_pkt(skb);
-                    }
+                __u32 via_ifindex = 0;
+                ret = gue_encap_v4(skb, tun, svc, &via_ifindex);
+                ASSERT (ret != TC_ACT_SHOT, dump_action(TC_ACT_SHOT), "GUE Encap Failed!\n");
+
+                if (cfg->flags & CFG_TX_DUMP) {
+                    dump_pkt(skb);
                 }
 
-                return dump_action(TC_ACT_UNSPEC);
+                if ((cfg->flags & CFG_TX_FWD) && via_ifindex && via_ifindex != skb->ifindex) {
+                    bpf_print("Redirecting to %u TX\n", via_ifindex);
+                    return dump_action(bpf_redirect(via_ifindex, 0));
+                }
             }
+
+            return dump_action(TC_ACT_UNSPEC);
         }
     }
 

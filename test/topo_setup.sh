@@ -69,6 +69,10 @@ done
 # enable ip tables logging inside docker
 sudo bash -c "echo 1 > /proc/sys/net/netfilter/nf_log_all_netns"
 
+echo ">>>>"
+sudo iptables -L -v
+echo "<<<<"
+
 echo -e "\n==========================================="
 echo "# TOPO($1).START [3/${STEPS}] : Starting nodes"
 echo "==========================================="
@@ -101,6 +105,11 @@ fi
 echo -e "\n==========================================="
 echo "# TOPO($1).START [5/${STEPS}] : Cleaning IPTABLES"
 echo "==========================================="
+
+echo ">>>>"
+sudo iptables -L -v
+echo "<<<<"
+
 if [ "${VERBOSE}" ]; then
     iptables -L POSTROUTING -n -t nat --line-numbers
 fi
@@ -116,6 +125,10 @@ if [ "${VERBOSE}" ]; then
     echo ""
     iptables -L POSTROUTING -n -t nat --line-numbers
 fi
+
+echo ">>>>"
+sudo iptables -L -v
+echo "<<<<"
 
 echo -e "\n==========================================="
 echo "# TOPO($1).START [6/${STEPS}] : Connecting Docker Networks"
@@ -163,6 +176,7 @@ do
     echo -e "\n### Configuring '${prxs[i]}' ###\n"
     # enable packet forwarding
     docker exec -it ${prxs[i]} bash -c "echo 1 > /proc/sys/net/ipv4/ip_forward"
+    docker exec -it ${prxs[i]} bash -c "echo 1 > /proc/sys/net/ipv4/conf/all/log_martians"
 
     echo "Disabling ICMP redirects..."
     docker exec -it ${prxs[i]} bash -c "echo 0 > /proc/sys/net/ipv4/conf/all/send_redirects"
@@ -177,13 +191,13 @@ do
     # ======
     # create bridge
     docker exec -it ${prxs[i]} bash -c "brctl addbr br0"
-
-    # bridge up
+#    docker exec -it ${prxs[i]} bash -c "ip link set br0 address aa:bb:cc:dd:ee:ff"  # workaround to have static MAC on bridge
     docker exec -it ${prxs[i]} bash -c "ip link set br0 up"
 
     # add default route
     docker exec -it ${prxs[i]} bash -c "ip route"
     #docker exec -it ${prxs[i]} bash -c "ip route add default via 172.1.0.1"
+#    docker exec -it ${prxs[i]} bash -c "ip route add 172.1.0.1 dev eth1 src 172.1.0.3"
 
     if [ "${VERBOSE}" ]; then
         echo ""
@@ -196,11 +210,11 @@ for NODE in ${CLIENTS}
 do
     echo -e "\n### Configuring '${NODE}' ###\n"
     # set routing
-    for (( i=0; i<${#PROXY_IP[@]}; i++ ))
-    do
-        DEFAULT_ROUTE=$(docker exec -it ${prxs[i]} bash -c "ip addr" | grep "eth1" | grep inet | awk '{print $2}' | sed 's/\/16//g')
-        docker exec -it ${NODE} bash -c "ip route add ${PROXY_IP[i]}/32 via ${DEFAULT_ROUTE} dev eth1"     # need one route per proxy
-    done
+#    for (( i=0; i<${#PROXY_IP[@]}; i++ ))
+#    do
+#        DEFAULT_ROUTE=$(docker exec -it ${prxs[i]} bash -c "ip addr" | grep "eth1" | grep inet | awk '{print $2}' | sed 's/\/16//g')
+#        docker exec -it ${NODE} bash -c "ip route add ${PROXY_IP[i]}/32 via ${DEFAULT_ROUTE} dev eth1"     # need one route per proxy
+#    done
 
     if [ "${VERBOSE}" ]; then
         echo ""
@@ -215,6 +229,12 @@ do
     echo -e "\n### Configuring '${NODE}' ###\n"
     # enable packet forwarding
     docker exec -it ${NODE} bash -c "echo 1 > /proc/sys/net/ipv4/ip_forward"
+    docker exec -it ${NODE} bash -c "echo 1 > /proc/sys/net/ipv4/conf/all/log_martians"
+    docker exec -it ${NODE} bash -c "echo 1 > /proc/sys/net/ipv4/conf/all/proxy_arp"
+
+    # create bridge
+    docker exec -it ${NODE} bash -c "brctl addbr br0"
+    docker exec -it ${NODE} bash -c "ip link set br0 up"
 
     # set routing if on main network (if behind nat, it will be configured together with nat box)
     CHECK=$(docker exec -it ${NODE} bash -c "ip route" | grep ${NETWORK_SUBNET[0]})
@@ -223,7 +243,7 @@ do
         do
             DEFAULT_ROUTE=$(docker exec -it ${prxs[i]} bash -c "ip addr" | grep "eth1" | grep inet | awk '{print $2}' | sed 's/\/16//g')
             #echo "docker exec -it ${NODE} bash -c 'ip route add ${PROXY_IP[i]}/32 via ${DEFAULT_ROUTE} dev eth1'"
-            docker exec -it ${NODE} bash -c "ip route add ${PROXY_IP[i]}/32 via ${DEFAULT_ROUTE} dev eth1"     # need one route per proxy
+#            docker exec -it ${NODE} bash -c "ip route add ${PROXY_IP[i]}/32 via ${DEFAULT_ROUTE} dev eth1"     # need one route per proxy
         done
     fi
 
@@ -247,7 +267,7 @@ do
         DEFAULT_ROUTE=$(docker exec -it ${prxs[j]} bash -c "ip addr" | grep "eth1" | grep inet | awk '{print $2}' | sed 's/\/16//g')
         #echo "[${DEFAULT_ROUTE}]=docker exec -it ${prxs[j]} bash -c 'ip addr' | grep 'eth1' | grep inet | awk '{print $2}' | sed 's/\/16//g'"
         #echo "docker exec -it ${nats[i]} bash -c 'ip route add ${PROXY_IP[j]}/32 via ${DEFAULT_ROUTE} dev eth1'"
-        docker exec -it ${nats[i]} bash -c "ip route add ${PROXY_IP[j]}/32 via ${DEFAULT_ROUTE} dev eth1"     # need one route per proxy
+#        docker exec -it ${nats[i]} bash -c "ip route add ${PROXY_IP[j]}/32 via ${DEFAULT_ROUTE} dev eth1"     # need one route per proxy
     done
 
     # NAT eth2 (private) -> eth1 (public)
@@ -272,11 +292,11 @@ do
     for NODE in ${NAT_GW[i]}
     do
         echo -e "\n### Adding routing of '${NODE}' via '${DEFAULT_NAT_ROUTE}' ###\n"
-        for (( i=0; i<${#PROXY_IP[@]}; i++ ))      # need one route per proxy/with own NAT box IP
-        do
-            #echo "docker exec -it ${NODE} bash -c 'ip route add ${PROXY_IP[i]}/32 via ${DEFAULT_NAT_ROUTE} dev eth1'"
-            docker exec -it ${NODE} bash -c "ip route add ${PROXY_IP[i]}/32 via ${DEFAULT_NAT_ROUTE} dev eth1"     # need one route per proxy
-        done
+#        for (( i=0; i<${#PROXY_IP[@]}; i++ ))      # need one route per proxy/with own NAT box IP
+#        do
+#            #echo "docker exec -it ${NODE} bash -c 'ip route add ${PROXY_IP[i]}/32 via ${DEFAULT_NAT_ROUTE} dev eth1'"
+#            docker exec -it ${NODE} bash -c "ip route add ${PROXY_IP[i]}/32 via ${DEFAULT_NAT_ROUTE} dev eth1"     # need one route per proxy
+#        done
         #echo "docker exec -it ${NODE} bash -c 'ip route add ${NETWORK_SUBNET[0]} via ${DEFAULT_NAT_ROUTE} dev eth1'"
         docker exec -it ${NODE} bash -c "ip route add ${NETWORK_SUBNET[0]} via ${DEFAULT_NAT_ROUTE} dev eth1"     # required when sitting behind nat
 
