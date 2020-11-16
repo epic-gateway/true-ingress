@@ -83,7 +83,10 @@ func tunnel_ping(timeout int) {
 			continue
 		}
 
-		gid64, _ := strconv.ParseInt(strings.Split(params[8], "{")[1], 16, 32)
+		g, _ := strconv.ParseInt(strings.Split(strings.Split(params[1], "(")[1], ",")[0], 10, 16)
+		s, _ := strconv.ParseInt(strings.Split(params[2], ")")[0], 10, 16)
+		gid64 := ((g & 0xFFFF) << 16) + (s & 0xFFFF)
+		fmt.Println(gid64)
 		gid := int(gid64)
 		pwd := strings.Split(params[4], "'")[1]
 		verify[gid] = pwd

@@ -86,13 +86,18 @@ void map_verify_print_header() {
 }
 
 void map_verify_print_footer() {
-    //printf("--------------------------------------------------------------------------\n");
+    printf("--------------------------------------------------------------------------\n");
     printf("\n");
+}
+
+void map_verify_print_count(__u32 count) {
+    printf("--------------------------------------------------------------------------\n");
+    printf("Entries:  %u\n\n", count);
 }
 
 bool map_verify_get(int map_fd, struct identity *key, struct verify *value) {
     if (bpf_map_lookup_elem(map_fd, key, value)) {
-        fprintf(stderr, "VERIFY.GET {%u, %u}\t\tERR (%d) \'%s\'\n",
+        fprintf(stderr, "VERIFY.GET (%u, %u)\t\tERR (%d) \'%s\'\n",
                 ntohs(key->service_id), ntohs(key->group_id), errno, strerror(errno));
 
         return false;
@@ -103,10 +108,11 @@ bool map_verify_get(int map_fd, struct identity *key, struct verify *value) {
         printf("VERIFY (%u, %u) -> ", ntohs(key->service_id), ntohs(key->group_id));
         printf("\'%16.16s\'", value->value);
         printf("\t%u", ntohl(value->tunnel_id));
-        printf("\t\t(%s, %s, %u)\t%u -> ", get_proto_name(ntohs(value->encap.ep.proto)), inet_ntoa(from), ntohs(value->encap.ep.port), ntohl(value->encap.ifindex));
-        printf("\t\t{%08x (%04x, %04x)} -> ", ntohl(*(__u32*)key), ntohs(key->service_id), ntohs(key->group_id));
-        __u64 *ptr = (__u64 *)value->value;
-        printf("{\'%llx%llx\' %08x}\n", ptr[0], ptr[1], value->tunnel_id);
+        printf("\t\t(%s %s:%u)\t%u", get_proto_name(ntohs(value->encap.ep.proto)), inet_ntoa(from), ntohs(value->encap.ep.port), ntohl(value->encap.ifindex));
+//        printf(" -> \t\t{%08x (%04x, %04x)} -> ", ntohl(*(__u32*)key), ntohs(key->service_id), ntohs(key->group_id));
+//        __u64 *ptr = (__u64 *)value->value;
+//        printf("{\'%llx%llx\' %08x}", ptr[0], ptr[1], value->tunnel_id);
+        printf("\n");
     }
 
     return true;
@@ -115,28 +121,30 @@ bool map_verify_get(int map_fd, struct identity *key, struct verify *value) {
 bool map_verify_getall(int map_fd) {
     struct identity prev_key, key;
     struct verify value;
+    __u32 count = 0;
 
     map_verify_print_header();
     while (bpf_map_get_next_key(map_fd, &prev_key, &key) == 0) {
         if (!map_verify_get(map_fd, &key, &value)) {
             break;
         }
-
+        ++count;
         prev_key=key;
     }
-    map_verify_print_footer();
+    map_verify_print_count(count);
+    //map_verify_print_footer();
 
     return true;
 }
 
 bool map_verify_set(int map_fd, struct identity *key, struct verify *value) {
     if (bpf_map_update_elem(map_fd, key, value, 0)) {
-        fprintf(stderr, "VERIFY.SET {%u, %u}\t\tERR (%d) \'%s\'\n",
+        fprintf(stderr, "VERIFY.SET (%u, %u)\t\tERR (%d) \'%s\'\n",
                 ntohs(key->service_id), ntohs(key->group_id), errno, strerror(errno));
 
         return false;
     } else {
-        printf("VERIFY.SET {%u, %u}\t\tOK\n", ntohs(key->service_id), ntohs(key->group_id));
+        printf("VERIFY.SET (%u, %u)\t\tOK\n", ntohs(key->service_id), ntohs(key->group_id));
     }
 
     return true;
@@ -144,12 +152,12 @@ bool map_verify_set(int map_fd, struct identity *key, struct verify *value) {
 
 bool map_verify_del(int map_fd, struct identity *key) {
     if (bpf_map_delete_elem(map_fd, key)) {
-        fprintf(stderr, "VERIFY.DEL {%u, %u}\t\tERR (%d) \'%s\'\n",
+        fprintf(stderr, "VERIFY.DEL (%u, %u)\t\tERR (%d) \'%s\'\n",
                 ntohs(key->service_id), ntohs(key->group_id), errno, strerror(errno));
 
         return false;
     } else {
-        printf("VERIFY.DEL {%u, %u}\t\tOK\n", ntohs(key->service_id), ntohs(key->group_id));
+        printf("VERIFY.DEL (%u, %u)\t\tOK\n", ntohs(key->service_id), ntohs(key->group_id));
     }
 
     return true;
@@ -183,8 +191,13 @@ void map_encap_print_header() {
 }
 
 void map_encap_print_footer() {
-    //printf("--------------------------------------------------------------------------\n");
+    printf("--------------------------------------------------------------------------\n");
     printf("\n");
+}
+
+void map_encap_print_count(__u32 count) {
+    printf("--------------------------------------------------------------------------\n");
+    printf("Entries:  %u\n\n", count);
 }
 
 bool map_encap_get(int map_fd, struct encap_key *key, struct service *value) {
@@ -192,17 +205,18 @@ bool map_encap_get(int map_fd, struct encap_key *key, struct service *value) {
     from.s_addr = ntohl(key->ep.ip);
 
     if (bpf_map_lookup_elem(map_fd, key, value)) {
-        fprintf(stderr, "ENCAP.GET {%s, %s, %u, %u}\t\tERR (%d) \'%s\'\n",
+        fprintf(stderr, "ENCAP.GET (%s %s:%u) %u\t\tERR (%d) \'%s\'\n",
                 get_proto_name(ntohs(key->ep.proto)), inet_ntoa(from), ntohs(key->ep.port), ntohl(key->ifindex), errno, strerror(errno));
 
         return false;
     } else {
-        printf("ENCAP (%s, %s, %u)  %u -> ", get_proto_name(ntohs(key->ep.proto)), inet_ntoa(from), ntohs(key->ep.port), ntohl(key->ifindex));
+        printf("ENCAP (%s %s:%u)  %u -> ", get_proto_name(ntohs(key->ep.proto)), inet_ntoa(from), ntohs(key->ep.port), ntohl(key->ifindex));
         printf("%u\t\t(%u, %u)\t\'%16.16s\'\t%u", ntohl(value->key.tunnel_id), ntohs(value->identity.service_id), ntohs(value->identity.group_id), (char*)value->key.value, value->hash);
-        __u32 *ptrk = (__u32 *)key;
-        printf("\t\t(%x%x%x) -> ", ptrk[0], ptrk[1], ptrk[2]);
-        __u64 *ptr = (__u64 *)value->key.value;
-        printf("(%08x\t(%04x, %04x)\t\'%llx%llx\'\n", value->key.tunnel_id, value->identity.service_id, value->identity.group_id, ptr[0], ptr[1]);
+//        __u32 *ptrk = (__u32 *)key;
+//        printf("\t\t(%x%x%x) -> ", ptrk[0], ptrk[1], ptrk[2]);
+//        __u64 *ptr = (__u64 *)value->key.value;
+//        printf("(%08x\t(%04x, %04x)\t\'%llx%llx\'", value->key.tunnel_id, value->identity.service_id, value->identity.group_id, ptr[0], ptr[1]);
+        printf("\n");
     }
     return true;
 }
@@ -210,16 +224,18 @@ bool map_encap_get(int map_fd, struct encap_key *key, struct service *value) {
 bool map_encap_getall(int map_fd) {
     struct encap_key prev_key, key;
     struct service value;
+    __u32 count = 0;
 
     map_encap_print_header();
     while (bpf_map_get_next_key(map_fd, &prev_key, &key) == 0) {
         if (!map_encap_get(map_fd, &key, &value)) {
             break;
         }
-
+        ++count;
         prev_key=key;
     }
-    map_encap_print_footer();
+    map_encap_print_count(count);
+    //map_encap_print_footer();
 
     return true;
 }
@@ -229,12 +245,12 @@ bool map_encap_set(int map_fd, struct encap_key *key, struct service *value) {
     from.s_addr = ntohl(key->ep.ip);
 
     if (bpf_map_update_elem(map_fd, key, value, 0)) {
-        fprintf(stderr, "ENCAP.SET {%s, %s, %u, %u}\t\tERR (%d) \'%s\'\n",
+        fprintf(stderr, "ENCAP.SET (%s %s:%u) %u\t\tERR (%d) \'%s\'\n",
                 get_proto_name(ntohs(key->ep.proto)), inet_ntoa(from), ntohs(key->ep.port), ntohl(key->ifindex), errno, strerror(errno));
 
         return false;
     } else {
-        printf("ENCAP.SET {%s, %s, %u, %u}\t\tOK\n", get_proto_name(ntohs(key->ep.proto)), inet_ntoa(from), ntohs(key->ep.port), ntohl(key->ifindex));
+        printf("ENCAP.SET (%s %s:%u) %u\t\tOK\n", get_proto_name(ntohs(key->ep.proto)), inet_ntoa(from), ntohs(key->ep.port), ntohl(key->ifindex));
     }
 
     return true;
@@ -245,12 +261,12 @@ bool map_encap_del(int map_fd, struct encap_key *key) {
     from.s_addr = ntohl(key->ep.ip);
 
     if (bpf_map_delete_elem(map_fd, key)) {
-        fprintf(stderr, "ENCAP.DEL {%s, %s, %u, %u}\t\tERR (%d) \'%s\'\n",
+        fprintf(stderr, "ENCAP.DEL (%s %s:%u) %u\t\tERR (%d) \'%s\'\n",
                 get_proto_name(ntohs(key->ep.proto)), inet_ntoa(from), ntohs(key->ep.port), ntohl(key->ifindex), errno, strerror(errno));
 
         return false;
     } else {
-        printf("ENCAP.DEL {%s, %s, %u, %u}\t\tOK\n", get_proto_name(ntohs(key->ep.proto)), inet_ntoa(from), ntohs(key->ep.port), ntohl(key->ifindex));
+        printf("ENCAP.DEL (%s %s:%u) %u\t\tOK\n", get_proto_name(ntohs(key->ep.proto)), inet_ntoa(from), ntohs(key->ep.port), ntohl(key->ifindex));
     }
 
     return true;
@@ -282,10 +298,10 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    int map_nat_fd = open_bpf_map_file("/sys/fs/bpf/tc/globals/map_nat");
-    if (map_nat_fd < 0) {
-        return 1;
-    }
+//    int map_nat_fd = open_bpf_map_file("/sys/fs/bpf/tc/globals/map_nat");
+//    if (map_nat_fd < 0) {
+//        return 1;
+//    }
 
     int map_verify_fd = open_bpf_map_file("/sys/fs/bpf/tc/globals/map_verify");
     if (map_verify_fd < 0) {
