@@ -27,39 +27,105 @@ int open_bpf_map_file(const char *file) {
     return fd;
 }
 
-bool map_cfg_get(int map_fd, unsigned int ifindex, struct cfg_if *value) {
+void usage(char *prog) {
+    fprintf(stderr,"ERR: Too little arguments\n");
+    fprintf(stderr,"Usage:\n");
+    fprintf(stderr,"    %s get <interface|all>\n", prog);
+    fprintf(stderr,"    %s set <interface> <direction> <id> <flags> <name>\n", prog);
+    fprintf(stderr,"    %s del <interface|all>\n\n", prog);
+    fprintf(stderr,"    <interface>     - Interface where PFC is attached\n");
+    fprintf(stderr,"    <direction>     - 0 for ingress, 1 for egress\n");
+    fprintf(stderr,"    <id>            - Instance identifier (numerical)\n");
+    fprintf(stderr,"    <flags>         - PFC operational mode:\n");
+    fprintf(stderr,"                       Ingress : 1 GUE-DECAP, 4 FWD, 8 DUMP\n");
+    fprintf(stderr,"                       Egress  : 1 IS-PROXY, 2 DSR, 4 FWD, 8 DUMP\n");
+    fprintf(stderr,"    <name>          - Instance identifier (string)\n");
+}
+
+void map_cfg_print_header() {
+    printf("TABLE-CFG:\n     Interface \t\tIfindex  Direction  Name                 Flags\n");
+    printf("--------------------------------------------------------------------------\n");
+}
+
+void map_cfg_print_footer() {
+    printf("--------------------------------------------------------------------------\n");
+    printf("\n");
+}
+
+void map_cfg_print_count(__u32 count) {
+    printf("--------------------------------------------------------------------------\n");
+    printf("Entries:  %u\n\n", count);
+}
+
+void map_cfg_print_record(unsigned int key, struct cfg_if *value) {
     char ifname[32];
 
+/*    printf("CFG.GET (%u) (%s):\n", ifindex, if_indextoname(ifindex, ifname));
+    printf("    Ingress -> id %u, name \'%s\', flags (%x) :%s%s%s%s\n",
+            value->queue[CFG_IDX_RX].id, value->queue[CFG_IDX_RX].name, value->queue[CFG_IDX_RX].flags,
+            (value->queue[CFG_IDX_RX].flags & CFG_RX_GUE) ? " GUE-DECAP" : "",
+            (value->queue[CFG_IDX_RX].flags & CFG_RX_DNAT) ? " DNAT" : "",
+            (value->queue[CFG_IDX_RX].flags & CFG_RX_FWD) ? " FWD" : "",
+            (value->queue[CFG_IDX_RX].flags & CFG_RX_DUMP) ? " DUMP" : "");
+    printf("    Egress  -> id %u, name \'%s\', flags (%x) :%s%s%s%s\n",
+            value->queue[CFG_IDX_TX].id, value->queue[CFG_IDX_TX].name, value->queue[CFG_IDX_TX].flags,
+            (value->queue[CFG_IDX_TX].flags & CFG_TX_PROXY) ? " PROXY" : "",
+            (value->queue[CFG_IDX_TX].flags & CFG_TX_SNAT) ? " DSR" : "",
+            (value->queue[CFG_IDX_RX].flags & CFG_TX_FWD) ? " FWD" : "",
+            (value->queue[CFG_IDX_TX].flags & CFG_TX_DUMP) ? " DUMP" : "");*/
+//    printf("CFG  %-5u  %-16s  Ingress  ->  name \'%-16s\'    flags (%u) :%s%s%s%s\n",
+    printf("CFG  %-16s   %-5u    Ingress    %-16s    %s%s%s%s\n",
+            if_indextoname(key, ifname), key,
+            value->queue[CFG_IDX_RX].name, /*value->queue[CFG_IDX_RX].flags,*/
+            (value->queue[CFG_IDX_RX].flags & CFG_RX_GUE) ? " GUE-DECAP(1)" : "",
+            (value->queue[CFG_IDX_RX].flags & CFG_RX_DNAT) ? " DNAT(2)" : "",
+            (value->queue[CFG_IDX_RX].flags & CFG_RX_FWD) ? " FWD(4)" : "",
+            (value->queue[CFG_IDX_RX].flags & CFG_RX_DUMP) ? " DUMP(8)" : "");
+//    printf("CFG  %-5u  %-16s  Egress   ->  name \'%-16s\'    flags (%u) :%s%s%s%s\n",
+    printf("CFG                              Egress     %-16s    %s%s%s%s\n",
+//            if_indextoname(key, ifname), key,
+            value->queue[CFG_IDX_TX].name, /*value->queue[CFG_IDX_TX].flags,*/
+            (value->queue[CFG_IDX_TX].flags & CFG_TX_PROXY) ? " PROXY(1)" : "",
+            (value->queue[CFG_IDX_TX].flags & CFG_TX_SNAT) ? " DSR(2)" : "",
+            (value->queue[CFG_IDX_TX].flags & CFG_TX_FWD) ? " FWD(4)" : "",
+            (value->queue[CFG_IDX_TX].flags & CFG_TX_DUMP) ? " DUMP(8)" : "");
+}
+
+void map_cfg_print_err(unsigned int key, const char *name, int err) {
+    char ifname[32];
+
+    fprintf(stderr, "CFG.%s (%d) (%s) -> ERR (%d) \'%s\'\n", name,
+            key, if_indextoname(key, ifname), errno, strerror(errno));
+}
+
+bool map_cfg_get(int map_fd, unsigned int ifindex, struct cfg_if *value) {
+
     if (bpf_map_lookup_elem(map_fd, &ifindex, value)) {
-        fprintf(stderr, "CFG.GET (%d) (%s) -> ERR (%d) \'%s\'\n", ifindex, if_indextoname(ifindex, ifname), errno, strerror(errno));
-        return false;
-    } else {
-        printf("CFG.GET (%u) (%s):\n", ifindex, if_indextoname(ifindex, ifname));
-        printf("    Ingress -> id %u, name \'%s\', flags (%x) :%s%s%s\n",
-               value->queue[CFG_IDX_RX].id, value->queue[CFG_IDX_RX].name, value->queue[CFG_IDX_RX].flags,
-               (value->queue[CFG_IDX_RX].flags & CFG_RX_GUE) ? " GUE-DECAP" : "",
-               (value->queue[CFG_IDX_RX].flags & CFG_RX_DNAT) ? " DNAT" : "",
-               (value->queue[CFG_IDX_RX].flags & CFG_RX_DUMP) ? " DUMP" : "");
-        printf("    Egress  -> id %u, name \'%s\', flags (%x) :%s%s%s\n",
-               value->queue[CFG_IDX_TX].id, value->queue[CFG_IDX_TX].name, value->queue[CFG_IDX_TX].flags,
-               (value->queue[CFG_IDX_TX].flags & CFG_TX_PROXY) ? " PROXY" : "",
-               (value->queue[CFG_IDX_TX].flags & CFG_TX_SNAT) ? " SNAT" : "",
-               (value->queue[CFG_IDX_TX].flags & CFG_TX_DUMP) ? " DUMP" : "");
+        return errno;
     }
 
-    return true;
+    return 0;
 }
 
 bool map_cfg_getall(int map_fd) {
     __u32 prev_key, key;
     struct cfg_if value;
+    __u32 count = 0;
+    int ret;
 
-    //map_cfg_print_header();
+    map_cfg_print_header();
     while(bpf_map_get_next_key(map_fd, &prev_key, &key) == 0) {
-        map_cfg_get(map_fd, key, &value);
+        ret = map_cfg_get(map_fd, key, &value);
+        if (!ret) {
+            map_cfg_print_record(key, &value);
+            ++count;
+        } else {
+            map_cfg_print_err(key, "GET", ret);
+            break;
+        }
         prev_key=key;
     }
-    //map_cfg_print_footer();
+    map_cfg_print_count(count);
 
     return true;
 }
@@ -128,15 +194,6 @@ bool map_cfg_delall(int map_fd) {
     return true;
 }
 
-void usage(char *prog) {
-    fprintf(stderr,"ERR: Too little arguments\n");
-    fprintf(stderr,"Usage:\n");
-    fprintf(stderr,"    %s get <interface|all>\n", prog);
-    fprintf(stderr,"    %s set <interface> <qid> <id> <flags> <name>\n", prog);
-    fprintf(stderr,"    %s del <interface|all>\n", prog);
-    fprintf(stderr,"    <qid> - 0 for ingress, 1 for egress\n");
-}
-
 // cli cfg [get|set] [key] ...
 // cli cfg set <key> <id> <flags> <name>
 // cli cfg get all|<key>
@@ -193,7 +250,12 @@ int main(int argc, char **argv)
                 return 1;
             }*/
             struct cfg_if value;
-            map_cfg_get(map_fd, ifindex, &value);
+            int ret = map_cfg_get(map_fd, ifindex, &value);
+            if (!ret) {
+                map_cfg_print_record(ifindex, &value);
+            } else {
+                map_cfg_print_err(ifindex, "GET", ret);
+            }
         }
     } else if (!strncmp(argv[1], "del", 4)) {
         if (!strncmp(argv[2], "all", 4)) {

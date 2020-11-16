@@ -57,6 +57,7 @@ int pfc_rx(struct __sk_buff *skb)
 
     // check packet for DECAP
     if (cfg->flags & CFG_RX_GUE) {
+        int ret = 0;
         // is GUE endpoint?
         //bpf_print("Decap key %lx\n", *(__u64*)&ep);
 
@@ -118,14 +119,25 @@ int pfc_rx(struct __sk_buff *skb)
 
                 if (verify->encap.ifindex) {  // usually EGW
                     __u32 ifindex = bpf_ntohl(verify->encap.ifindex);
-                    bpf_print("Redirecting to container ifindex %u TX\n", ifindex);
 
                     // update TABLE-PROXY
                     struct mac *mac_remote = bpf_map_lookup_elem(&map_proxy, &ifindex);
                     ASSERT(mac_remote != 0, dump_action(TC_ACT_UNSPEC), "ERROR: Proxy MAC for ifindex %u not found!\n", ifindex);
 
+                    struct mac tmp = { 0 };
+                    ret = bpf_skb_load_bytes(skb, 0, tmp.value, 6);
+                    if (ret < 0) {
+                        bpf_print("bpf_skb_load_bytes D-MAC: %d\n", ret);
+                        return dump_action(TC_ACT_SHOT);
+                    }
+                    ret = bpf_skb_store_bytes(skb, 6, tmp.value, 6, BPF_F_INVALIDATE_HASH);
+                    if (ret < 0) {
+                        bpf_print("bpf_skb_store_bytes(S-MAC): %d\n", ret);
+                        return TC_ACT_SHOT;
+                    }
+
                     // Update destination MAC
-                    int ret = bpf_skb_store_bytes(skb, 0, mac_remote->value, 6, BPF_F_INVALIDATE_HASH);
+                    ret = bpf_skb_store_bytes(skb, 0, mac_remote->value, 6, BPF_F_INVALIDATE_HASH);
                     if (ret < 0) {
                         bpf_print("bpf_skb_store_bytes: %d\n", ret);
                         return TC_ACT_SHOT;
@@ -135,6 +147,7 @@ int pfc_rx(struct __sk_buff *skb)
                         dump_pkt(skb);
                     }
 
+                    bpf_print("Redirecting to container ifindex %u TX\n", ifindex);
                     return dump_action(bpf_redirect(ifindex, 0));
                 } else {                // usually NODE
                     //bpf_print("Create/refresh tracking record\n");
@@ -155,11 +168,12 @@ int pfc_rx(struct __sk_buff *skb)
                     // update TABLE-ENCAP
                     bpf_map_update_elem(&map_encap, &skey, &svc, BPF_ANY);
 
+                    __u32 via_ifindex = 0;
+#if 0
                     // flags: 0, BPF_FIB_LOOKUP_DIRECT 1, BPF_FIB_LOOKUP_OUTPUT 2
                     int flags_fib = 0;
                     struct bpf_fib_lookup fib_params = { 0 };
-                    __u32 via_ifindex = 0;
-                    int ret = fib_lookup(skb, &fib_params, skb->ifindex, flags_fib);
+                    ret = fib_lookup(skb, &fib_params, skb->ifindex, flags_fib);
                     if (ret == TC_ACT_OK) {
                         ret = bpf_skb_store_bytes(skb, 0, &fib_params.dmac, 6, BPF_F_INVALIDATE_HASH);
                         if (ret < 0) {
@@ -176,7 +190,21 @@ int pfc_rx(struct __sk_buff *skb)
 
                         __builtin_memcpy(&via_ifindex, &fib_params.ifindex, sizeof(via_ifindex));
                     }
-
+#else
+                    // Update source MAC
+                    struct mac tmp = { 0 };
+                    // Update destination MAC
+                    ret = bpf_skb_load_bytes(skb, 0, tmp.value, 6);
+                    if (ret < 0) {
+                        bpf_print("bpf_skb_load_bytes D-MAC: %d\n", ret);
+                        return dump_action(TC_ACT_SHOT);
+                    }
+                    ret = bpf_skb_store_bytes(skb, 6, tmp.value, 6, BPF_F_INVALIDATE_HASH);
+                    if (ret < 0) {
+                        bpf_print("bpf_skb_store_bytes(S-MAC): %d\n", ret);
+                        return TC_ACT_SHOT;
+                    }
+#endif
                     if (cfg->flags & CFG_TX_DUMP) {
                         dump_pkt(skb);
                     }

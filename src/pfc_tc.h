@@ -768,7 +768,7 @@ int gue_encap_v4(struct __sk_buff *skb, struct tunnel *tun, struct service *svc,
         bpf_print("bpf_skb_store_bytes: %d\n", ret);
         return TC_ACT_SHOT;
     }
-
+#if 0
     // Resolve MAC addresses if not known yes
 //    __u32 *ptr1 = (__u32 *)&tun->mac_remote.value[2];
 //    __u32 *ptr2 = (__u32 *)&tun->mac_local.value[2];
@@ -779,15 +779,6 @@ int gue_encap_v4(struct __sk_buff *skb, struct tunnel *tun, struct service *svc,
         int flags_fib = 0;
         ret = fib_lookup(skb, &fib_params, skb->ifindex, flags_fib);
         if (ret == TC_ACT_OK) {
-//            if (*ptr1 == 0) {
-//                __builtin_memcpy(&tun->mac_remote, fib_params.dmac, ETH_ALEN);
-//                bpf_print("  Updating D-MAC\n");
-//            }
-//            if (*ptr2 == 0) {
-//                __builtin_memcpy(&tun->mac_local, fib_params.smac, ETH_ALEN);
-//                bpf_print("  Updating S-MAC\n");
-//            }
-
             __builtin_memcpy(via_ifindex, &fib_params.ifindex, sizeof(*via_ifindex));
 
             // Update destination MAC
@@ -808,7 +799,20 @@ int gue_encap_v4(struct __sk_buff *skb, struct tunnel *tun, struct service *svc,
             }
         }
 //    }
-
+#else
+    // Update destination MAC
+    struct mac tmp = { 0 };
+    ret = bpf_skb_load_bytes(skb, 0, tmp.value, 6);
+    if (ret < 0) {
+        bpf_print("bpf_skb_load_bytes D-MAC: %d\n", ret);
+        return dump_action(TC_ACT_SHOT);
+    }
+    ret = bpf_skb_store_bytes(skb, 6, tmp.value, 6, BPF_F_INVALIDATE_HASH);
+    if (ret < 0) {
+        bpf_print("bpf_skb_store_bytes(S-MAC): %d\n", ret);
+        return TC_ACT_SHOT;
+    }
+#endif
     return TC_ACT_OK;
 }
 

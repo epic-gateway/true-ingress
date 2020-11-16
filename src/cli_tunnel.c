@@ -60,20 +60,31 @@ void usage(char *prog) {
     fprintf(stderr,"Usage:\n");
     fprintf(stderr,"    %s get <id>|all\n", prog);
     fprintf(stderr,"    %s set <id> <ip-local> <port-local> <ip-remote> <port-remote>\n", prog);
-    fprintf(stderr,"    %s del <id>|all\n", prog);
+    fprintf(stderr,"    %s del <id>|all\n\n", prog);
+    fprintf(stderr,"    <id>            - GUE tunnel identifier\n");
+    fprintf(stderr,"    <ip-local>      - GUE tunnel local ip address\n");
+    fprintf(stderr,"    <port-local>    - GUE tunnel local UDP port\n");
+    fprintf(stderr,"    <ip-remote>     - GUE tunnel remote ip address\n");
+    fprintf(stderr,"    <port-remote>   - GUE tunnel remote UDP port\n");
 }
 
 ////////////////////
 // TABLE-TUNNEL
 ////////////////////
 void map_tunnel_print_header() {
-    printf("TABLE-TUNNEL:\n   \ttunnel-id\t\tlocal-ip:port -> \tremote-ip:port\t\tMAC\n");
+//    printf("TABLE-TUNNEL:\n   \ttunnel-id\t\tlocal-ip:port -> \tremote-ip:port\t\tMAC\n");
+    printf("TABLE-TUNNEL:\n   \ttunnel-id\t\tlocal-ip:port -> remote-ip:port\n");
     printf("--------------------------------------------------------------------------\n");
 }
 
 void map_tunnel_print_footer() {
-    //printf("--------------------------------------------------------------------------\n");
+    printf("--------------------------------------------------------------------------\n");
     printf("\n");
+}
+
+void map_tunnel_print_count(__u32 count) {
+    printf("--------------------------------------------------------------------------\n");
+    printf("Entries:  %u\n\n", count);
 }
 
 void map_tunnel_print_record(__u32 id, struct tunnel *value) {
@@ -82,23 +93,24 @@ void map_tunnel_print_record(__u32 id, struct tunnel *value) {
     local.s_addr = ntohl(value->ip_local);
     remote.s_addr = ntohl(value->ip_remote);
 
-    printf("TUN\t%8u\t%16s:%-5u -> ", id,
+    printf("TUN\t%8u\t%16s:%u -> ", id,
             inet_ntoa(local), ntohs(value->port_local));
-    printf("%16s:%-5u", inet_ntoa(remote), ntohs(value->port_remote));
-    printf("\t%02x:%02x:%02x:%02x:%02x:%02x",
-           value->mac_remote.value[0], value->mac_remote.value[1], value->mac_remote.value[2],
-           value->mac_remote.value[3], value->mac_remote.value[4], value->mac_remote.value[5]);
-    printf("\t\t(%08x:%04x -> %08x:%04x)\n",
-            value->ip_local, ntohs(value->port_local),
-            value->ip_remote, ntohs(value->port_remote));
+    printf("%s:%u", inet_ntoa(remote), ntohs(value->port_remote));
+//    printf("\t%02x:%02x:%02x:%02x:%02x:%02x",
+//           value->mac_remote.value[0], value->mac_remote.value[1], value->mac_remote.value[2],
+//           value->mac_remote.value[3], value->mac_remote.value[4], value->mac_remote.value[5]);
+//    printf("\t\t(%08x:%04x -> %08x:%04x)",
+//            value->ip_local, ntohs(value->port_local),
+//            value->ip_remote, ntohs(value->port_remote));
+    printf("\n");
 }
 
 void map_tunnel_print_ok(__u32 id, const char *name) {
-    printf("TUNNEL.%s {%u}\t\tOK\n", name, id);
+    printf("TUNNEL.%s (%u)\t\tOK\n", name, id);
 }
 
 void map_tunnel_print_err(__u32 id, const char *name, int err) {
-    fprintf(stderr, "TUNNEL.%s {%u}\t\tERR (%d) \'%s\'\n", name, id, err, strerror(err));
+    fprintf(stderr, "TUNNEL.%s (%u)\t\tERR (%d) \'%s\'\n", name, id, err, strerror(err));
 }
 
 int map_tunnel_get(int map_fd, __u32 id, struct tunnel *value) {
@@ -113,12 +125,14 @@ bool map_tunnel_getall(int map_fd) {
     __u32 prev_key, key;
     struct tunnel value;
     int ret;
+    __u32 count = 0;
 
     map_tunnel_print_header();
     while(bpf_map_get_next_key(map_fd, &prev_key, &key) == 0) {
         ret = map_tunnel_get(map_fd, key, &value);
         if (!ret) {
             map_tunnel_print_record(key, &value);
+            ++count;
         } else {
             map_tunnel_print_err(key, "GET", ret);
             break;
@@ -126,7 +140,9 @@ bool map_tunnel_getall(int map_fd) {
 
         prev_key=key;
     }
-    map_tunnel_print_footer();
+
+    map_tunnel_print_count(count);
+//    map_tunnel_print_footer();
 
     return true;
 }
@@ -177,30 +193,36 @@ void map_decap_print_header() {
 }
 
 void map_decap_print_footer() {
-    //printf("--------------------------------------------------------------------------\n");
+    printf("--------------------------------------------------------------------------\n");
     printf("\n");
+}
+
+void map_decap_print_count(__u32 count) {
+    printf("--------------------------------------------------------------------------\n");
+    printf("Entries:  %u\n\n", count);
 }
 
 void map_decap_print_record(struct endpoint *key, __u32 *value) {
     struct in_addr from;
     from.s_addr = ntohl(key->ip);
 
-    printf("DECAP\t%8s    %16s:%u\t\t%u", get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port), *value);
-    printf("\t\t(%04x  %08x:%04x)\n", key->proto, key->ip, key->port);
+    printf("DECAP\t%8s    %s:%u\t\t%u", get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port), *value);
+//    printf("\t\t(%04x  %08x:%04x)", key->proto, key->ip, key->port);
+    printf("\n");
 }
 
 void map_decap_print_ok(struct endpoint *key, const char *name) {
     struct in_addr from;
     from.s_addr = ntohl(key->ip);
 
-    printf("DECAP.%s {%s, %s, %u}\t%llx\tOK\n", name, get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port), *(__u64 *)key);
+    printf("DECAP.%s (%s, %s, %u)\t%llx\tOK\n", name, get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port), *(__u64 *)key);
 }
 
 void map_decap_print_err(struct endpoint *key, const char *name, int err) {
     struct in_addr from;
     from.s_addr = ntohl(key->ip);
 
-    fprintf(stderr, "DECAP.%s {%s, %s, %u}\t\tERR (%d) \'%s\'\n", name,
+    fprintf(stderr, "DECAP.%s (%s, %s, %u)\t\tERR (%d) \'%s\'\n", name,
             get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port), err, strerror(err));
 }
 
@@ -213,7 +235,7 @@ int map_decap_get(int map_fd, struct endpoint *key, __u32 *value) {
 
 bool map_decap_getall(int map_fd) {
     struct endpoint prev_key, key;
-    __u32 value;
+    __u32 value, count = 0;
     int ret;
 
     map_decap_print_header();
@@ -221,6 +243,7 @@ bool map_decap_getall(int map_fd) {
         ret = map_decap_get(map_fd, &key, &value);
         if (!ret) {
             map_decap_print_record(&key, &value);
+            ++count;
         } else {
             map_decap_print_err(&key, "GET", ret);
             break;
@@ -228,7 +251,8 @@ bool map_decap_getall(int map_fd) {
 
         prev_key=key;
     }
-    map_decap_print_footer();
+    map_decap_print_count(count);
+//    map_decap_print_footer();
 
     return true;
 }
