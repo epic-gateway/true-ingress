@@ -44,7 +44,7 @@ bool map_cfg_get(int map_fd, unsigned int ifindex, struct cfg_if *value) {
         printf("    Egress  -> id %u, name \'%s\', flags (%x) :%s%s%s%s\n",
                value->queue[CFG_IDX_TX].id, value->queue[CFG_IDX_TX].name, value->queue[CFG_IDX_TX].flags,
                (value->queue[CFG_IDX_TX].flags & CFG_TX_PROXY) ? " PROXY" : "",
-               (value->queue[CFG_IDX_TX].flags & CFG_TX_SNAT) ? " SNAT" : "",
+               (value->queue[CFG_IDX_TX].flags & CFG_TX_SNAT) ? " DSR" : "",
                (value->queue[CFG_IDX_RX].flags & CFG_TX_FWD) ? " FWD" : "",
                (value->queue[CFG_IDX_TX].flags & CFG_TX_DUMP) ? " DUMP" : "");
     }
