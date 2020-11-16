@@ -8,10 +8,6 @@ import (
 	"strings"
 )
 
-func Version() string {
-	return "Acnodal PFC v0.4"
-}
-
 func Check() (bool, string) {
 	// see if we can run one of our executables
 	bytes, err := exec.Command("/opt/acnodal/bin/pfc_cli_go", "version").Output()

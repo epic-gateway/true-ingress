@@ -10,6 +10,8 @@ import (
 	pfc "gitlab.com/acnodal/packet-forwarding-component/src/go/pfc"
 )
 
+var version string // initialized by gitlab CI via Makefile and ldflags
+
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Println(os.Args[0], "version")
@@ -23,7 +25,7 @@ func main() {
 
 	switch os.Args[1] {
 	case "version":
-		fmt.Println(pfc.Version())
+		fmt.Println(version)
 
 	case "check":
 		check, err := pfc.Check()

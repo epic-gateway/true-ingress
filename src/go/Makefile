@@ -1,3 +1,6 @@
+# This will be set if we're building in a gitlab CI environment and
+# we'll default it to "dev" in other cases
+CI_COMMIT_REF_NAME ?= dev
 
 all: go
 
@@ -5,4 +8,4 @@ clean:
 	rm -rf pfc_cli_go
 
 go:
-	go build  -tags 'osusergo netgo' pfc_cli_go.go
+	go build -ldflags "-X main.version=${CI_COMMIT_REF_NAME}" -tags 'osusergo netgo' pfc_cli_go.go

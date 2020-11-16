@@ -1,4 +1,4 @@
-SOURCES = $(wildcard src) test/docker src/go
+SOURCES = src test/docker src/go
 CLEAN = $(addsuffix _clean,$(SOURCES))
 
 .PHONY: clean $(SOURCES) $(CLEAN) check test prod-img
@@ -53,6 +53,8 @@ tar:
 
 	# for GUE Ping
 	cp ./test/docker/gue_ping_svc_auto ./src/go/pfc_cli_go pkg/bin/
+
+	chmod +x pkg/bin/*
 
 	tar cvfj pfc.tar.bz2 --directory=pkg bin
 
