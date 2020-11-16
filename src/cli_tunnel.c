@@ -60,7 +60,12 @@ void usage(char *prog) {
     fprintf(stderr,"Usage:\n");
     fprintf(stderr,"    %s get <id>|all\n", prog);
     fprintf(stderr,"    %s set <id> <ip-local> <port-local> <ip-remote> <port-remote>\n", prog);
-    fprintf(stderr,"    %s del <id>|all\n", prog);
+    fprintf(stderr,"    %s del <id>|all\n\n", prog);
+    fprintf(stderr,"    <id>            - GUE tunnel identifier\n");
+    fprintf(stderr,"    <ip-local>      - GUE tunnel local ip address\n");
+    fprintf(stderr,"    <port-local>    - GUE tunnel local UDP port\n");
+    fprintf(stderr,"    <ip-remote>     - GUE tunnel remote ip address\n");
+    fprintf(stderr,"    <port-remote>   - GUE tunnel remote UDP port\n");
 }
 
 ////////////////////

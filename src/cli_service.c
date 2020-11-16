@@ -63,10 +63,10 @@ void usage(char *prog) {
     fprintf(stderr,"    <service-id>    - GUE header service id\n");
     fprintf(stderr,"    <key>           - GUE header 128b key\n");
     fprintf(stderr,"    <tunnel-id>     - Transport GUE tunnel identifier\n");
-    fprintf(stderr,"    <proto>         - flow identifier: ip.proto (supported tcp|udp)\n");
-    fprintf(stderr,"    <ip-ep>         - flow identifier: backend ipv4 address\n");
-    fprintf(stderr,"    <port-ep>       - flow identifier: backend port\n");
-    fprintf(stderr,"    <ifindex>       - flow identifier: ifindex of proxy container veth\n");
+    fprintf(stderr,"    <proto>         - Flow identifier: Ip.proto (supported tcp|udp)\n");
+    fprintf(stderr,"    <ip-ep>         - Flow identifier: Backend ipv4 address\n");
+    fprintf(stderr,"    <port-ep>       - Flow identifier: Backend port\n");
+    fprintf(stderr,"    <ifindex>       - Flow identifier: Ifindex of proxy container veth\n");
 }
 
 ////////////////////

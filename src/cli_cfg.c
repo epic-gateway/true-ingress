@@ -27,6 +27,21 @@ int open_bpf_map_file(const char *file) {
     return fd;
 }
 
+void usage(char *prog) {
+    fprintf(stderr,"ERR: Too little arguments\n");
+    fprintf(stderr,"Usage:\n");
+    fprintf(stderr,"    %s get <interface|all>\n", prog);
+    fprintf(stderr,"    %s set <interface> <direction> <id> <flags> <name>\n", prog);
+    fprintf(stderr,"    %s del <interface|all>\n\n", prog);
+    fprintf(stderr,"    <interface>     - Interface where PFC is attached\n");
+    fprintf(stderr,"    <direction>     - 0 for ingress, 1 for egress\n");
+    fprintf(stderr,"    <id>            - Instance identifier (numerical)\n");
+    fprintf(stderr,"    <flags>         - PFC operational mode:\n");
+    fprintf(stderr,"                       Ingress : 1 GUE-DECAP, 4 FWD, 8 DUMP\n");
+    fprintf(stderr,"                       Egress  : 1 IS-PROXY, 2 DSR, 4 FWD, 8 DUMP\n");
+    fprintf(stderr,"    <name>          - Instance identifier (string)\n");
+}
+
 void map_cfg_print_header() {
     printf("TABLE-CFG:\n     Interface \t\tIfindex  Direction  Name                 Flags\n");
     printf("--------------------------------------------------------------------------\n");
@@ -177,15 +192,6 @@ bool map_cfg_delall(int map_fd) {
     }
 
     return true;
-}
-
-void usage(char *prog) {
-    fprintf(stderr,"ERR: Too little arguments\n");
-    fprintf(stderr,"Usage:\n");
-    fprintf(stderr,"    %s get <interface|all>\n", prog);
-    fprintf(stderr,"    %s set <interface> <qid> <id> <flags> <name>\n", prog);
-    fprintf(stderr,"    %s del <interface|all>\n", prog);
-    fprintf(stderr,"    <qid> - 0 for ingress, 1 for egress\n");
 }
 
 // cli cfg [get|set] [key] ...
