@@ -35,15 +35,17 @@ bool map_cfg_get(int map_fd, unsigned int ifindex, struct cfg_if *value) {
         return false;
     } else {
         printf("CFG.GET (%u) (%s):\n", ifindex, if_indextoname(ifindex, ifname));
-        printf("    Ingress -> id %u, name \'%s\', flags (%x) :%s%s%s\n",
+        printf("    Ingress -> id %u, name \'%s\', flags (%x) :%s%s%s%s\n",
                value->queue[CFG_IDX_RX].id, value->queue[CFG_IDX_RX].name, value->queue[CFG_IDX_RX].flags,
                (value->queue[CFG_IDX_RX].flags & CFG_RX_GUE) ? " GUE-DECAP" : "",
                (value->queue[CFG_IDX_RX].flags & CFG_RX_DNAT) ? " DNAT" : "",
+               (value->queue[CFG_IDX_RX].flags & CFG_RX_FWD) ? " FWD" : "",
                (value->queue[CFG_IDX_RX].flags & CFG_RX_DUMP) ? " DUMP" : "");
-        printf("    Egress  -> id %u, name \'%s\', flags (%x) :%s%s%s\n",
+        printf("    Egress  -> id %u, name \'%s\', flags (%x) :%s%s%s%s\n",
                value->queue[CFG_IDX_TX].id, value->queue[CFG_IDX_TX].name, value->queue[CFG_IDX_TX].flags,
                (value->queue[CFG_IDX_TX].flags & CFG_TX_PROXY) ? " PROXY" : "",
                (value->queue[CFG_IDX_TX].flags & CFG_TX_SNAT) ? " SNAT" : "",
+               (value->queue[CFG_IDX_RX].flags & CFG_TX_FWD) ? " FWD" : "",
                (value->queue[CFG_IDX_TX].flags & CFG_TX_DUMP) ? " DUMP" : "");
     }
 
