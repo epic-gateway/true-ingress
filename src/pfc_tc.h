@@ -601,10 +601,6 @@ int fib_lookup(struct __sk_buff *skb, struct bpf_fib_lookup *fib_params, int ifi
     ASSERT(parse_headers(skb, &hdr) != TC_ACT_SHOT, dump_action(TC_ACT_UNSPEC), "Uninteresting packet type, IGNORING\n", dump_pkt(skb));
 
     fib_params->family       = AF_INET;
-    fib_params->tos          = hdr.iph->tos;
-    fib_params->l4_protocol  = hdr.iph->protocol;
-    fib_params->sport        = 0;
-    fib_params->dport        = 0;
     fib_params->tot_len      = bpf_ntohs(hdr.iph->tot_len);
     fib_params->ipv4_src     = bpf_htonl(hdr.iph->saddr);
     fib_params->ipv4_dst     = bpf_htonl(hdr.iph->daddr);
