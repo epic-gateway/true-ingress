@@ -626,7 +626,7 @@ int fib_lookup(struct __sk_buff *skb, struct bpf_fib_lookup *fib_params, int ifi
     }
 
     bpf_print("FIB lookup input: S-IP %x D-IP %x ifindex %u\n",
-              bpf_ntohs(hdr.iph->saddr), bpf_ntohs(hdr.iph->daddr), ifindex);
+              bpf_ntohl(hdr.iph->saddr), bpf_ntohl(hdr.iph->daddr), ifindex);
     bpf_print("FIB lookup output: S-MAC %x D-MAC %x via ifindex %u\n",
               bpf_ntohl(*(__u32*)&(fib_params->smac[2])), bpf_ntohl(*(__u32*)&(fib_params->dmac[2])), fib_params->ifindex);
 
