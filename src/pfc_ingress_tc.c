@@ -169,9 +169,6 @@ int pfc_rx(struct __sk_buff *skb)
                     //int flags_fib = 0;
                     struct bpf_fib_lookup fib_params = { 0 };
                     ret = fib_lookup(skb, &fib_params, skb->ifindex, 0);
-                    ret = fib_lookup(skb, &fib_params, skb->ifindex, BPF_FIB_LOOKUP_DIRECT);
-                    ret = fib_lookup(skb, &fib_params, skb->ifindex, BPF_FIB_LOOKUP_OUTPUT);
-                    ret = fib_lookup(skb, &fib_params, skb->ifindex, BPF_FIB_LOOKUP_OUTPUT | BPF_FIB_LOOKUP_DIRECT);
                     if (ret == TC_ACT_OK) {
                         __builtin_memcpy(&via_ifindex, &fib_params.ifindex, sizeof(via_ifindex));
 
