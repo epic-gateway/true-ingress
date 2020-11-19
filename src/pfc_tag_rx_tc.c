@@ -15,13 +15,29 @@
 #include <linux/if_arp.h>
 
 #include "dump_tc.h"
+#include "maps_tc.h"
 
 //__section("egress")
 int tag_tx(struct __sk_buff *skb)
 {
     bpf_print("TAG RX <<<< ifindex %u, len %u\n", skb->ifindex, skb->len);
     skb->mark = skb->ifindex;
-    bpf_print("  tagged %u\n", skb->mark);
+    bpf_print("  Tagged %u\n", skb->mark);
+
+    __u32 key = skb->ifindex;
+    struct mac mac_remote = { 0 };
+    // Update destination MAC
+    int ret = bpf_skb_load_bytes(skb, 6, mac_remote.value, 6);
+    if (ret < 0) {
+        bpf_print("bpf_skb_load_bytes: %d\n", ret);
+        return dump_action(TC_ACT_UNSPEC);
+    }
+
+    bpf_print("  Update proxy MAC: ifindex %u -> MAC %x\n", key, bpf_ntohl(*(__u32*)&(mac_remote.value[2])));
+
+    // update TABLE-PROXY
+    bpf_map_update_elem(&map_proxy, &key, &mac_remote, BPF_ANY);
+
 
     return dump_action(TC_ACT_UNSPEC);
 }
