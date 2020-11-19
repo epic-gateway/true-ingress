@@ -110,7 +110,7 @@ int pfc_tx(struct __sk_buff *skb)
 
         //    if (*ptr1 == 0 || *ptr2 == 0) {
                 // flags: 0, BPF_FIB_LOOKUP_DIRECT 1, BPF_FIB_LOOKUP_OUTPUT 2
-                int flags_fib = BPF_FIB_LOOKUP_DIRECT;
+                int flags_fib = 0;
                 ret = fib_lookup(skb, &fib_params, skb->ifindex, flags_fib);
                 if (ret == TC_ACT_OK) {
                     __builtin_memcpy(&via_ifindex, &fib_params.ifindex, sizeof(via_ifindex));
