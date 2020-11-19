@@ -548,8 +548,8 @@ int update_tunnel_from_guec(__u32 tunnel_id, struct headers *hdr)
     bpf_print("GUE Control: Updating tunnel-id %u remote to %x:%u\n", tunnel_id, ep.ip, bpf_ntohs(ep.port));
     tun->ip_remote = ep.ip;
     tun->port_remote = ep.port;
-//    __builtin_memcpy(&tun->mac_remote, hdr->eth->h_source, ETH_ALEN);
-//    __builtin_memcpy(&tun->mac_local, hdr->eth->h_dest, ETH_ALEN);
+    //__builtin_memcpy(&tun->mac_remote, hdr->eth->h_source, ETH_ALEN);
+    //__builtin_memcpy(&tun->mac_local, hdr->eth->h_dest, ETH_ALEN);
 
     return TC_ACT_SHOT;
 }
@@ -602,7 +602,7 @@ int fib_lookup(struct __sk_buff *skb, struct bpf_fib_lookup *fib_params, int ifi
 
     fib_params->family       = AF_INET;
     fib_params->tos          = hdr.iph->tos;
-    fib_params->l4_protocol  = IPPROTO_UDP;
+    fib_params->l4_protocol  = hdr.iph->protocol;
     fib_params->sport        = 0;
     fib_params->dport        = 0;
     fib_params->tot_len      = bpf_ntohs(hdr.iph->tot_len);
@@ -625,7 +625,9 @@ int fib_lookup(struct __sk_buff *skb, struct bpf_fib_lookup *fib_params, int ifi
         return TC_ACT_UNSPEC;
     }
 
-    bpf_print("FIB lookup: S-MAC %x D-MAC %x via ifindex %u\n",
+    bpf_print("FIB lookup input: S-IP %x D-IP %x ifindex %u\n",
+              bpf_ntohl(hdr.iph->saddr), bpf_ntohl(hdr.iph->daddr), ifindex);
+    bpf_print("FIB lookup output: S-MAC %x D-MAC %x via ifindex %u\n",
               bpf_ntohl(*(__u32*)&(fib_params->smac[2])), bpf_ntohl(*(__u32*)&(fib_params->dmac[2])), fib_params->ifindex);
 
     return TC_ACT_OK;
@@ -747,7 +749,6 @@ int gue_encap_v4(struct __sk_buff *skb, struct tunnel *tun, struct service *svc,
     h_outer.ip = iph_inner;
     h_outer.ip.daddr = bpf_htonl(tun->ip_remote);
     h_outer.ip.saddr = bpf_htonl(tun->ip_local);
-    //h_outer.ip.saddr = 0x4030201;
     h_outer.ip.tot_len = bpf_htons(olen + bpf_ntohs(h_outer.ip.tot_len));
     h_outer.ip.protocol = IPPROTO_UDP;
     h_outer.ip.tos = 0;     // SET EXPLICIT TRAFFIC CLASS
@@ -768,51 +769,7 @@ int gue_encap_v4(struct __sk_buff *skb, struct tunnel *tun, struct service *svc,
         bpf_print("bpf_skb_store_bytes: %d\n", ret);
         return TC_ACT_SHOT;
     }
-#if 0
-    // Resolve MAC addresses if not known yes
-//    __u32 *ptr1 = (__u32 *)&tun->mac_remote.value[2];
-//    __u32 *ptr2 = (__u32 *)&tun->mac_local.value[2];
-    struct bpf_fib_lookup fib_params = { 0 };
 
-//    if (*ptr1 == 0 || *ptr2 == 0) {
-        // flags: 0, BPF_FIB_LOOKUP_DIRECT 1, BPF_FIB_LOOKUP_OUTPUT 2
-        int flags_fib = 0;
-        ret = fib_lookup(skb, &fib_params, skb->ifindex, flags_fib);
-        if (ret == TC_ACT_OK) {
-            __builtin_memcpy(via_ifindex, &fib_params.ifindex, sizeof(*via_ifindex));
-
-            // Update destination MAC
-            ret = bpf_skb_store_bytes(skb, 0, &fib_params.dmac, 6, BPF_F_INVALIDATE_HASH);
-            if (ret < 0) {
-                bpf_print("bpf_skb_store_bytes(D-MAC): %d\n", ret);
-                return TC_ACT_SHOT;
-            }
-
-            // Update source MAC
-        //    __u64 smac = 0x020001ac4202; // client mac
-        //    __u64 smac = 0xffeeddccbbaa; // bridge mac
-        //    ret = bpf_skb_store_bytes(skb, 6, &smac, 6, BPF_F_INVALIDATE_HASH);
-            ret = bpf_skb_store_bytes(skb, 6, &fib_params.smac, 6, BPF_F_INVALIDATE_HASH);
-            if (ret < 0) {
-                bpf_print("bpf_skb_store_bytes(S-MAC): %d\n", ret);
-                return TC_ACT_SHOT;
-            }
-        }
-//    }
-#else
-    // Update destination MAC
-    struct mac tmp = { 0 };
-    ret = bpf_skb_load_bytes(skb, 0, tmp.value, 6);
-    if (ret < 0) {
-        bpf_print("bpf_skb_load_bytes D-MAC: %d\n", ret);
-        return dump_action(TC_ACT_SHOT);
-    }
-    ret = bpf_skb_store_bytes(skb, 6, tmp.value, 6, BPF_F_INVALIDATE_HASH);
-    if (ret < 0) {
-        bpf_print("bpf_skb_store_bytes(S-MAC): %d\n", ret);
-        return TC_ACT_SHOT;
-    }
-#endif
     return TC_ACT_OK;
 }
 

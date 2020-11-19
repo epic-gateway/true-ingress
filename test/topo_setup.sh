@@ -195,13 +195,14 @@ do
     docker exec -it ${prxs[i]} bash -c "ip link set br0 up"
 
     # add default route
-    docker exec -it ${prxs[i]} bash -c "ip route"
-    #docker exec -it ${prxs[i]} bash -c "ip route add default via 172.1.0.1"
-#    docker exec -it ${prxs[i]} bash -c "ip route add 172.1.0.1 dev eth1 src 172.1.0.3"
+    docker exec -it ${prxs[i]} bash -c "ip route del default via 172.1.0.1 dev eth1"
+    docker exec -it ${prxs[i]} bash -c "ip route add default via 172.1.0.1 dev eth1 metric 100"
+    docker exec -it ${prxs[i]} bash -c "ip route add 172.1.0.1 dev eth1 src 172.1.0.3 metric 100"
 
     if [ "${VERBOSE}" ]; then
         echo ""
         docker exec -it ${prxs[i]} bash -c "ip addr"
+        docker exec -it ${prxs[i]} bash -c "ip route"
     fi
 
 done
@@ -235,6 +236,10 @@ do
     # create bridge
     docker exec -it ${NODE} bash -c "brctl addbr br0"
     docker exec -it ${NODE} bash -c "ip link set br0 up"
+
+    docker exec -it ${NODE} bash -c "ip route del default via 172.1.0.1 dev eth1"
+    docker exec -it ${NODE} bash -c "ip route add default via 172.1.0.1 dev eth1 metric 100"
+#    docker exec -it ${NODE} bash -c "ip route add 172.1.0.1 dev eth1 src 172.1.0.3 metric 100"
 
     # set routing if on main network (if behind nat, it will be configured together with nat box)
     CHECK=$(docker exec -it ${NODE} bash -c "ip route" | grep ${NETWORK_SUBNET[0]})
