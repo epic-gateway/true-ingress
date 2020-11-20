@@ -110,27 +110,27 @@ int pfc_tx(struct __sk_buff *skb)
 
         //    if (*ptr1 == 0 || *ptr2 == 0) {
                 // flags: 0, BPF_FIB_LOOKUP_DIRECT 1, BPF_FIB_LOOKUP_OUTPUT 2
-            bpf_print("BPF_FIB_LOOKUP_OUTPUT\n");
-            int flags_fib = BPF_FIB_LOOKUP_OUTPUT;
-                ret = fib_lookup(skb, &fib_params, skb->ifindex, flags_fib);
+                //int flags_fib = BPF_FIB_LOOKUP_DIRECT;
+                ret = fib_lookup(skb, &fib_params, skb->ifindex, BPF_FIB_LOOKUP_OUTPUT);
                 if (ret == TC_ACT_OK) {
                     __builtin_memcpy(&via_ifindex, &fib_params.ifindex, sizeof(via_ifindex));
 
-                    if (via_ifindex && via_ifindex != skb->ifindex) {
-                        bpf_print("Adjusting MACs\n");
-                        // Update destination MAC
-                        ret = bpf_skb_store_bytes(skb, 0, &fib_params.dmac, 6, BPF_F_INVALIDATE_HASH);
-                        if (ret < 0) {
-                            bpf_print("bpf_skb_store_bytes(D-MAC): %d\n", ret);
-                            return TC_ACT_SHOT;
-                        }
+                    bpf_print("Adjusting MACs\n");
+                    // Update destination MAC
+                    ret = bpf_skb_store_bytes(skb, 0, &fib_params.dmac, 6, BPF_F_INVALIDATE_HASH);
+                    if (ret < 0) {
+                        bpf_print("bpf_skb_store_bytes(D-MAC): %d\n", ret);
+                        return TC_ACT_SHOT;
+                    }
 
-                        // Update source MAC
-                        ret = bpf_skb_store_bytes(skb, 6, &fib_params.smac, 6, BPF_F_INVALIDATE_HASH);
-                        if (ret < 0) {
-                            bpf_print("bpf_skb_store_bytes(S-MAC): %d\n", ret);
-                            return TC_ACT_SHOT;
-                        }
+                    // Update source MAC
+                    ret = bpf_skb_store_bytes(skb, 6, &fib_params.smac, 6, BPF_F_INVALIDATE_HASH);
+                    if (ret < 0) {
+                        bpf_print("bpf_skb_store_bytes(S-MAC): %d\n", ret);
+                        return TC_ACT_SHOT;
+                        //struct bpf_redir_neigh nh = { 0 };
+                        //nh.nh_family = AF_INET;
+                        //bpf_redirect_neigh(via_ifindex, nh, sizeof(nh), 0);
                     }
                 }
         //    }
@@ -215,10 +215,7 @@ int pfc_tx(struct __sk_buff *skb)
             //    if (*ptr1 == 0 || *ptr2 == 0) {
                     // flags: 0, BPF_FIB_LOOKUP_DIRECT 1, BPF_FIB_LOOKUP_OUTPUT 2
                     //int flags_fib = BPF_FIB_LOOKUP_DIRECT;
-                    ret = fib_lookup(skb, &fib_params, skb->ifindex, 0);
-                    ret = fib_lookup(skb, &fib_params, skb->ifindex, BPF_FIB_LOOKUP_DIRECT);
                     ret = fib_lookup(skb, &fib_params, skb->ifindex, BPF_FIB_LOOKUP_OUTPUT);
-                    ret = fib_lookup(skb, &fib_params, skb->ifindex, BPF_FIB_LOOKUP_OUTPUT | BPF_FIB_LOOKUP_DIRECT);
                     if (ret == TC_ACT_OK) {
                         __builtin_memcpy(&via_ifindex, &fib_params.ifindex, sizeof(via_ifindex));
 

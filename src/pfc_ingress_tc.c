@@ -124,14 +124,7 @@ int pfc_rx(struct __sk_buff *skb)
                     struct mac *mac_remote = bpf_map_lookup_elem(&map_proxy, &ifindex);
                     ASSERT(mac_remote != 0, dump_action(TC_ACT_UNSPEC), "ERROR: Proxy MAC for ifindex %u not found!\n", ifindex);
 
-                    // Update destination MAC
-                    struct bpf_fib_lookup fib_params = { 0 };
-                    ret = fib_lookup(skb, &fib_params, skb->ifindex, 0);
-                    ret = fib_lookup(skb, &fib_params, skb->ifindex, BPF_FIB_LOOKUP_DIRECT);
-                    ret = fib_lookup(skb, &fib_params, skb->ifindex, BPF_FIB_LOOKUP_OUTPUT);
-                    ret = fib_lookup(skb, &fib_params, skb->ifindex, BPF_FIB_LOOKUP_OUTPUT | BPF_FIB_LOOKUP_DIRECT);
-
-                    bpf_print("Sett D-MAC: ifindex %u -> MAC %x\n", ifindex, bpf_ntohl(*(__u32*)&(mac_remote->value[2])));
+                    bpf_print("Set D-MAC: ifindex %u -> MAC %x\n", ifindex, bpf_ntohl(*(__u32*)&(mac_remote->value[2])));
                     ret = bpf_skb_store_bytes(skb, 0, mac_remote->value, 6, BPF_F_INVALIDATE_HASH);
                     if (ret < 0) {
                         bpf_print("bpf_skb_store_bytes: %d\n", ret);
