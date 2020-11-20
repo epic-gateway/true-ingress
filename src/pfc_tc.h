@@ -606,27 +606,25 @@ int fib_lookup(struct __sk_buff *skb, struct bpf_fib_lookup *fib_params, int ifi
     fib_params->sport        = 0;
     fib_params->dport        = 0;
     fib_params->tot_len      = bpf_ntohs(hdr.iph->tot_len);
-    fib_params->ipv4_src     = bpf_htonl(hdr.iph->saddr);
-    fib_params->ipv4_dst     = bpf_htonl(hdr.iph->daddr);
+    fib_params->ipv4_src     = hdr.iph->saddr;
+    fib_params->ipv4_dst     = hdr.iph->daddr;
     fib_params->ifindex      = ifindex;
+
 
     int rc = bpf_fib_lookup(skb, fib_params, sizeof(*fib_params), flags);
     switch (rc) {
     case BPF_FIB_LKUP_RET_SUCCESS:
         break;
     case BPF_FIB_LKUP_RET_NO_NEIGH:
-        bpf_print("ERROR: FIB lookup failed: ARP entry missing\n", rc);
+        bpf_print("ERROR: FIB lookup failed: Route found but ARP entry missing\n", rc);
         return TC_ACT_UNSPEC;
     case BPF_FIB_LKUP_RET_FWD_DISABLED :
-        bpf_print("ERROR: FIB lookup failed: Forwarding disabled\n", rc);
+        bpf_print("ERROR: FIB lookup failed: '/proc/sys/net/ipv4/ip_forward' disabled\n", rc);
         return TC_ACT_UNSPEC;
     default :
         bpf_print("ERROR: FIB lookup failed: %d\n", rc);
         return TC_ACT_UNSPEC;
     }
-
-    bpf_print("FIB lookup input: S-IP %x D-IP %x ifindex %u\n",
-              bpf_ntohl(hdr.iph->saddr), bpf_ntohl(hdr.iph->daddr), ifindex);
     bpf_print("FIB lookup output: S-MAC %x D-MAC %x via ifindex %u\n",
               bpf_ntohl(*(__u32*)&(fib_params->smac[2])), bpf_ntohl(*(__u32*)&(fib_params->dmac[2])), fib_params->ifindex);
 
