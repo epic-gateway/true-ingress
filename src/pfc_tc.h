@@ -601,8 +601,8 @@ int fib_lookup(struct __sk_buff *skb, struct bpf_fib_lookup *fib_params, int ifi
     ASSERT(parse_headers(skb, &hdr) != TC_ACT_SHOT, dump_action(TC_ACT_UNSPEC), "Uninteresting packet type, IGNORING\n", dump_pkt(skb));
 
     fib_params->family       = AF_INET;
-    fib_params->ipv4_src     = bpf_htonl(hdr.iph->saddr);
-    fib_params->ipv4_dst     = bpf_htonl(hdr.iph->daddr);
+    fib_params->ipv4_src     = 0x64fa1eac;
+    fib_params->ipv4_dst     = 0x67fa1eac;
     fib_params->ifindex      = ifindex;
 
     int rc = bpf_fib_lookup(skb, fib_params, sizeof(*fib_params), flags);
@@ -621,9 +621,9 @@ int fib_lookup(struct __sk_buff *skb, struct bpf_fib_lookup *fib_params, int ifi
     }
 
     bpf_print("FIB lookup input: S-IP %x D-IP %x ifindex %u\n",
-              bpf_ntohl(hdr.iph->saddr), bpf_ntohl(hdr.iph->daddr), ifindex);
+              hdr.iph->saddr, hdr.iph->daddr, ifindex);
     bpf_print("FIB lookup output: S-MAC %x D-MAC %x via ifindex %u\n",
-              bpf_ntohl(*(__u32*)&(fib_params->smac[2])), bpf_ntohl(*(__u32*)&(fib_params->dmac[2])), fib_params->ifindex);
+              *(__u32*)&(fib_params->smac[2]), *(__u32*)&(fib_params->dmac[2]), fib_params->ifindex);
 
     return TC_ACT_OK;
 }
