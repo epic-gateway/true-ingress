@@ -104,13 +104,10 @@ int pfc_tx(struct __sk_buff *skb)
             ASSERT (ret != TC_ACT_SHOT, dump_action(TC_ACT_SHOT), "GUE Encap Failed!\n");
 
             // Resolve MAC addresses if not known yet
-        //    __u32 *ptr1 = (__u32 *)&tun->mac_remote.value[2];
-        //    __u32 *ptr2 = (__u32 *)&tun->mac_local.value[2];
             struct bpf_fib_lookup fib_params = { 0 };
 
-        //    if (*ptr1 == 0 || *ptr2 == 0) {
+            if (cfg->flags & CFG_TX_FIB) {
                 // flags: 0, BPF_FIB_LOOKUP_DIRECT 1, BPF_FIB_LOOKUP_OUTPUT 2
-                //int flags_fib = BPF_FIB_LOOKUP_DIRECT;
                 ret = fib_lookup(skb, &fib_params, skb->ifindex, BPF_FIB_LOOKUP_OUTPUT);
                 if (ret == TC_ACT_OK) {
                     __builtin_memcpy(&via_ifindex, &fib_params.ifindex, sizeof(via_ifindex));
@@ -128,12 +125,9 @@ int pfc_tx(struct __sk_buff *skb)
                     if (ret < 0) {
                         bpf_print("bpf_skb_store_bytes(S-MAC): %d\n", ret);
                         return TC_ACT_SHOT;
-                        //struct bpf_redir_neigh nh = { 0 };
-                        //nh.nh_family = AF_INET;
-                        //bpf_redirect_neigh(via_ifindex, nh, sizeof(nh), 0);
                     }
                 }
-        //    }
+            }
 
             if (cfg->flags & CFG_TX_DUMP) {
                 dump_pkt(skb);
@@ -208,13 +202,10 @@ int pfc_tx(struct __sk_buff *skb)
                 ASSERT (ret != TC_ACT_SHOT, dump_action(TC_ACT_SHOT), "GUE Encap Failed!\n");
 
                 // Resolve MAC addresses if not known yet
-            //    __u32 *ptr1 = (__u32 *)&tun->mac_remote.value[2];
-            //    __u32 *ptr2 = (__u32 *)&tun->mac_local.value[2];
                 struct bpf_fib_lookup fib_params = { 0 };
 
-            //    if (*ptr1 == 0 || *ptr2 == 0) {
+                if (cfg->flags & CFG_TX_FIB) {
                     // flags: 0, BPF_FIB_LOOKUP_DIRECT 1, BPF_FIB_LOOKUP_OUTPUT 2
-                    //int flags_fib = BPF_FIB_LOOKUP_DIRECT;
                     ret = fib_lookup(skb, &fib_params, skb->ifindex, BPF_FIB_LOOKUP_OUTPUT);
                     if (ret == TC_ACT_OK) {
                         __builtin_memcpy(&via_ifindex, &fib_params.ifindex, sizeof(via_ifindex));
@@ -227,16 +218,14 @@ int pfc_tx(struct __sk_buff *skb)
                             return TC_ACT_SHOT;
                         }
 
-                        //if (via_ifindex && via_ifindex != skb->ifindex) {
-                            // Update source MAC
-                            ret = bpf_skb_store_bytes(skb, 6, &fib_params.smac, 6, BPF_F_INVALIDATE_HASH);
-                            if (ret < 0) {
-                                bpf_print("bpf_skb_store_bytes(S-MAC): %d\n", ret);
-                                return TC_ACT_SHOT;
-                            }
-                        //}
+                        // Update source MAC
+                        ret = bpf_skb_store_bytes(skb, 6, &fib_params.smac, 6, BPF_F_INVALIDATE_HASH);
+                        if (ret < 0) {
+                            bpf_print("bpf_skb_store_bytes(S-MAC): %d\n", ret);
+                            return TC_ACT_SHOT;
+                        }
                     }
-            //    }
+                }
 
                 if (cfg->flags & CFG_TX_DUMP) {
                     dump_pkt(skb);
