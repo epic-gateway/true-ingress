@@ -146,11 +146,6 @@ int pfc_rx(struct __sk_buff *skb)
                     // update TABLE-ENCAP
                     bpf_map_update_elem(&map_encap, &skey, &svc, BPF_ANY);
 
-                    // we've put our grubby paws all over the packet
-                    // so we need to recalc the checksum or linux will
-                    // drop it like it's hot
-                    bpf_set_hash_invalid(skb);
-
                     if (cfg->flags & CFG_TX_DUMP) {
                         dump_pkt(skb);
                     }

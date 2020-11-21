@@ -728,6 +728,11 @@ int gue_encap_v4(struct __sk_buff *skb, struct tunnel *tun, struct service *svc,
         ret = bpf_skb_store_bytes(skb, 6, src, 6, 0);
         ASSERT(ret >= 0, TC_ACT_UNSPEC, "bpf_skb_load_bytes()6 failed: %d\n", ret);
 
+        // we've put our grubby paws all over the packet
+        // so we need to recalc the checksum or linux will
+        // drop it like it's hot
+        bpf_set_hash_invalid(skb);
+
         // done
         return bpf_redirect(skb->ifindex, BPF_F_INGRESS);
     }
@@ -762,11 +767,16 @@ int gue_encap_v4(struct __sk_buff *skb, struct tunnel *tun, struct service *svc,
     h_outer.udp.check   = 0;
 
     // store new outer network header
-    ret = bpf_skb_store_bytes(skb, ETH_HLEN, &h_outer, olen, BPF_F_INVALIDATE_HASH);
+    ret = bpf_skb_store_bytes(skb, ETH_HLEN, &h_outer, olen, 0);
     if (ret < 0) {
         bpf_print("bpf_skb_store_bytes: %d\n", ret);
         return TC_ACT_SHOT;
     }
+
+    // we've put our grubby paws all over the packet
+    // so we need to recalc the checksum or linux will
+    // drop it like it's hot
+    bpf_set_hash_invalid(skb);
 
     return TC_ACT_OK;
 }
@@ -778,8 +788,16 @@ int gue_decap_v4(struct __sk_buff *skb)
     __u64 flags = 0; //BPF_F_ADJ_ROOM_FIXED_GSO | BPF_F_ADJ_ROOM_ENCAP_L3_IPV4 | BPF_F_ADJ_ROOM_ENCAP_L4_UDP;
 
     /* shrink room between mac and network header */
-    if (bpf_skb_adjust_room(skb, -olen, BPF_ADJ_ROOM_MAC, flags))
+    int ret = bpf_skb_adjust_room(skb, -olen, BPF_ADJ_ROOM_MAC, flags);
+    if (ret) {
+        bpf_print("bpf_skb_adjust_room: %d\n", ret);
         return TC_ACT_SHOT;
+    }
+
+    // we've put our grubby paws all over the packet
+    // so we need to recalc the checksum or linux will
+    // drop it like it's hot
+    bpf_set_hash_invalid(skb);
 
     return TC_ACT_OK;
 }
