@@ -103,10 +103,10 @@ int pfc_tx(struct __sk_buff *skb)
             ret = gue_encap_v4(skb, tun, svc, &via_ifindex);
             ASSERT (ret != TC_ACT_SHOT, dump_action(TC_ACT_SHOT), "GUE Encap Failed!\n");
 
-            // Resolve MAC addresses if not known yet
-            struct bpf_fib_lookup fib_params = { 0 };
-
             if (cfg->flags & CFG_TX_FIB) {
+                // Resolve MAC addresses if not known yet
+                struct bpf_fib_lookup fib_params = { 0 };
+
                 // flags: 0, BPF_FIB_LOOKUP_DIRECT 1, BPF_FIB_LOOKUP_OUTPUT 2
                 ret = fib_lookup(skb, &fib_params, skb->ifindex, BPF_FIB_LOOKUP_OUTPUT);
                 if (ret == TC_ACT_OK) {
@@ -201,10 +201,10 @@ int pfc_tx(struct __sk_buff *skb)
                 ret = gue_encap_v4(skb, tun, svc, &via_ifindex);
                 ASSERT (ret != TC_ACT_SHOT, dump_action(TC_ACT_SHOT), "GUE Encap Failed!\n");
 
-                // Resolve MAC addresses if not known yet
-                struct bpf_fib_lookup fib_params = { 0 };
-
                 if (cfg->flags & CFG_TX_FIB) {
+                    // Resolve MAC addresses if not known yet
+                    struct bpf_fib_lookup fib_params = { 0 };
+
                     // flags: 0, BPF_FIB_LOOKUP_DIRECT 1, BPF_FIB_LOOKUP_OUTPUT 2
                     ret = fib_lookup(skb, &fib_params, skb->ifindex, BPF_FIB_LOOKUP_OUTPUT);
                     if (ret == TC_ACT_OK) {
