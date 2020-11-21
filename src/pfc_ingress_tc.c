@@ -110,9 +110,8 @@ int pfc_rx(struct __sk_buff *skb)
                 ASSERT(verify != 0, dump_action(TC_ACT_UNSPEC), "ERROR: Service id %u not found!\n", bpf_ntohl(gueext->id));
 
                 struct service svc;
-                __builtin_memcpy(&svc.key, verify, sizeof(*verify));  //FIXME?
+                __builtin_memcpy(&svc.key, verify, sizeof(*verify));
                 svc.identity = *(struct identity *)&gueext->id;
-//                __builtin_memcpy(&svc.identity, &gueext->id, 4);
                 svc.hash = pktnum;
 
                 ASSERT (TC_ACT_OK == gue_decap_v4(skb), dump_action(TC_ACT_SHOT), "GUE Decap Failed!\n");
@@ -136,7 +135,6 @@ int pfc_rx(struct __sk_buff *skb)
 
                     bpf_print("Redirecting to container ifindex %u TX\n", ifindex);
                     return dump_action(bpf_redirect(ifindex, 0));
-//                    return dump_action(TC_ACT_UNSPEC);
                 } else {                // usually NODE
                     //bpf_print("Create/refresh tracking record\n");
                     struct encap_key skey = { { 0 } , 0 };
@@ -148,17 +146,6 @@ int pfc_rx(struct __sk_buff *skb)
 
                     if (cfg->flags & CFG_TX_DUMP) {
                         dump_pkt(skb);
-                    }
-
-                    // FIXME: I almost certainly broke this when I
-                    // removed the code that used to update the packet
-                    // mac addresses. I'm not sure what it was
-                    // supposed to do, though, so I don't know how to
-                    // fix it.
-                    __u32 via_ifindex = 0;
-                    if ((cfg->flags & CFG_RX_FWD) && via_ifindex && via_ifindex != skb->ifindex) {
-                        bpf_print("Redirecting to interface ifindex %u TX\n", via_ifindex);
-                        return dump_action(bpf_redirect(via_ifindex, 0));
                     }
                 }
 
