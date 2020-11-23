@@ -109,7 +109,7 @@ int pfc_rx(struct __sk_buff *skb)
                 struct verify *verify = bpf_map_lookup_elem(&map_verify, (struct identity *)&gueext->id);
                 ASSERT(verify != 0, dump_action(TC_ACT_UNSPEC), "ERROR: Service id %u not found!\n", bpf_ntohl(gueext->id));
 
-                struct service svc;
+                struct service svc = {{ 0 }, {{ 0 }, 0, {{ 0 }, 0 }}, 0 };
                 __builtin_memcpy(&svc.key, verify, sizeof(*verify));
                 svc.identity = *(struct identity *)&gueext->id;
                 svc.hash = pktnum;
@@ -143,6 +143,32 @@ int pfc_rx(struct __sk_buff *skb)
 
                     // update TABLE-ENCAP
                     bpf_map_update_elem(&map_encap, &skey, &svc, BPF_ANY);
+
+                    if (cfg->flags & CFG_RX_FWD) {
+                        // flags: 0, BPF_FIB_LOOKUP_DIRECT 1, BPF_FIB_LOOKUP_OUTPUT 2
+                        struct bpf_fib_lookup fib_params = { 0 };
+                        ret = fib_lookup(skb, &fib_params, skb->ifindex, 0);
+                        if (ret == TC_ACT_OK) {
+                            // Update destination MAC
+                            ret = bpf_skb_store_bytes(skb, 0, &fib_params.dmac, 6, BPF_F_INVALIDATE_HASH);
+                            if (ret < 0) {
+                                bpf_print("bpf_skb_store_bytes(D-MAC): %d\n", ret);
+                            }
+
+                            // Update source MAC
+                            ret = bpf_skb_store_bytes(skb, 6, &fib_params.smac, 6, BPF_F_INVALIDATE_HASH);
+                            if (ret < 0) {
+                                bpf_print("bpf_skb_store_bytes(S-MAC): %d\n", ret);
+                            }
+
+                            if (cfg->flags & CFG_TX_DUMP) {
+                                dump_pkt(skb);
+                            }
+
+                            bpf_print("Redirecting to interface ifindex %u TX\n", fib_params.ifindex);
+                            return dump_action(bpf_redirect(fib_params.ifindex, 0));
+                        }
+                    }
 
                     if (cfg->flags & CFG_TX_DUMP) {
                         dump_pkt(skb);

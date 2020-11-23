@@ -206,7 +206,7 @@ int pfc_tx(struct __sk_buff *skb)
                     struct bpf_fib_lookup fib_params = { 0 };
 
                     // flags: 0, BPF_FIB_LOOKUP_DIRECT 1, BPF_FIB_LOOKUP_OUTPUT 2
-                    ret = fib_lookup(skb, &fib_params, skb->ifindex, BPF_FIB_LOOKUP_OUTPUT);
+                    ret = fib_lookup(skb, &fib_params, skb->ifindex, 0);
                     if (ret == TC_ACT_OK) {
                         __builtin_memcpy(&via_ifindex, &fib_params.ifindex, sizeof(via_ifindex));
 
