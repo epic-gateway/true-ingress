@@ -38,7 +38,7 @@ void usage(char *prog) {
     fprintf(stderr,"    <id>            - Instance identifier (numerical)\n");
     fprintf(stderr,"    <flags>         - PFC operational mode:\n");
     fprintf(stderr,"                       Ingress : 1 GUE-DECAP, 4 FWD, 8 DUMP\n");
-    fprintf(stderr,"                       Egress  : 1 IS-PROXY, 2 DSR, 4 FWD, 8 DUMP\n");
+    fprintf(stderr,"                       Egress  : 1 IS-PROXY, 2 DSR, 4 FWD, 8 DUMP, 16 FIB\n");
     fprintf(stderr,"    <name>          - Instance identifier (string)\n");
 }
 
@@ -74,21 +74,21 @@ void map_cfg_print_record(unsigned int key, struct cfg_if *value) {
             (value->queue[CFG_IDX_RX].flags & CFG_TX_FWD) ? " FWD" : "",
             (value->queue[CFG_IDX_TX].flags & CFG_TX_DUMP) ? " DUMP" : "");*/
 //    printf("CFG  %-5u  %-16s  Ingress  ->  name \'%-16s\'    flags (%u) :%s%s%s%s\n",
-    printf("CFG  %-16s   %-5u    Ingress    %-16s    %s%s%s%s\n",
+    printf("CFG  %-16s   %-5u    Ingress    %-16s    %s%s%s\n",
             if_indextoname(key, ifname), key,
             value->queue[CFG_IDX_RX].name, /*value->queue[CFG_IDX_RX].flags,*/
             (value->queue[CFG_IDX_RX].flags & CFG_RX_GUE) ? " GUE-DECAP(1)" : "",
             (value->queue[CFG_IDX_RX].flags & CFG_RX_DNAT) ? " DNAT(2)" : "",
-            (value->queue[CFG_IDX_RX].flags & CFG_RX_FWD) ? " FWD(4)" : "",
             (value->queue[CFG_IDX_RX].flags & CFG_RX_DUMP) ? " DUMP(8)" : "");
 //    printf("CFG  %-5u  %-16s  Egress   ->  name \'%-16s\'    flags (%u) :%s%s%s%s\n",
-    printf("CFG                              Egress     %-16s    %s%s%s%s\n",
+    printf("CFG                              Egress     %-16s    %s%s%s%s%s\n",
 //            if_indextoname(key, ifname), key,
             value->queue[CFG_IDX_TX].name, /*value->queue[CFG_IDX_TX].flags,*/
             (value->queue[CFG_IDX_TX].flags & CFG_TX_PROXY) ? " PROXY(1)" : "",
             (value->queue[CFG_IDX_TX].flags & CFG_TX_SNAT) ? " DSR(2)" : "",
             (value->queue[CFG_IDX_TX].flags & CFG_TX_FWD) ? " FWD(4)" : "",
-            (value->queue[CFG_IDX_TX].flags & CFG_TX_DUMP) ? " DUMP(8)" : "");
+            (value->queue[CFG_IDX_TX].flags & CFG_TX_DUMP) ? " DUMP(8)" : "",
+            (value->queue[CFG_IDX_TX].flags & CFG_TX_FIB) ? " FIB(16)" : "");
 }
 
 void map_cfg_print_err(unsigned int key, const char *name, int err) {
