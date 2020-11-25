@@ -267,7 +267,7 @@ int main(int argc, char **argv)
 
     // process operation
     if (!strncmp(argv[1], "set", 4)) {
-        if (argc < 7) {
+        if (argc < 6) {
             usage(argv[0]);
             return 1;
         }
@@ -289,7 +289,7 @@ int main(int argc, char **argv)
             return 1;
         }
             
-        map_cfg_set(map_fd, ifindex, qid, atoi(argv[4]), atoi(argv[5]), argv[6]);
+        map_cfg_set(map_fd, ifindex, qid, 0, atoi(argv[4]), argv[5]);
     } else if (!strncmp(argv[1], "get", 4)) {
         if (!strncmp(argv[2], "all", 4)) {
             map_cfg_getall(map_fd);
