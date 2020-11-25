@@ -20,7 +20,12 @@
 //__section("egress")
 int tag_tx(struct __sk_buff *skb)
 {
-    bpf_print("TAG RX <<<< ifindex %u, len %u\n", skb->ifindex, skb->len);
+    if (skb->ifindex == skb->ingress_ifindex) {
+        bpf_print("PFC-Tag (iif %u RX) >>>> PKT len %u\n", skb->ifindex, skb->len);
+    } else {
+        bpf_print("PFC-Tag (iif %u TX) >>>> PKT len %u\n", skb->ifindex, skb->len);
+    }
+
     skb->mark = skb->ifindex;
     bpf_print("  Tagged %u\n", skb->mark);
 

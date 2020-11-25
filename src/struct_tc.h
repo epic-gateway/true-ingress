@@ -163,7 +163,14 @@ make_service(struct service  *ref,
 #define CFG_IDX_TX      1
 #define CFG_IDX_MAX     2
 
+#define CFG_PROG_NONE       0
+#define CFG_PROG_DECAP      1
+#define CFG_PROG_ENCAP      2
+#define CFG_PROG_TAG        3
+#define CFG_PROG_MAX        4
+
 struct config {
+    __u8    prog;
     __u32   id;
     __u32   flags;
     char    name[CFG_NAME_SIZE];
@@ -174,6 +181,7 @@ make_config(struct config  *ref,
              __u32   id,
              __u32   flags)
 {
+    ref->prog   = CFG_PROG_NONE;
     ref->id     = id;
     ref->flags  = flags;
     return ref;
