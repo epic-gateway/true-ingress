@@ -632,7 +632,7 @@ int fib_lookup(struct __sk_buff *skb, struct bpf_fib_lookup *fib_params, int ifi
 }
 
 static __always_inline
-int gue_encap_v4(struct __sk_buff *skb, struct tunnel *tun, struct service *svc, __u32 *via_ifindex)
+int gue_encap_v4(struct __sk_buff *skb, struct tunnel *tun, struct service *svc)
 {
     struct iphdr iph_inner = { 0 };
     struct tunhdr h_outer = {{0}, {0}, 0, 0, {0, 0}};

@@ -111,7 +111,7 @@ int pfc_encap(struct __sk_buff *skb)
             //set_mss(skb, 1400);
 
             __u32 via_ifindex = 0;
-            ret = gue_encap_v4(skb, tun, svc, &via_ifindex);
+            ret = gue_encap_v4(skb, tun, svc);
             ASSERT (ret != TC_ACT_SHOT, dump_action(TC_ACT_SHOT), "GUE Encap Failed!\n");
 
             if (cfg->flags & CFG_TX_FIB) {
@@ -185,9 +185,6 @@ int pfc_encap(struct __sk_buff *skb)
                 bpf_print("DSR: SNAT to %x:%u\n", svc->key.encap.ep.ip, bpf_ntohs(svc->key.encap.ep.port));
 
                 snat4(skb, &hdr, bpf_htonl(svc->key.encap.ep.ip), svc->key.encap.ep.port);
-                if (cfg->flags & CFG_TX_DUMP) {
-                    dump_pkt(skb);
-                }
             } else {    // Regular mode
                 bpf_print("Regular: GUE Encap Service: group-id %u, service-id %u, tunnel-id %u\n",
                         bpf_ntohs(svc->identity.service_id), bpf_ntohs(svc->identity.group_id), bpf_ntohl(svc->key.tunnel_id));
@@ -208,44 +205,44 @@ int pfc_encap(struct __sk_buff *skb)
                 // fix MSS
                 //set_mss(skb, 1400);
 
-                __u32 via_ifindex = 0;
-                ret = gue_encap_v4(skb, tun, svc, &via_ifindex);
+                ret = gue_encap_v4(skb, tun, svc);
                 ASSERT (ret != TC_ACT_SHOT, dump_action(TC_ACT_SHOT), "GUE Encap Failed!\n");
+            }
 
-                if (cfg->flags & CFG_TX_FIB) {
-                    // Resolve MAC addresses if not known yet
-                    struct bpf_fib_lookup fib_params = { 0 };
+            __u32 via_ifindex = 0;
+            if (cfg->flags & CFG_TX_FIB) {
+                // Resolve MAC addresses if not known yet
+                struct bpf_fib_lookup fib_params = { 0 };
 
-                    // flags: 0, BPF_FIB_LOOKUP_DIRECT 1, BPF_FIB_LOOKUP_OUTPUT 2
-                    ret = fib_lookup(skb, &fib_params, skb->ifindex, 0);
-                    if (ret == TC_ACT_OK) {
-                        __builtin_memcpy(&via_ifindex, &fib_params.ifindex, sizeof(via_ifindex));
+                // flags: 0, BPF_FIB_LOOKUP_DIRECT 1, BPF_FIB_LOOKUP_OUTPUT 2
+                ret = fib_lookup(skb, &fib_params, skb->ifindex, 0);
+                if (ret == TC_ACT_OK) {
+                    __builtin_memcpy(&via_ifindex, &fib_params.ifindex, sizeof(via_ifindex));
 
-                        bpf_print("Adjusting MACs\n");
-                        // Update destination MAC
-                        ret = bpf_skb_store_bytes(skb, 0, &fib_params.dmac, 6, BPF_F_INVALIDATE_HASH);
-                        if (ret < 0) {
-                            bpf_print("bpf_skb_store_bytes(D-MAC): %d\n", ret);
-                            return TC_ACT_SHOT;
-                        }
+                    bpf_print("Adjusting MACs\n");
+                    // Update destination MAC
+                    ret = bpf_skb_store_bytes(skb, 0, &fib_params.dmac, 6, BPF_F_INVALIDATE_HASH);
+                    if (ret < 0) {
+                        bpf_print("bpf_skb_store_bytes(D-MAC): %d\n", ret);
+                        return TC_ACT_SHOT;
+                    }
 
-                        // Update source MAC
-                        ret = bpf_skb_store_bytes(skb, 6, &fib_params.smac, 6, BPF_F_INVALIDATE_HASH);
-                        if (ret < 0) {
-                            bpf_print("bpf_skb_store_bytes(S-MAC): %d\n", ret);
-                            return TC_ACT_SHOT;
-                        }
+                    // Update source MAC
+                    ret = bpf_skb_store_bytes(skb, 6, &fib_params.smac, 6, BPF_F_INVALIDATE_HASH);
+                    if (ret < 0) {
+                        bpf_print("bpf_skb_store_bytes(S-MAC): %d\n", ret);
+                        return TC_ACT_SHOT;
                     }
                 }
+            }
 
-                if (cfg->flags & CFG_TX_DUMP) {
-                    dump_pkt(skb);
-                }
+            if (cfg->flags & CFG_TX_DUMP) {
+                dump_pkt(skb);
+            }
 
-                if ((cfg->flags & CFG_TX_FWD) && via_ifindex && via_ifindex != skb->ifindex) {
-                    bpf_print("Redirecting to %u TX\n", via_ifindex);
-                    return dump_action(bpf_redirect(via_ifindex, 0));
-                }
+            if ((cfg->flags & CFG_TX_FWD) && via_ifindex && via_ifindex != skb->ifindex) {
+                bpf_print("Redirecting to %u TX\n", via_ifindex);
+                return dump_action(bpf_redirect(via_ifindex, 0));
             }
 
             return dump_action(TC_ACT_UNSPEC);
