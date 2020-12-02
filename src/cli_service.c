@@ -95,27 +95,29 @@ void map_verify_print_count(__u32 count) {
     printf("Entries:  %u\n\n", count);
 }
 
-bool map_verify_get(int map_fd, struct identity *key, struct verify *value) {
+void map_verify_print_record(struct identity *key, struct verify *value) {
+    struct in_addr from;
+    from.s_addr = ntohl(value->encap.ep.ip);
+
+    printf("VERIFY (%u, %u) -> ", ntohs(key->service_id), ntohs(key->group_id));
+    printf("\'%16.16s\'", value->value);
+    printf("\t%u", ntohl(value->tunnel_id));
+    printf("\t\t(%s %s:%u)\t%u", get_proto_name(ntohs(value->encap.ep.proto)), inet_ntoa(from), ntohs(value->encap.ep.port), ntohl(value->encap.ifindex));
+//        printf(" -> \t\t{%08x (%04x, %04x)} -> ", ntohl(*(__u32*)key), ntohs(key->service_id), ntohs(key->group_id));
+//        __u64 *ptr = (__u64 *)value->value;
+//        printf("{\'%llx%llx\' %08x}", ptr[0], ptr[1], value->tunnel_id);
+    printf("\n");
+}
+
+int map_verify_get(int map_fd, struct identity *key, struct verify *value) {
     if (bpf_map_lookup_elem(map_fd, key, value)) {
         fprintf(stderr, "VERIFY.GET (%u, %u)\t\tERR (%d) \'%s\'\n",
                 ntohs(key->service_id), ntohs(key->group_id), errno, strerror(errno));
 
-        return false;
-    } else {
-        struct in_addr from;
-        from.s_addr = ntohl(value->encap.ep.ip);
-
-        printf("VERIFY (%u, %u) -> ", ntohs(key->service_id), ntohs(key->group_id));
-        printf("\'%16.16s\'", value->value);
-        printf("\t%u", ntohl(value->tunnel_id));
-        printf("\t\t(%s %s:%u)\t%u", get_proto_name(ntohs(value->encap.ep.proto)), inet_ntoa(from), ntohs(value->encap.ep.port), ntohl(value->encap.ifindex));
-//        printf(" -> \t\t{%08x (%04x, %04x)} -> ", ntohl(*(__u32*)key), ntohs(key->service_id), ntohs(key->group_id));
-//        __u64 *ptr = (__u64 *)value->value;
-//        printf("{\'%llx%llx\' %08x}", ptr[0], ptr[1], value->tunnel_id);
-        printf("\n");
+        return errno;
     }
 
-    return true;
+    return 0;
 }
 
 bool map_verify_getall(int map_fd) {
@@ -125,9 +127,10 @@ bool map_verify_getall(int map_fd) {
 
     map_verify_print_header();
     while (bpf_map_get_next_key(map_fd, &prev_key, &key) == 0) {
-        if (!map_verify_get(map_fd, &key, &value)) {
+        if (map_verify_get(map_fd, &key, &value)) {
             break;
         }
+        map_verify_print_record(&key, &value);
         ++count;
         prev_key=key;
     }
@@ -345,7 +348,16 @@ int main(int argc, char **argv)
         make_identity(&id, atoi(argv[2]), atoi(argv[3]));
         make_verify(&pwd, tid, &ekey);
         make_service(&svc, &id, &pwd);
-        
+
+        // update encap entry
+        {
+            struct verify current;
+
+            if (!map_verify_get(map_verify_fd, &id, &current)) {
+                map_encap_del(map_encap_fd, &current.encap);
+            }
+        }
+
         map_encap_set(map_encap_fd, &ekey, &svc);
         map_verify_set(map_verify_fd, &id, &pwd);
     } else if (!strncmp(argv[1], "set-node", 9)) {  // set-node <group-id>2 <service-id>3 <key>4 <tunnel-id>5
@@ -396,6 +408,7 @@ int main(int argc, char **argv)
             struct verify pwd;
 
             map_verify_get(map_verify_fd, make_identity(&id, atoi(argv[2]), atoi(argv[3])), &pwd);
+            map_verify_print_record(&id, &pwd);
 
             struct service svc;
 
@@ -415,11 +428,9 @@ int main(int argc, char **argv)
             struct verify pwd;
 
             if (!map_verify_get(map_verify_fd, make_identity(&id, atoi(argv[2]), atoi(argv[3])), &pwd)) {
-                return 1;
+                map_encap_del(map_encap_fd, &pwd.encap);
+                map_verify_del(map_verify_fd, &id);
             }
-
-            map_encap_del(map_encap_fd, &pwd.encap);
-            map_verify_del(map_verify_fd, &id);
         }
     } else {
         fprintf(stderr,"ERR: Unknown operation \'%s\'\n", argv[1]);
