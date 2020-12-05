@@ -22,10 +22,14 @@
 #include "pfc_tc.h"
 
 //__section("ingress")
-int pfc_rx(struct __sk_buff *skb)
+int pfc_decap(struct __sk_buff *skb)
 {
     __u32 pktnum = stats_update(skb->ifindex, STAT_IDX_RX, skb);
-    bpf_print("PFC RX <<<< # %u, ifindex %u, len %u\n", pktnum, skb->ifindex, skb->len);
+    if (skb->ifindex == skb->ingress_ifindex) {
+        bpf_print("PFC-Decap (iif %u RX) >>>> PKT # %u, len %u\n", skb->ifindex, pktnum, skb->len);
+    } else {
+        bpf_print("PFC-Decap (iif %u TX) >>>> PKT # %u, len %u\n", skb->ifindex, pktnum, skb->len);
+    }
 //    bpf_print("  gso_segs %u\n", skb->gso_segs);
 //    bpf_print("  gso_size %u\n", skb->gso_size);
 
@@ -33,10 +37,16 @@ int pfc_rx(struct __sk_buff *skb)
     __u32 key = skb->ifindex;
     struct cfg_if *iface = bpf_map_lookup_elem(&map_config, &key);
     ASSERT(iface != 0, dump_action(TC_ACT_UNSPEC), "ERROR: Config not found!\n", dump_pkt(skb));
-    struct config *cfg = &iface->queue[CFG_IDX_RX];
+    struct config *cfg = &iface->queue[(skb->ifindex == skb->ingress_ifindex) ? CFG_IDX_RX : CFG_IDX_TX];
+    
+    if (cfg->prog == CFG_PROG_NONE) {
+        bpf_print("cfg[%u]->prog = CFG_PROG_DECAP\n", (skb->ifindex == skb->ingress_ifindex) ? CFG_IDX_RX : CFG_IDX_TX);
+        cfg->prog = CFG_PROG_DECAP;
+        bpf_map_update_elem(&map_config, &key, iface, BPF_ANY);
+    }
 
     // log hello
-    bpf_print("ID %s(%u) Flags %x\n", cfg->name, cfg->id, cfg->flags);
+    bpf_print("ID %s(%u) Flags %u\n", cfg->name, cfg->id, cfg->flags);
 
     // dump packet
     if (cfg->flags & CFG_RX_DUMP) {
@@ -109,7 +119,7 @@ int pfc_rx(struct __sk_buff *skb)
                 struct verify *verify = bpf_map_lookup_elem(&map_verify, (struct identity *)&gueext->id);
                 ASSERT(verify != 0, dump_action(TC_ACT_UNSPEC), "ERROR: Service id %u not found!\n", bpf_ntohl(gueext->id));
 
-                struct service svc;
+                struct service svc = {{ 0 }, {{ 0 }, 0, {{ 0 }, 0 }}, 0 };
                 __builtin_memcpy(&svc.key, verify, sizeof(*verify));
                 svc.identity = *(struct identity *)&gueext->id;
                 svc.hash = pktnum;
@@ -143,6 +153,32 @@ int pfc_rx(struct __sk_buff *skb)
 
                     // update TABLE-ENCAP
                     bpf_map_update_elem(&map_encap, &skey, &svc, BPF_ANY);
+
+                    if (cfg->flags & CFG_RX_FWD) {
+                        // flags: 0, BPF_FIB_LOOKUP_DIRECT 1, BPF_FIB_LOOKUP_OUTPUT 2
+                        struct bpf_fib_lookup fib_params = { 0 };
+                        ret = fib_lookup(skb, &fib_params, skb->ifindex, 0);
+                        if (ret == TC_ACT_OK) {
+                            // Update destination MAC
+                            ret = bpf_skb_store_bytes(skb, 0, &fib_params.dmac, 6, BPF_F_INVALIDATE_HASH);
+                            if (ret < 0) {
+                                bpf_print("bpf_skb_store_bytes(D-MAC): %d\n", ret);
+                            }
+
+                            // Update source MAC
+                            ret = bpf_skb_store_bytes(skb, 6, &fib_params.smac, 6, BPF_F_INVALIDATE_HASH);
+                            if (ret < 0) {
+                                bpf_print("bpf_skb_store_bytes(S-MAC): %d\n", ret);
+                            }
+
+                            if (cfg->flags & CFG_TX_DUMP) {
+                                dump_pkt(skb);
+                            }
+
+                            bpf_print("Redirecting to interface ifindex %u TX\n", fib_params.ifindex);
+                            return dump_action(bpf_redirect(fib_params.ifindex, 0));
+                        }
+                    }
 
                     if (cfg->flags & CFG_TX_DUMP) {
                         dump_pkt(skb);

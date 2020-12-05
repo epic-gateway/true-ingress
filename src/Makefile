@@ -26,9 +26,9 @@ COMMON_DIR = ../common
 include $(COMMON_DIR)/common.mk
 
 attach:
-	./attach_tc.sh
+	./attach_tc.sh lo
 	sudo ls -R /sys/fs/bpf/
 
 detach:
-	./detach_tc.sh
+	./detach_tc.sh lo
 	sudo ls -R /sys/fs/bpf/
