@@ -8,7 +8,7 @@ before_script:
 
 make:
   script:
-    - make build tar
+    - make tar
   artifacts:
     paths:
       - pfc.tar.bz2

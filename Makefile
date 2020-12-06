@@ -1,11 +1,12 @@
 SOURCES = libbpf/src headers src test/docker src/go
 CLEAN = $(addsuffix _clean,$(SOURCES))
+TARFILE = pfc.tar.bz2
 
-.PHONY: clean $(SOURCES) $(CLEAN) check test prod-img
+.PHONY: clean $(SOURCES) $(CLEAN) clean-tar check test prod-img
 
 all: build check
 
-clean: $(CLEAN)
+clean: $(CLEAN) clean-tar
 
 build: $(SOURCES)
 
@@ -42,7 +43,7 @@ go:
 	$(MAKE) -C test/docker go
 	$(MAKE) -C src/go go
 
-tar:
+tar: build
 	mkdir -p pkg/bin
 
 	# Copy eBPF
@@ -56,10 +57,13 @@ tar:
 
 	chmod +x pkg/bin/*
 
-	tar cvfj pfc.tar.bz2 --directory=pkg bin
+	tar cvfj $(TARFILE) --directory=pkg bin
 
 $(SOURCES):
 	$(MAKE) -C $@
+
+clean-tar:
+	rm -f $(TARFILE)
 
 $(CLEAN):
 	$(MAKE) -C $(subst _clean,,$@) clean
@@ -74,4 +78,4 @@ help:
 	@echo 'push             push docker image (set TAG to override default tag)'
 	@echo 'init             submodule init + install dependencies'
 	@echo 'test             execute simple test scenario test/ebpf/test_go.sh'
-	@echo 'tar              create pfc.tar.bz2 containing all required binaries and scripts'
+	@echo "tar              create $(TARFILE) containing all required binaries and scripts"
