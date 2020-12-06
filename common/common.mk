@@ -44,7 +44,7 @@ CFLAGS ?= -g
 CFLAGS += -I../headers/
 LDFLAGS ?= -L$(LIBBPF_DIR)
 
-BPF_CFLAGS ?= -I../libbpf/include/uapi -I../headers/
+BPF_CFLAGS ?= -g -I../libbpf/include/uapi -I../headers/
 
 LIBS = -l:libbpf.a -lelf $(USER_LIBS)
 

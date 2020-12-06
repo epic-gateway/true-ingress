@@ -5,16 +5,16 @@
 
 #include "struct_tc.h"
 
-#define MAP_SIZE_INCOMMING  0
 #define MAP_SIZE_MAX        1024
 
-struct bpf_elf_map SEC("maps") map_stats = {
+struct bpf_elf_map SEC(ELF_SECTION_MAPS) map_stats = {
     .type       = BPF_MAP_TYPE_HASH,
     .size_key   = sizeof(__u32),
     .size_value = sizeof(struct statistics),
     .pinning    = PIN_GLOBAL_NS, /* PIN_OBJECT_NS or PIN_GLOBAL_NS, or PIN_NONE */
     .max_elem   = MAP_SIZE_MAX,
 };
+BPF_ANNOTATE_KV_PAIR(map_stats, __u32, struct statistics);
 
 static inline
 __u32 stats_update(__u32 key, __u32 index, struct __sk_buff *skb)
