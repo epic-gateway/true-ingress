@@ -72,3 +72,6 @@ src/go/pfc_cli_go
 
 # libbpf headers
 headers/bpf
+
+# emacs cruft
+.dir-locals.el
