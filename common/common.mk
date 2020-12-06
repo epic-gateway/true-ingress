@@ -40,11 +40,11 @@ EXTRA_DEPS +=
 # BPF-prog kern and userspace shares struct via header file:
 KERN_USER_H ?= $(wildcard common_kern_user.h)
 
-CFLAGS ?= -I$(LIBBPF_DIR)/build/usr/include/ -g
+CFLAGS ?= -g
 CFLAGS += -I../headers/
 LDFLAGS ?= -L$(LIBBPF_DIR)
 
-BPF_CFLAGS ?= -I../libbpf/include/uapi -I$(LIBBPF_DIR)/build/usr/include/ -I../headers/
+BPF_CFLAGS ?= -I../libbpf/include/uapi -I../headers/
 
 LIBS = -l:libbpf.a -lelf $(USER_LIBS)
 
@@ -85,16 +85,6 @@ llvm-check: $(CLANG) $(LLC)
 			exit 1; \
 		else true; fi; \
 	done
-
-$(OBJECT_LIBBPF):
-	@if [ ! -d $(LIBBPF_DIR) ]; then \
-		echo "Error: Need libbpf submodule"; \
-		echo "May need to run git submodule update --init"; \
-		exit 1; \
-	else \
-		cd $(LIBBPF_DIR) && $(MAKE) all; \
-		mkdir -p build; DESTDIR=build $(MAKE) install_headers; \
-	fi
 
 # Create dependency: detect if C-file change and touch H-file, to trigger
 # target $(COMMON_OBJS)

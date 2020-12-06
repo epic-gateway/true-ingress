@@ -1,4 +1,4 @@
-SOURCES = src test/docker src/go
+SOURCES = libbpf/src headers src test/docker src/go
 CLEAN = $(addsuffix _clean,$(SOURCES))
 
 .PHONY: clean $(SOURCES) $(CLEAN) check test prod-img

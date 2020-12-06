@@ -70,3 +70,5 @@ src/go/pfc_cli_go
 
 # tracing userspace programs
 
+# libbpf headers
+headers/bpf

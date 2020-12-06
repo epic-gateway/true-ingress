@@ -20,7 +20,8 @@ There is set if userspace CLIs to read and write data into maps.
 | ---------------------- | ----------------------------------------------------------------- |
 |      common            | Common files (from [xdp-tutorial](https://github.com/xdp-project/xdp-tutorial))   |
 |      docs              | Additional documentation and pictures                             |
-|      header            | Linux headers (from [xdp-tutorial](https://github.com/xdp-project/xdp-tutorial))  |
+|      headers           | Linux headers (from [xdp-tutorial](https://github.com/xdp-project/xdp-tutorial))  |
+|      headers/bpf       | libbpf headers (installed from libbpf submodule)                  |
 |      libbpf            | Libbpf submdule. It is required for linking BFP programs          |
 |      scripts           | Handful of sripts to help setup dev/test VM                       |
 |      src               | Sources of eBPF and helpers                                       |
