@@ -348,16 +348,6 @@ int main(int argc, char **argv)
         make_identity(&id, atoi(argv[2]), atoi(argv[3]));
         make_verify(&pwd, tid, &ekey);
         make_service(&svc, &id, &pwd);
-
-        // update encap entry
-        {
-            struct verify current;
-
-            if (!map_verify_get(map_verify_fd, &id, &current)) {
-                map_encap_del(map_encap_fd, &current.encap);
-            }
-        }
-
         map_encap_set(map_encap_fd, &ekey, &svc);
         map_verify_set(map_verify_fd, &id, &pwd);
     } else if (!strncmp(argv[1], "set-node", 9)) {  // set-node <group-id>2 <service-id>3 <key>4 <tunnel-id>5
