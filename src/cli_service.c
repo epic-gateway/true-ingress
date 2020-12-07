@@ -292,17 +292,35 @@ bool map_encap_del(int map_fd, struct encap_key *key) {
     return true;
 }
 
-bool map_encap_delall(int map_fd) {
+bool map_encap_del_all(int map_fd) {
     struct encap_key prev_key, key;
 
     while (bpf_map_get_next_key(map_fd, &prev_key, &key) == 0) {
         if (!map_encap_del(map_fd, &key)) {
             break;
         }
-        //prev_key=key;
+        prev_key=key;
     }
 
     return true;
+}
+
+/*
+ * Delete the encaps that belong to the verify with the provided
+ * identity.
+ */
+void map_encap_del_verify(int map_fd, struct identity *id) {
+    struct encap_key prev_key, key;
+    struct service encap;
+
+    while (bpf_map_get_next_key(map_fd, &prev_key, &key) == 0) {
+        if (map_encap_get(map_fd, &key, &encap)
+            && encap.identity.service_id == id->service_id
+            && encap.identity.group_id == id->group_id) {
+            map_encap_del(map_fd, &key);
+            prev_key=key;
+        }
+    }
 }
 
 ////////////////////
@@ -416,7 +434,7 @@ int main(int argc, char **argv)
     } else if (!strncmp(argv[1], "del", 4)) {
         if (!strncmp(argv[2], "all", 4)) {
             map_verify_delall(map_verify_fd);
-            map_encap_delall(map_encap_fd);
+            map_encap_del_all(map_encap_fd);
         } else {
             if (argc < 4) {
                 usage(argv[0]);
@@ -427,8 +445,10 @@ int main(int argc, char **argv)
             struct verify pwd;
 
             if (!map_verify_get(map_verify_fd, make_identity(&id, atoi(argv[2]), atoi(argv[3])), &pwd)) {
-                map_encap_del(map_encap_fd, &pwd.encap);
+                map_encap_del_verify(map_encap_fd, &id);
                 map_verify_del(map_verify_fd, &id);
+            } else {
+                return 1;
             }
         }
     } else {
