@@ -199,6 +199,18 @@ void map_encap_print_count(__u32 count) {
     printf("Entries:  %u\n\n", count);
 }
 
+/*
+ * Print one encap structure.
+ */
+void map_encap_print(struct encap_key *key, struct service *value) {
+    struct in_addr from;
+    from.s_addr = ntohl(key->ep.ip);
+
+    printf("ENCAP (%s %s:%u)  %u -> ", get_proto_name(ntohs(key->ep.proto)), inet_ntoa(from), ntohs(key->ep.port), ntohl(key->ifindex));
+    printf("%u\t\t(%u, %u)\t\'%16.16s\'\t%u", ntohl(value->key.tunnel_id), ntohs(value->identity.service_id), ntohs(value->identity.group_id), (char*)value->key.value, value->hash);
+    printf("\n");
+}
+
 bool map_encap_get(int map_fd, struct encap_key *key, struct service *value) {
     struct in_addr from;
     from.s_addr = ntohl(key->ep.ip);
@@ -208,14 +220,6 @@ bool map_encap_get(int map_fd, struct encap_key *key, struct service *value) {
                 get_proto_name(ntohs(key->ep.proto)), inet_ntoa(from), ntohs(key->ep.port), ntohl(key->ifindex), errno, strerror(errno));
 
         return false;
-    } else {
-        printf("ENCAP (%s %s:%u)  %u -> ", get_proto_name(ntohs(key->ep.proto)), inet_ntoa(from), ntohs(key->ep.port), ntohl(key->ifindex));
-        printf("%u\t\t(%u, %u)\t\'%16.16s\'\t%u", ntohl(value->key.tunnel_id), ntohs(value->identity.service_id), ntohs(value->identity.group_id), (char*)value->key.value, value->hash);
-//        __u32 *ptrk = (__u32 *)key;
-//        printf("\t\t(%x%x%x) -> ", ptrk[0], ptrk[1], ptrk[2]);
-//        __u64 *ptr = (__u64 *)value->key.value;
-//        printf("(%08x\t(%04x, %04x)\t\'%llx%llx\'", value->key.tunnel_id, value->identity.service_id, value->identity.group_id, ptr[0], ptr[1]);
-        printf("\n");
     }
     return true;
 }
@@ -227,16 +231,33 @@ bool map_encap_getall(int map_fd) {
 
     map_encap_print_header();
     while (bpf_map_get_next_key(map_fd, &prev_key, &key) == 0) {
-        if (!map_encap_get(map_fd, &key, &value)) {
-            break;
+        if (map_encap_get(map_fd, &key, &value)) {
+            map_encap_print(&key, &value);
         }
         ++count;
         prev_key=key;
     }
     map_encap_print_count(count);
-    //map_encap_print_footer();
 
     return true;
+}
+
+/*
+ * Print the encaps that belong to the verify with the provided
+ * identity.
+ */
+void map_encap_print_verify(int map_fd, struct identity *id) {
+    struct encap_key prev_key, key;
+    struct service encap;
+
+    while (bpf_map_get_next_key(map_fd, &prev_key, &key) == 0) {
+        if (map_encap_get(map_fd, &key, &encap)
+            && encap.identity.service_id == id->service_id
+            && encap.identity.group_id == id->group_id) {
+            map_encap_print(&key, &encap);
+            prev_key=key;
+        }
+    }
 }
 
 bool map_encap_set(int map_fd, struct encap_key *key, struct service *value) {
@@ -347,7 +368,6 @@ int main(int argc, char **argv)
             return 1;
         }
 
-//        struct service svc = { 0 };
         struct identity id = { 0 };
         struct verify pwd = { 0 };
         __u32 tid = atoi(argv[5]);
@@ -371,9 +391,7 @@ int main(int argc, char **argv)
 
         make_identity(&id, atoi(argv[2]), atoi(argv[3]));
         make_verify(&pwd, tid, &ekey);
-//        make_service(&svc, &id, &pwd);
 
-//        map_encap_set(map_encap_fd, &ekey, &svc);
         map_verify_set(map_verify_fd, &id, &pwd);
     } else if (!strncmp(argv[1], "get", 4)) {
         if (!strncmp(argv[2], "all", 4)) {
@@ -388,12 +406,12 @@ int main(int argc, char **argv)
             struct identity id;
             struct verify pwd;
 
-            map_verify_get(map_verify_fd, make_identity(&id, atoi(argv[2]), atoi(argv[3])), &pwd);
-            map_verify_print_record(&id, &pwd);
-
-            struct service svc;
-
-            map_encap_get(map_encap_fd, &pwd.encap, &svc);
+            if (map_verify_get(map_verify_fd, make_identity(&id, atoi(argv[2]), atoi(argv[3])), &pwd) == 0) {
+                map_verify_print_record(&id, &pwd);
+                map_encap_print_verify(map_encap_fd, &id);
+            } else {
+                return 1;
+            }
         }
     } else if (!strncmp(argv[1], "del", 4)) {
         if (!strncmp(argv[2], "all", 4)) {
