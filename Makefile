@@ -57,7 +57,7 @@ tar: build
 
 	chmod +x pkg/bin/*
 
-	tar cvfj $(TARFILE) --directory=pkg bin
+	tar cfj $(TARFILE) --directory=pkg bin
 
 $(SOURCES):
 	$(MAKE) -C $@
