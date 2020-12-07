@@ -103,9 +103,6 @@ void map_verify_print_record(struct identity *key, struct verify *value) {
     printf("\'%16.16s\'", value->value);
     printf("\t%u", ntohl(value->tunnel_id));
     printf("\t\t(%s %s:%u)\t%u", get_proto_name(ntohs(value->encap.ep.proto)), inet_ntoa(from), ntohs(value->encap.ep.port), ntohl(value->encap.ifindex));
-//        printf(" -> \t\t{%08x (%04x, %04x)} -> ", ntohl(*(__u32*)key), ntohs(key->service_id), ntohs(key->group_id));
-//        __u64 *ptr = (__u64 *)value->value;
-//        printf("{\'%llx%llx\' %08x}", ptr[0], ptr[1], value->tunnel_id);
     printf("\n");
 }
 
@@ -135,7 +132,6 @@ bool map_verify_getall(int map_fd) {
         prev_key=key;
     }
     map_verify_print_count(count);
-    //map_verify_print_footer();
 
     return true;
 }
@@ -301,11 +297,6 @@ int main(int argc, char **argv)
         return 1;
     }
 
-//    int map_nat_fd = open_bpf_map_file("/sys/fs/bpf/tc/globals/map_nat");
-//    if (map_nat_fd < 0) {
-//        return 1;
-//    }
-
     int map_verify_fd = open_bpf_map_file("/sys/fs/bpf/tc/globals/map_verify");
     if (map_verify_fd < 0) {
         return 1;
@@ -321,7 +312,7 @@ int main(int argc, char **argv)
             usage(argv[0]);
             return 1;
         }
-        
+
         proto = get_proto_number(argv[6]);
         if( proto == 0) {
             fprintf(stderr, "Unsupported IP proto \'%s\'\n", argv[6]);
@@ -340,7 +331,7 @@ int main(int argc, char **argv)
         struct verify pwd = { 0 };
         struct encap_key ekey = { 0 };
         __u32 tid = atoi(argv[5]);
-        
+
         strncpy((char*)pwd.value, argv[4], SECURITY_KEY_SIZE);
 
         make_endpoint(&ep_to, to.s_addr, atoi(argv[8]), proto);
@@ -375,7 +366,7 @@ int main(int argc, char **argv)
             }
             make_encap_key(&ekey, to.s_addr, atoi(argv[8]), proto, 0);
         }
-        
+
         strncpy((char*)pwd.value, argv[4], SECURITY_KEY_SIZE);
 
         make_identity(&id, atoi(argv[2]), atoi(argv[3]));
