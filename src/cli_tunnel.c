@@ -15,45 +15,10 @@
 #include <arpa/inet.h>
 
 #include "struct_tc.h"
+#include "cli_util.h"
 
 // MAP_TUNNEL:	u32 -> struct tunnel
 // MAP_DECAP:	struct endpoint -> u32
-
-int open_bpf_map_file(const char *file) {
-    int fd;
-
-    fd = bpf_obj_get(file);
-    if (fd < 0) {
-        fprintf(stderr,
-            "WARN: Failed to open bpf map file:%s err(%d):%s\n",
-            file, errno, strerror(errno));
-        return fd;
-    }
-    return fd;
-}
-
-__u16 get_proto_number(const char *proto) {
-    if (!strncmp(proto, "tcp", 4)) {
-        return IPPROTO_TCP;
-    } else if (!strncmp(proto, "udp", 4)) {
-        return IPPROTO_UDP;
-    }
-
-    return 0;
-}
-
-const char *get_proto_name(__u16 proto) {
-    switch (proto) {
-        case 0:
-            return "NONE";
-        case IPPROTO_TCP:
-            return "tcp";
-        case IPPROTO_UDP:
-            return "udp";
-    }
-
-    return "proto-unknown";
-}
 
 void usage(char *prog) {
     fprintf(stderr,"ERR: Too little arguments\n");

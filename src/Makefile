@@ -14,11 +14,6 @@ USER_TARGETS := \
     cli_gc
 
 USER_LIBS := -lz
-#COPY_LOADER = xdp_loader
-
-LLC ?= llc
-CLANG ?= clang
-CC := gcc
 
 LIBBPF_DIR = ../libbpf/src
 COMMON_DIR = ../common

@@ -13,19 +13,7 @@
 #include <bpf_util.h>
 
 #include "struct_tc.h"
-
-int open_bpf_map_file(const char *file) {
-    int fd;
-
-    fd = bpf_obj_get(file);
-    if (fd < 0) {
-        fprintf(stderr,
-            "WARN: Failed to open bpf map file:%s err(%d):%s\n",
-            file, errno, strerror(errno));
-        return fd;
-    }
-    return fd;
-}
+#include "cli_util.h"
 
 void usage(char *prog) {
     fprintf(stderr,"ERR: Too little arguments\n");
