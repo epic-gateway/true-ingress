@@ -6,13 +6,6 @@ BPF_TARGETS := \
     pfc_tag_rx_tc \
     pfc_tag_tx_tc
 
-USER_TARGETS := \
-    cli_cfg \
-    cli_tunnel \
-    cli_service \
-    cli_nat \
-    cli_gc
-
 USER_LIBS := -lz
 
 LIBBPF_DIR = ../libbpf/src

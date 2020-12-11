@@ -1,4 +1,4 @@
-SOURCES = libbpf/src headers common src test/docker src/go
+SOURCES = libbpf/src headers common src/cli src test/docker src/go
 CLEAN = $(addsuffix _clean,$(SOURCES))
 TARFILE = pfc.tar.bz2
 

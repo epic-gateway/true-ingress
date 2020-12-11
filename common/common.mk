@@ -22,6 +22,7 @@ USER_OBJ := ${USER_C:.c=.o}
 # Expect this is defined by including Makefile, but define if not
 COMMON_DIR ?= ../common/
 LIBBPF_DIR ?= ../libbpf/src/
+HEADER_DIR ?= ../headers/
 
 OBJECT_LIBBPF = $(LIBBPF_DIR)/libbpf.a
 
@@ -38,10 +39,10 @@ EXTRA_DEPS +=
 KERN_USER_H ?= $(wildcard common_kern_user.h)
 
 CFLAGS ?= -g
-CFLAGS += -I../headers/ -I ../common/
+CFLAGS += -I$(HEADER_DIR) -I $(COMMON_DIR)
 LDFLAGS ?= -L$(LIBBPF_DIR)
 
-BPF_CFLAGS ?= -g -I../libbpf/include/uapi -I../headers/
+BPF_CFLAGS ?= -g -I../libbpf/include/uapi -I$(HEADER_DIR)
 
 LIBS = -l:libbpf.a -lelf $(USER_LIBS)
 

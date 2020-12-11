@@ -5,17 +5,13 @@
 | Directory name         | Description                                                                    |
 | ---------------------- | ------------------------------------------------------------------------------ |
 |    go                  | PFC Go API is located here                                                     |
+|    cli                 | PFC command-line programs                                                      |
 |    pfc_ingress_tc.c    | PFC RX TC program                                                              |
 |    pfc_egress_tc.c     | PFC TX TC program                                                              |
 |    attach_tc.sh        | Attach TC binary to network interface                                          |
 |    detach_tc.sh        | Detach TC binary from network interface                                        |
 |    reattach_tc.sh      | Reattach new TC binary to network interface                                    |
 |    show_tc.sh          | Show what is attached to network interface                                     |
-|    cli_cfg.c           | CLI to configure basic setup of PFC                                            |
-|    cli_tunnel.c        | CLI to configure GUE tunnel local and remote endpoint                          |
-|    cli_service.c       | CLI to configure service specific info (group-id, service-id, key, ips, ports) |
-|    cli_gc.c            | streamlined cli_service to display dynamic sessions                            |
-
 
 ## Description
 
