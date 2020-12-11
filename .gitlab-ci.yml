@@ -11,4 +11,4 @@ make:
     - make tar
   artifacts:
     paths:
-      - pfc.tar.bz2
+      - pkg/pfc.tar.bz2

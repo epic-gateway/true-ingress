@@ -1,10 +1,10 @@
 SOURCES = libbpf/src headers common src/cli src/bpf test/docker src/go
 CLEAN = $(addsuffix _clean,$(SOURCES))
-TARFILE = pfc.tar.bz2
+TARFILE = pkg/pfc.tar.bz2
 
 .PHONY: clean $(SOURCES) $(CLEAN) clean-tar check test prod-img
 
-all: build check
+all: tar
 
 clean: $(CLEAN) clean-tar
 
@@ -63,7 +63,7 @@ $(SOURCES):
 	$(MAKE) -C $@
 
 clean-tar:
-	rm -f $(TARFILE)
+	rm -rf pkg
 
 $(CLEAN):
 	$(MAKE) -C $(subst _clean,,$@) clean
