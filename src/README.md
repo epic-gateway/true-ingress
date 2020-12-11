@@ -2,16 +2,15 @@
 
 ## Source structure
 
-| Directory name         | Description                                                                    |
-| ---------------------- | ------------------------------------------------------------------------------ |
-|    go                  | PFC Go API is located here                                                     |
-|    cli                 | PFC command-line programs                                                      |
-|    pfc_ingress_tc.c    | PFC RX TC program                                                              |
-|    pfc_egress_tc.c     | PFC TX TC program                                                              |
-|    attach_tc.sh        | Attach TC binary to network interface                                          |
-|    detach_tc.sh        | Detach TC binary from network interface                                        |
-|    reattach_tc.sh      | Reattach new TC binary to network interface                                    |
-|    show_tc.sh          | Show what is attached to network interface                                     |
+| Directory name   | Description                                    |
+| ---------------- | ---------------------------------------------- |
+| go               | Go API                                         |
+| cli              | Command-line programs                          |
+| bpf              | BPF programs                                   |
+| attach_tc.sh     | Attach TC binary to network interface          |
+| detach_tc.sh     | Detach TC binary from network interface        |
+| reattach_tc.sh   | Reattach new TC binary to network interface    |
+| show_tc.sh       | Show what is attached to network interface     |
 
 ## Description
 
