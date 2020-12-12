@@ -29,15 +29,13 @@ int pfc_encap(struct __sk_buff *skb)
     } else {
         bpf_print("PFC-Encap (iif %u TX) >>>> PKT # %u, len %u\n", skb->ifindex, stats_update(skb->ifindex, STAT_IDX_TX, skb), skb->len);
     }
-//    bpf_print("  gso_segs %u\n", skb->gso_segs);
-//    bpf_print("  gso_size %u\n", skb->gso_size);
 
     // get config
     __u32 key = skb->ifindex;
     struct cfg_if *iface = bpf_map_lookup_elem(&map_config, &key);
     ASSERT(iface != 0, dump_action(TC_ACT_UNSPEC), "ERROR: Config not found!\n", dump_pkt(skb));
     struct config *cfg = &iface->queue[(skb->ifindex == skb->ingress_ifindex) ? CFG_IDX_RX : CFG_IDX_TX];
-    
+
     if (cfg->prog == CFG_PROG_NONE) {
         bpf_print("cfg[%u]->prog = CFG_PROG_ENCAP\n", (skb->ifindex == skb->ingress_ifindex) ? CFG_IDX_RX : CFG_IDX_TX);
         cfg->prog = CFG_PROG_ENCAP;
@@ -45,7 +43,6 @@ int pfc_encap(struct __sk_buff *skb)
     }
 
     // log identification info
-//    bpf_print("ID %s(%u) Flags %x\n", cfg->name, cfg->id, cfg->flags);
     bpf_print("ID: \'%s\'    Flags: %u\n", cfg->name, cfg->flags);
 
     // dump packet
@@ -55,7 +52,6 @@ int pfc_encap(struct __sk_buff *skb)
 
     // parse packet
     struct headers hdr = { 0 };
-//    ASSERT(parse_headers(skb, &hdr) != TC_ACT_SHOT, dump_action(TC_ACT_OK), "Uninteresting packet type, IGNORING\n", dump_pkt(skb));
     if (parse_headers(skb, &hdr) == TC_ACT_SHOT) {
         return dump_action(TC_ACT_UNSPEC);
     }
@@ -65,39 +61,17 @@ int pfc_encap(struct __sk_buff *skb)
     struct endpoint dep = { 0 }, sep = { 0 };
     // get Destination EP
     parse_dest_ep(&dep, &hdr);
-    //bpf_print("Parsed Dest EP: ip %x, port %u, proto %u\n", dep.ip, bpf_ntohs(dep.port), bpf_ntohs(dep.proto));
 
     // check ROLE
     if (cfg->flags & CFG_TX_PROXY) {
-        //bpf_print("Is PROXY\n");
 
         // is Service endpoint?
         struct encap_key ekey = { dep, bpf_ntohl(skb->mark) };
-        //__u32 *ptr = (__u32*)&ekey;
-        //bpf_print("encap KEY: %x%x%x\n", ptr[0], ptr[1], ptr[2]);
         struct service *svc = bpf_map_lookup_elem(&map_encap, &ekey);
         if (svc) {
-/*            if (skb->mark) {
-                __u32 key = skb->mark;
-                struct mac mac_remote = { 0 };
-                // Update destination MAC
-                int ret = bpf_skb_load_bytes(skb, 6, mac_remote.value, 6);
-                if (ret < 0) {
-                    bpf_print("bpf_skb_load_bytes: %d\n", ret);
-                    return dump_action(TC_ACT_SHOT);
-                }
-
-                bpf_print("Update proxy MAC: ifindex %u -> MAC %x\n", key, bpf_ntohl(*(__u32*)&(mac_remote.value[2])));
-
-                // update TABLE-PROXY
-                bpf_map_update_elem(&map_proxy, &key, &mac_remote, BPF_ANY);
-            }
-*/
             bpf_print("  tag %u\n", skb->mark);
             bpf_print("GUE Encap Service: group-id %u, service-id %u, tunnel-id %u\n",
                       bpf_ntohs(svc->identity.service_id), bpf_ntohs(svc->identity.group_id), bpf_ntohl(svc->key.tunnel_id));
-            //__u64 *ptr = (__u64 *)svc->key.value;
-            //bpf_print("    tunnel KEY %lx%lx\n", ptr[0], ptr[1]);
             __u32 key = bpf_ntohl(svc->key.tunnel_id);
             struct tunnel *tun = bpf_map_lookup_elem(&map_tunnel, &key);
             ASSERT(tun, dump_action(TC_ACT_UNSPEC), "ERROR: tunnel-id %u not found\n", key);
@@ -106,9 +80,6 @@ int pfc_encap(struct __sk_buff *skb)
             bpf_print("GUE Encap Tunnel: id %u\n", key);
             bpf_print("    FROM %x:%u\n", tun->ip_local, bpf_ntohs(tun->port_local));
             bpf_print("    TO   %x:%u\n", tun->ip_remote, bpf_ntohs(tun->port_remote));
-
-            // fix MSS
-            //set_mss(skb, 1400);
 
             __u32 via_ifindex = 0;
             ret = gue_encap_v4(skb, tun, svc);
@@ -154,8 +125,6 @@ int pfc_encap(struct __sk_buff *skb)
 
         // check output mode
         if (cfg->flags & CFG_TX_SNAT) {
-            //bpf_print("Checking SNAT\n");
-
             // get Source EP
             parse_src_ep(&sep, &hdr);
 
@@ -172,15 +141,9 @@ int pfc_encap(struct __sk_buff *skb)
             }
         }
     } else {
-        //bpf_print("Is NODE\n");
-
         struct encap_key ekey = { dep, 0 };
         struct service *svc = bpf_map_lookup_elem(&map_encap, &ekey);
         if (svc) {
-//                __u32 *tmp = (__u32 *)svc;
-//                bpf_print("%x %x %x\n", tmp[0], tmp[1], tmp[2]);
-//                bpf_print("%x %x %x\n", tmp[3], tmp[4], tmp[5]);
-
             if (svc->key.encap.ep.proto) {  // DSR mode
                 bpf_print("DSR: SNAT to %x:%u\n", svc->key.encap.ep.ip, bpf_ntohs(svc->key.encap.ep.port));
 
@@ -189,10 +152,6 @@ int pfc_encap(struct __sk_buff *skb)
                 bpf_print("Regular: GUE Encap Service: group-id %u, service-id %u, tunnel-id %u\n",
                         bpf_ntohs(svc->identity.service_id), bpf_ntohs(svc->identity.group_id), bpf_ntohl(svc->key.tunnel_id));
 
-//                bpf_print("GUE Encap Service: service-id %x, group-id %x, tunnel-id %x\n",
-//                          svc->identity.service_id, svc->identity.group_id, svc->key.tunnel_id);
-                //__u64 *ptr = (__u64 *)svc->key.value;
-                //bpf_print("    tunnel KEY %lx%lx\n", ptr[0], ptr[1]);
                 __u32 key = bpf_ntohl(svc->key.tunnel_id);
                 struct tunnel *tun = bpf_map_lookup_elem(&map_tunnel, &key);
                 ASSERT(tun, dump_action(TC_ACT_UNSPEC), "ERROR: tunnel-id %u not found\n", key);
@@ -201,9 +160,6 @@ int pfc_encap(struct __sk_buff *skb)
                 bpf_print("Regular: GUE Encap Tunnel: id %u\n", key);
                 bpf_print("    FROM %x:%u\n", tun->ip_local, bpf_ntohs(tun->port_local));
                 bpf_print("    TO   %x:%u\n", tun->ip_remote, bpf_ntohs(tun->port_remote));
-
-                // fix MSS
-                //set_mss(skb, 1400);
 
                 ret = gue_encap_v4(skb, tun, svc);
                 ASSERT (ret != TC_ACT_SHOT, dump_action(TC_ACT_SHOT), "GUE Encap Failed!\n");

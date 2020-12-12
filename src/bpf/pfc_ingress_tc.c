@@ -30,15 +30,13 @@ int pfc_decap(struct __sk_buff *skb)
     } else {
         bpf_print("PFC-Decap (iif %u TX) >>>> PKT # %u, len %u\n", skb->ifindex, pktnum, skb->len);
     }
-//    bpf_print("  gso_segs %u\n", skb->gso_segs);
-//    bpf_print("  gso_size %u\n", skb->gso_size);
 
     // get config
     __u32 key = skb->ifindex;
     struct cfg_if *iface = bpf_map_lookup_elem(&map_config, &key);
     ASSERT(iface != 0, dump_action(TC_ACT_UNSPEC), "ERROR: Config not found!\n", dump_pkt(skb));
     struct config *cfg = &iface->queue[(skb->ifindex == skb->ingress_ifindex) ? CFG_IDX_RX : CFG_IDX_TX];
-    
+
     if (cfg->prog == CFG_PROG_NONE) {
         bpf_print("cfg[%u]->prog = CFG_PROG_DECAP\n", (skb->ifindex == skb->ingress_ifindex) ? CFG_IDX_RX : CFG_IDX_TX);
         cfg->prog = CFG_PROG_DECAP;
@@ -55,7 +53,6 @@ int pfc_decap(struct __sk_buff *skb)
 
     // parse packet
     struct headers hdr = { 0 };
-//    ASSERT(parse_headers(skb, &hdr) != TC_ACT_SHOT, dump_action(TC_ACT_OK), "Uninteresting packet type, IGNORING\n", dump_pkt(skb));
     if (parse_headers(skb, &hdr) == TC_ACT_SHOT) {
         return dump_action(TC_ACT_UNSPEC);
     }
@@ -69,10 +66,7 @@ int pfc_decap(struct __sk_buff *skb)
     if (cfg->flags & CFG_RX_GUE) {
         int ret = 0;
         // is GUE endpoint?
-        //bpf_print("Decap key %lx\n", *(__u64*)&ep);
-
         if (bpf_map_lookup_elem(&map_decap, &ep)) {
-            //bpf_print("Parsing GUE header\n");
             void *data_end = (void *)(long)skb->data_end;
             // control or data
             struct guehdr *gue = hdr.payload;
@@ -110,8 +104,6 @@ int pfc_decap(struct __sk_buff *skb)
                 struct gueext5hdr *gueext = (struct gueext5hdr *)&gue[1];
                 ASSERT((void*)&gueext[1] <= data_end, dump_action(TC_ACT_SHOT), "ERROR: (GUEext) Invalid packet size\n");
 
-                //__u32 id = bpf_ntohl(gueext->id);
-                //bpf_print("GUE Data: id %x (service-id %u, group-id %u)\n", id, id & 0xFFFF, (id >> 16) & 0xFFFF);
                 // check service identity
                 ASSERT1(service_verify(gueext) == 0, dump_action(TC_ACT_SHOT), );
 
@@ -146,7 +138,6 @@ int pfc_decap(struct __sk_buff *skb)
                     bpf_print("Redirecting to container ifindex %u TX\n", ifindex);
                     return dump_action(bpf_redirect(ifindex, 0));
                 } else {                // usually NODE
-                    //bpf_print("Create/refresh tracking record\n");
                     struct encap_key skey = { { 0 } , 0 };
                     struct endpoint dep = { 0 };
                     ASSERT(parse_ep(skb, &skey.ep, &dep) != TC_ACT_SHOT, dump_action(TC_ACT_UNSPEC), "ERROR: SRC EP parsing failed!\n");
