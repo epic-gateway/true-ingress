@@ -164,7 +164,6 @@ docker exec -it ${CLIENT} bash -c "ping -c1 ${PROXY_IP}"
 # PFC >>>> attach TAGging BPF to veth ingress
 docker exec -it ${PROXY} bash -c "sudo tc qdisc add dev veth1 clsact"
 docker exec -it ${PROXY} bash -c "tc filter add dev veth1 ingress bpf direct-action object-file pfc_tag_rx_tc.o sec .text"
-#docker exec -it ${PROXY} bash -c "tc filter add dev veth1 egress  bpf direct-action object-file pfc_tag_tx_tc.o sec .text"
 # <<<<
 
 # Configure forwarding

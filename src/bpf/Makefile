@@ -3,8 +3,7 @@
 BPF_TARGETS := \
     pfc_ingress_tc \
     pfc_egress_tc \
-    pfc_tag_rx_tc \
-    pfc_tag_tx_tc
+    pfc_tag_rx_tc
 
 LIBBPF_DIR = ../../libbpf/src/
 COMMON_DIR = ../../common/
