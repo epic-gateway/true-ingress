@@ -17,7 +17,6 @@
 #include "dump_tc.h"
 #include "maps_tc.h"
 
-//__section("egress")
 int tag_tx(struct __sk_buff *skb)
 {
     if (skb->ifindex == skb->ingress_ifindex) {

@@ -21,7 +21,6 @@
 
 #include "pfc_tc.h"
 
-//__section("ingress")
 int pfc_decap(struct __sk_buff *skb)
 {
     __u32 pktnum = stats_update(skb->ifindex, STAT_IDX_RX, skb);

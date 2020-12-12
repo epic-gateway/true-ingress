@@ -21,7 +21,6 @@
 
 #include "pfc_tc.h"
 
-//__section("egress")
 int pfc_encap(struct __sk_buff *skb)
 {
     if (skb->ifindex == skb->ingress_ifindex) {
