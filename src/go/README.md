@@ -2,8 +2,6 @@
 
 Provides Go bindings to setup/delete/list service forwarding in PFC.
 
-Contain 2 files
-
 ### pfc/pfc.go
 
 API itself. Provides set of functions to add, delete, get list of services.
@@ -97,3 +95,10 @@ List all configured tunnels and services.
 Show help.
 
     pfc_cli_go help
+
+### gue_ping_svc_auto.go
+
+Go version of PFC daemon which:
+- periodically sends GUE ping for all configured tunnels
+- periodically check dynamic client sessions and remove expired
+

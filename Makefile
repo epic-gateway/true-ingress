@@ -1,4 +1,4 @@
-SOURCES = libbpf/src headers common src/cli src/bpf test/docker src/go
+SOURCES = libbpf/src headers common src/cli src/bpf src/go
 CLEAN = $(addsuffix _clean,$(SOURCES))
 TARFILE = pkg/pfc.tar.bz2
 
@@ -40,7 +40,6 @@ check:
 	$(MAKE) -C src attach detach
 
 go:
-	$(MAKE) -C test/docker go
 	$(MAKE) -C src/go go
 
 tar: build
@@ -53,7 +52,7 @@ tar: build
 	cp ./src/cli/cli_cfg ./src/cli/cli_service ./src/cli/cli_tunnel ./src/cli/cli_gc pkg/bin/
 
 	# for GUE Ping
-	cp ./test/docker/gue_ping_svc_auto ./src/go/pfc_cli_go pkg/bin/
+	cp ./src/go/gue_ping_svc_auto ./src/go/pfc_cli_go pkg/bin/
 
 	chmod +x pkg/bin/*
 
