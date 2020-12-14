@@ -5,7 +5,8 @@ CI_COMMIT_REF_NAME ?= dev
 all: go
 
 clean:
-	rm -rf pfc_cli_go
+	rm -rf pfc_cli_go gue_ping_svc_auto
 
 go:
+	go build -ldflags "-X main.version=${CI_COMMIT_REF_NAME}" -tags 'osusergo netgo' gue_ping_svc_auto.go
 	go build -ldflags "-X main.version=${CI_COMMIT_REF_NAME}" -tags 'osusergo netgo' pfc_cli_go.go

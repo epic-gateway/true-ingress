@@ -37,12 +37,6 @@ You can optionally specify docker image name otherwise default name from _test/c
 
 ## Additional scripts
 
-### gue_ping_svc_auto.go
-
-Go version of PFC daemon which:
-- periodically sends GUE ping for all configured tunnels
-- periodically check dynamic client sessions and remove expired
-
 ### server.py
 
 Python HTTP server implementation which can serve content of local files.

@@ -65,7 +65,7 @@ cli_tunnel
 cli_service
 cli_gc
 cli_nat
-test/docker/gue_ping_svc_auto
+src/go/gue_ping_svc_auto
 src/go/pfc_cli_go
 
 # tracing userspace programs
