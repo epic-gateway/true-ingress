@@ -37,12 +37,7 @@ if [ "${VERBOSE}" ]; then
 fi
 
 if [ "${GUE_DELAY}" ]; then
-    #nohup bash -c "python3 /opt/acnodal/bin/gue_ping_svc_auto.py ${DELAY}" &
-    #nohup bash -c "python3 /opt/acnodal/bin/gue_ping_svc_auto.py ${DELAY} &> /tmp/gue_ping.log" &
-#    nohup python3 /opt/acnodal/bin/gue_ping_svc_auto.py ${GUE_DELAY} ${SWEEP_DELAY} ${SWEEP_CNT} &
-
     nohup gue_ping_svc_auto ${GUE_DELAY} ${SWEEP_DELAY} ${SWEEP_CNT} &> /tmp/gue_ping.log &
-    #ps aux | grep "gue_ping"
 fi
 
 attach_tc.sh ${NIC}
