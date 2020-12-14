@@ -21,11 +21,8 @@ if [ "${NODES}" ] ; then
     do
         echo -e "\n# PING ${NODE} -> ${IP}"
         docker exec -it ${NODE} bash -c "ping -q -c3 ${IP}"
-        #docker exec -it ${NODE} bash -c "traceroute ${IP}"
-        #docker exec -it ${NODE} bash -c "nping -c3 --icmp ${IP}"
     done
 else
     ping -q -c3 ${IP}
-    #nping -c3 --icmp ${IP}
 fi
 

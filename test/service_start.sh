@@ -48,7 +48,6 @@ if [ ! "${CHECK}" ] ; then
     echo "# Creating '${SERVICE_DIR}'"
     docker exec -it ${NODE} bash -c "mkdir -p ${SERVICE_DIR}"
 fi
-#docker exec -it ${NODE} bash -c "if [ -d "${SERVICE_DIR}" ] ; then mkdir -p ${SERVICE_DIR} ; fi"
 
 CHECK=`docker exec -it ${NODE} bash -c "ls ${ADDR_DIR}" | grep -v "No such file or directory"`
 if [ ! "${CHECK}" ] ; then
@@ -56,7 +55,6 @@ if [ ! "${CHECK}" ] ; then
     echo "# Creating '${ADDR_DIR}'"
     docker exec -it ${NODE} bash -c "mkdir -p ${ADDR_DIR}"
 fi
-#docker exec -it ${NODE} bash -c "if [ -d "${ADDR_DIR}" ] ; then mkdir -p ${ADDR_DIR} ; fi"
 
 # check service id
 CHECK=`docker exec -it ${NODE} bash -c "ls ${SERVICE_DIR}/${SERVICE_ID}" | grep -v "No such file or directory"`
@@ -82,8 +80,6 @@ echo -e "\n==============================================="
 echo "# SERVICE(${SERVICE_ID}).START [3/${STEPS}] : Create service on '${NODE}'"
 # create service record
 docker exec -it ${NODE} bash -c "mkdir -p ${SERVICE_DIR}/${SERVICE_ID}"
-
-#docker exec -it ${NODE} bash -c "echo -e \"ID=${SERVICE_ID}\nPROTO=tcp\nIP=${IP}\nPORT=${PORT}\nLOG=${SERVICE_DIR}/${SERVICE_ID}/log\" > ${SERVICE_DIR}/${SERVICE_ID}/info"
 
 # assign IP if not used yet
 CHECK=`docker exec -it ${NODE} bash -c "ls ${ADDR_DIR}/${IP}" | grep -v "No such file or directory"`
@@ -118,11 +114,8 @@ if [ -x "./${SERVICE}_check.sh" ] ; then
     echo -e "\n==============================================="
     echo "# SERVICE(${SERVICE_ID}).START [5/${STEPS}] : Check service is running"
 
-    #echo -e "\n==============================================="
-    #echo -e "\n### CURL from '${NODE}' to ${IP}:${PORT}"
     # syntax: $0     <docker>  <ip>        <port>
     ./${SERVICE}_check.sh ${NODE} ${IP} ${PORT} ${SERVICE_ID}
-    #./test_curl.sh ${IP} ${PORT} ${NODE}
 else
     echo "./${SERVICE}_check.sh not awailable for check."
 fi

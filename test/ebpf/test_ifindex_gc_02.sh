@@ -62,14 +62,12 @@ SWEEP_COUNT=5
 
 
 # PFC >>>> Attach PFC to eth on EGW
-#docker exec -it ${PROXY} bash -c "pfc_start.sh ${PROXY_NIC} "${PROXY}" 9 9 ${PROXY_PORT_MIN} ${PROXY_PORT_MAX}"
 if [ ! "$(docker exec -it ${PROXY} bash -c \"tc qdisc show dev ${PROXY_NIC} | grep clsact\")" ]; then
     docker exec -it ${PROXY} bash -c "sudo tc qdisc add dev ${PROXY_NIC} clsact"
 fi
 docker exec -it ${PROXY} bash -c "tc filter add dev ${PROXY_NIC} ingress bpf direct-action object-file pfc_ingress_tc.o sec .text"
 
 docker exec -it ${PROXY} bash -c "cli_cfg set ${PROXY_NIC} 0 0 9 \"${PROXY}-ETH RX\""
-#docker exec -it ${PROXY} bash -c "cli_cfg set ${PROXY_NIC} 1 0 9 \"${PROXY}-ETH TX\""
 
 docker exec -it ${PROXY} bash -c "port_init.sh ${PROXY_PORT_MIN} ${PROXY_PORT_MAX}"
 # <<<<
@@ -84,9 +82,7 @@ if [ ! "$(docker exec -it ${PROXY} bash -c \"tc qdisc show dev br0 | grep clsact
 fi
 docker exec -it ${PROXY} bash -c "tc filter add dev br0 ingress bpf direct-action object-file pfc_egress_tc.o sec .text"
 
-##docker exec -it ${PROXY} bash -c "cli_cfg set br0 0 ${DEFAULT_IFINDEX} 9 'EGW-BRx RX'"
 docker exec -it ${PROXY} bash -c "cli_cfg set br0 1 ${DEFAULT_IFINDEX} 9 'EGW-BR-R RX'"
-#docker exec -it ${PROXY} bash -c "cli_cfg set br0 1 0 9 'EGW-BR RX'"
 # <<<<
 
 # DEBUG >>>>
@@ -95,10 +91,8 @@ docker exec -it ${PROXY} bash -c "show_tc.sh ; cli_cfg get all"
 
 
 # PFC >>>> Attach PFC to eth on NODE
-#docker exec -it ${NODE} bash -c "pfc_start.sh ${NODE_NIC} "${NODE}" 9 8 ${NODE_PORT_MIN} ${NODE_PORT_MAX} ${DELAY}"
 docker exec -itd ${NODE} bash -c "gue_ping_svc_auto ${DELAY} ${SWEEP_DELAY} ${SWEEP_COUNT} &> /tmp/gue_ping.log"
 
-#docker exec -it ${NODE} bash -c "attach_tc.sh ${NODE_NIC}"
 if [ ! "$(docker exec -it ${NODE} bash -c \"tc qdisc show dev ${NODE_NIC} | grep clsact\")" ]; then
     docker exec -it ${NODE} bash -c "sudo tc qdisc add dev ${NODE_NIC} clsact"
 fi
@@ -147,15 +141,6 @@ echo "[${NODE_TUN_PORT}]"
 
 # INFRA >>>> Setup PROXY NS1 -> create namespace, attach veth1, add it to bridge, assign public ip 5.5.5.5
 ./ns_add.sh ${PROXY} "proxy1" ${PROXY_IP} 1 br0
-#./ns_add.sh ${PROXY} "proxy2" 10.0.0.2 2 br0
-#./ns_add.sh ${PROXY} "proxy3" 10.0.0.3 3 br0
-#./ns_add.sh ${PROXY} "proxy4" 10.0.0.4 4 br0
-#./ns_add.sh ${PROXY} "proxy5" 10.0.0.5 5 br0
-#./ns_add.sh ${PROXY} "proxy6" 10.0.0.6 6 br0
-#./ns_add.sh ${PROXY} "proxy7" 10.0.0.7 7 br0
-#./ns_add.sh ${PROXY} "proxy8" 10.0.0.8 8 br0
-#./ns_add.sh ${PROXY} "proxy9" 10.0.0.9 9 br0
-#./ns_add.sh ${PROXY} "proxy10" 10.0.0.10 10 br0
 
 docker exec -it ${CLIENT} bash -c "ip route add ${PROXY_IP}/32 via ${PROXY_TUN_IP} dev eth1"
 docker exec -it ${CLIENT} bash -c "ping -c1 ${PROXY_IP}"
@@ -198,11 +183,9 @@ fi
 # <<<<
 
 # pfc_add.sh     <nic> <group-id> <service-id> <passwd> <remote-tunnel-ip> <remote-tunnel-port> <proto> <proxy-ip> <proxy-port> <backend-ip> <backend-port>
-#docker exec -it ${PROXY} bash -c "pfc_add.sh ${PROXY_NIC} ${GROUP_ID} ${SERVICE_ID} ${PASSWD} 0 0 ${SERVICE_PROTO} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT} 4"
 docker exec -it ${PROXY} bash -c "cli_tunnel set ${TUNNEL_ID} ${PROXY_TUN_IP} ${PROXY_TUN_PORT} 0 0"
 docker exec -it ${PROXY} bash -c "cli_service set-gw ${GROUP_ID} ${SERVICE_ID} ${PASSWD} ${TUNNEL_ID} ${SERVICE_PROTO} ${SERVICE_IP} ${SERVICE_PORT} ${PROXY_IFINDEX}"
 
-#docker exec -it ${NODE} bash -c "pfc_add.sh ${NODE_NIC} ${GROUP_ID} ${SERVICE_ID} ${PASSWD} ${PROXY_TUN_IP} ${PROXY_TUN_PORT} ${SERVICE_PROTO} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_IP} ${SERVICE_PORT}"
 docker exec -it ${NODE} bash -c "cli_tunnel set ${TUNNEL_ID} ${NODE_TUN_IP} ${NODE_TUN_PORT} ${PROXY_TUN_IP} ${PROXY_TUN_PORT}"
 docker exec -it ${NODE} bash -c "cli_service set-node ${GROUP_ID} ${SERVICE_ID} ${PASSWD} ${TUNNEL_ID}"
 # <<<<
