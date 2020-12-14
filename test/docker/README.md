@@ -43,12 +43,6 @@ Go version of PFC daemon which:
 - periodically sends GUE ping for all configured tunnels
 - periodically check dynamic client sessions and remove expired
 
-### gue_ping_svc_auto.py
-
-Python version of PFC daemon which:
-- periodically sends GUE ping for all configured tunnels
-- periodically check dynamic client sessions and remove expired
-
 ### server.py
 
 Python HTTP server implementation which can serve content of local files.
