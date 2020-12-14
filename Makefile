@@ -50,7 +50,7 @@ tar: build
 	cp ./src/bpf/*.o pkg/bin/
 
 	# Copy CLI
-	cp ./src/cli/cli_cfg ./src/cli/cli_service ./src/cli/cli_tunnel ./src/cli/cli_gc pkg/bin/
+	cp ./src/cli/cli_cfg ./src/cli/cli_service ./src/cli/cli_tunnel pkg/bin/
 
 	# for GUE Ping
 	cp ./test/docker/gue_ping_svc_auto ./src/go/pfc_cli_go pkg/bin/
