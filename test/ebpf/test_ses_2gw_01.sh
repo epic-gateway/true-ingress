@@ -136,16 +136,12 @@ do
     sleep 1
 done
 
-#docker exec -it ${PROXY} bash -c "cli_gc get all | grep 'ENCAP ('"
 docker exec -it ${NODE} bash -c "cli_gc get all | grep 'ENCAP ('"
 
 if [ ! "$(docker exec -it ${PROXY} bash -c "cli_tunnel get ${TUNNEL_ID}" | grep "TUN" | grep ${TUNNEL_ID} | grep -v "0.0.0.0:0")" ] ; then
     echo -e "\nGUE Ping for '${SERVICE_NAME}' \e[31mFAILED\e[0m\n"
     RETURN=1
 else
-    # check traces before
-#    tail -n60 /sys/kernel/debug/tracing/trace
-
     echo -e "\nCreating session #1 (expiration set to ${SWEEP_DELAY}x${SWEEP_COUNT} s)"
     TMP=$(./${SERVICE_TYPE}_check.sh ${CLIENT} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_ID})
     if [ "${VERBOSE}" ]; then
@@ -157,18 +153,13 @@ else
         echo -e "Service '${SERVICE_NAME}' : \e[31mFAILED\e[0m\n"
         RETURN=1
     fi
-
-    # check traces after
-#    tail -n60 /sys/kernel/debug/tracing/trace
 fi
 
-#docker exec -it ${PROXY} bash -c "cli_gc get all | grep 'ENCAP ('"
 docker exec -it ${NODE} bash -c "cli_gc get all | grep 'ENCAP ('"
 
 echo "Waiting 3s"
 sleep 3
 
-#docker exec -it ${PROXY} bash -c "cli_gc get all | grep 'ENCAP ('"
 docker exec -it ${NODE} bash -c "cli_gc get all | grep 'ENCAP ('"
 
 echo -e "\nCreating session #2 (expiration set to ${SWEEP_DELAY}x${SWEEP_COUNT} s)"
@@ -186,7 +177,6 @@ fi
 for (( i=1; i<10; i++ ))
 do
     echo "[$i/10] Sessions:"
-    #docker exec -it ${PROXY} bash -c "cli_gc get all | grep 'ENCAP ('"
     docker exec -it ${NODE} bash -c "cli_gc get all | grep 'ENCAP ('"
     sleep 1
 done

@@ -27,10 +27,3 @@ fi
 
 echo "docker exec -it $1 tcpdump ${VERBOSITY} -i $nic \"$3\""
 docker exec -it $1 tcpdump ${VERBOSITY} -i $nic "$3"
-
-# using tshark instead
-#VERBOSITY="-nxV"
-#VERBOSITY="-nx"
-#echo "docker exec -it $1 tshark ${VERBOSITY} -i $nic \"$3\""
-#docker exec -it $1 tshark ${VERBOSITY} -i $nic "$3"
-

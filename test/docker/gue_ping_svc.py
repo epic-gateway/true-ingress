@@ -35,13 +35,11 @@ def main(argv):
         while (1):
             print(".")
 
-            #print("python3 /opt/acnodal/bin/gue_ping_svc_once.py %s %s %s %s 0 %s '%s'" % (argv[1], argv[3], argv[4], argv[5], argv[6], argv[7]))
             os.popen("python3 /opt/acnodal/bin/gue_ping_svc_once.py %s %s %s %s %s %s '%s'" % (argv[1], argv[3], argv[4], argv[5], argv[6], argv[7], argv[8]))
 
             time.sleep(delay)
     except KeyboardInterrupt:
         print("Interrupted by user")
-#        raise 
 
 if __name__ == '__main__':
     main(sys.argv)

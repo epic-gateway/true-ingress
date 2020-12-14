@@ -10,16 +10,9 @@ if [ $5 ] ; then
     SRC_PORT="--local-port $5"
 fi
 
-#echo "CURL: NODE='${NODE}' IP='${IP}' PORT='${PORT}'"
-
-#CMD="docker exec -it ${NODE} bash -c \"curl ${IP}:${PORT}/tmp/hello\""
 echo ""
 echo "#####################################################"
 echo "From '${NODE}' exec 'curl http://${IP}:${PORT}/hello':"
 echo ""
-#echo "docker exec -it ${NODE} bash -c curl --connect-timeout 3 ${IP}:${PORT}/tmp/hello"
 docker exec -it ${NODE} bash -c "curl ${SRC_PORT} --connect-timeout 3 ${IP}:${PORT}/hello"
 echo "#####################################################"
-#echo "LOG (/tmp/${SERVICE_ID}.log):"
-#docker exec -it ${NODE} bash -c "curl --connect-timeout 3 ${IP}:${PORT}/tmp/${SERVICE_ID}.log"
-#echo "#####################################################"

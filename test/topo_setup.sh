@@ -186,9 +186,6 @@ do
     echo "Enabling Proxy ARP..."
     docker exec -it ${prxs[i]} bash -c "echo 1 > /proc/sys/net/ipv4/conf/all/proxy_arp"
 
-    # >>>>>>
-    #docker exec -it ${prxs[i]} bash -c "ip addr add ${PROXY_IP[i]} dev lo"        # need different ip per proxy
-    # ======
     # create bridge
     docker exec -it ${prxs[i]} bash -c "brctl addbr br0"
 #    docker exec -it ${prxs[i]} bash -c "ip link set br0 address aa:bb:cc:dd:ee:ff"  # workaround to have static MAC on bridge

@@ -13,9 +13,6 @@ DELAY=$6
 
 echo "PFC: TUNNEL PING: NODE='${NODE}' SERVICE_ID='${SERVICE_ID}' PROTO='${PROTO}' REMOTE_IP='${REMOTE_IP}' REMOTE_PORT='${REMOTE_PORT}' LOCAL_PORT='${LOCAL_PORT}' DELAY='${DELAY}'"
 
-#echo "docker exec -itd ${NODE} bash -c nping -c0 --delay ${DELAY}s --udp --source-port ${LOCAL_PORT} --dest-port ${REMOTE_PORT} ${REMOTE_IP}"
-#docker exec -itd ${NODE} bash -c "sleep 3 ; nping -c0 --delay ${DELAY}s --udp --source-port ${LOCAL_PORT} --dest-port ${REMOTE_PORT} ${REMOTE_IP}"
-
 docker exec -itd ${NODE} bash -c "python3 gue_ping_tun.py eth1 ${DELAY} ${REMOTE_IP} ${REMOTE_PORT} ${LOCAL_PORT} ${SERVICE_ID}"
 
 echo -e "\n==============================================="
