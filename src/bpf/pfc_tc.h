@@ -37,13 +37,14 @@ struct guehdr {
     __u16 flags;
 };
 
-struct gueext1hdr {
-    __u32   id;
+struct gueexthdr {
+    __u32   gidsid;
+    __u8    key[16];
 };
 
-struct gueext5hdr {
-    __u32   id;
-    __u8    key[16];
+struct guepinghdr {
+    struct gueexthdr ext;
+    __u32   tunnelid;
 };
 
 struct tunhdr {
@@ -548,17 +549,15 @@ int update_tunnel_from_guec(__u32 tunnel_id, struct headers *hdr)
     bpf_print("GUE Control: Updating tunnel-id %u remote to %x:%u\n", tunnel_id, ep.ip, bpf_ntohs(ep.port));
     tun->ip_remote = ep.ip;
     tun->port_remote = ep.port;
-    //__builtin_memcpy(&tun->mac_remote, hdr->eth->h_source, ETH_ALEN);
-    //__builtin_memcpy(&tun->mac_local, hdr->eth->h_dest, ETH_ALEN);
 
     return TC_ACT_SHOT;
 }
 
 static inline
-int service_verify(struct gueext5hdr *gueext)
+int service_verify(struct gueexthdr *gueext)
 {
-    struct identity id = *(struct identity *)&gueext->id;
-    struct verify *vrf = bpf_map_lookup_elem(&map_verify, (struct identity *)&gueext->id);
+    struct identity id = *(struct identity *)&gueext->gidsid;
+    struct verify *vrf = bpf_map_lookup_elem(&map_verify, (struct identity *)&gueext->gidsid);
     ASSERT(vrf != 0, dump_action(TC_ACT_UNSPEC), "ERROR: Service (group-id %u, service-id %u) not found!\n", bpf_ntohs(id.service_id), bpf_ntohs(id.group_id));
 
     __u64 *ref_key = (__u64 *)vrf->value;

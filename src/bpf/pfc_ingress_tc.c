@@ -74,20 +74,14 @@ int pfc_decap(struct __sk_buff *skb)
             ASSERT1(gue->version == 0, dump_action(TC_ACT_SHOT), bpf_print("ERROR: Unsupported GUE version %u\n", gue->version));
 
             if (gue->control) {
-                if (gue->hlen == 1) {
-                    bpf_print("GUE Control: ID\n");
-                    struct gueext1hdr *gueext = (struct gueext1hdr *)&gue[1];
-                    ASSERT((void*)&gueext[1] <= data_end, dump_action(TC_ACT_SHOT), "ERROR: (GUEext) Invalid packet size\n");
-
-                    return dump_action(update_tunnel_from_guec(bpf_ntohl(gueext->id), &hdr));
-                } else if (gue->hlen == 5) {
-                    bpf_print("GUE Control: ID + KEY\n");
-                    struct gueext5hdr *gueext = (struct gueext5hdr *)&gue[1];
+                if (gue->hlen == 6) {
+                    bpf_print("GUE Control: IDs + KEY\n");
+                    struct guepinghdr *gueext = (struct guepinghdr *)&gue[1];
                     ASSERT1((void*)&gueext[1] <= data_end, dump_action(TC_ACT_SHOT), bpf_print("ERROR: (GUEext) Invalid packet size\n"));
 
-                    ASSERT1(service_verify(gueext) == 0, dump_action(TC_ACT_SHOT), );
+                    ASSERT1(service_verify(&gueext->ext) == 0, dump_action(TC_ACT_SHOT), bpf_print("ERROR: (GUEext) Service verify failure\n"));
 
-                    return dump_action(update_tunnel_from_guec(bpf_ntohl(gueext->id), &hdr));
+                    return dump_action(update_tunnel_from_guec(bpf_ntohl(gueext->tunnelid), &hdr));
                 } else {
                     ASSERT(0, dump_action(TC_ACT_SHOT), "ERROR: Unexpected GUE control HLEN %u\n", gue->hlen);
                 }
@@ -99,19 +93,19 @@ int pfc_decap(struct __sk_buff *skb)
                 ASSERT(gue->hlen != 0, dump_action(TC_ACT_UNSPEC), "Linux GUE (no ext fields)\n");              // FIXME: remove when linux infra not used anymore
                 ASSERT(gue->hlen == 5, dump_action(TC_ACT_SHOT), "Unexpected GUE data HLEN %u\n", gue->hlen);
 
-                struct gueext5hdr *gueext = (struct gueext5hdr *)&gue[1];
+                struct gueexthdr *gueext = (struct gueexthdr *)&gue[1];
                 ASSERT((void*)&gueext[1] <= data_end, dump_action(TC_ACT_SHOT), "ERROR: (GUEext) Invalid packet size\n");
 
                 // check service identity
                 ASSERT1(service_verify(gueext) == 0, dump_action(TC_ACT_SHOT), );
 
                 // get verify structure
-                struct verify *verify = bpf_map_lookup_elem(&map_verify, (struct identity *)&gueext->id);
-                ASSERT(verify != 0, dump_action(TC_ACT_UNSPEC), "ERROR: Service id %u not found!\n", bpf_ntohl(gueext->id));
+                struct verify *verify = bpf_map_lookup_elem(&map_verify, (struct identity *)&gueext->gidsid);
+                ASSERT(verify != 0, dump_action(TC_ACT_UNSPEC), "ERROR: Service id %u not found!\n", bpf_ntohl(gueext->gidsid));
 
                 struct service svc = {{ 0 }, {{ 0 }, 0, {{ 0 }, 0 }}, 0 };
                 __builtin_memcpy(&svc.key, verify, sizeof(*verify));
-                svc.identity = *(struct identity *)&gueext->id;
+                svc.identity = *(struct identity *)&gueext->gidsid;
                 svc.hash = pktnum;
 
                 ASSERT (TC_ACT_OK == gue_decap_v4(skb), dump_action(TC_ACT_SHOT), "GUE Decap Failed!\n");
