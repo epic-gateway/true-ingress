@@ -176,17 +176,6 @@ struct config {
     char    name[CFG_NAME_SIZE];
 };
 
-static inline struct config *
-make_config(struct config  *ref,
-             __u32   id,
-             __u32   flags)
-{
-    ref->prog   = CFG_PROG_NONE;
-    ref->id     = id;
-    ref->flags  = flags;
-    return ref;
-}
-
 struct cfg_if {
     struct config queue[CFG_IDX_MAX];
 };
