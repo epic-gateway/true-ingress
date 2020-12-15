@@ -177,37 +177,23 @@ bool map_cfg_set(int map_fd, unsigned int ifindex, unsigned int qid, uint flags,
     struct cfg_if value = { 0 };
     char ifname[32];
 
-    if (bpf_map_lookup_elem(map_fd, &ifindex, &value)) {  // create new
-        struct config *cfg = &value.queue[qid];
+    // read the existing struct (if any)
+    bpf_map_lookup_elem(map_fd, &ifindex, &value);
 
-        cfg->id = 0;
-        cfg->flags = flags;
-        strncpy(cfg->name, name, 16);
+    // update the struct
+    struct config *cfg = &value.queue[qid];
+    cfg->flags = flags;
+    strncpy(cfg->name, name, 16);
 
-        if (bpf_map_update_elem(map_fd, &ifindex, &value, 0)) {
-            fprintf(stderr, "CFG.SET {%u[%u]} (%s[%s]) -> ERR (%d) \'%s\'\n",
-                    ifindex, qid, if_indextoname(ifindex, ifname),
-                    (qid) ? "TX" : "RX", errno, strerror(errno));
-            return false;
-        }
-        printf("CFG.SET {%u[%u]} (%s[%s])\t\tCREATED\n", ifindex, qid,
-                    if_indextoname(ifindex, ifname), (qid) ? "TX" : "RX");
-    } else {    // update existing
-        struct config *cfg = &value.queue[qid];
-
-        cfg->id = id;
-        cfg->flags = flags;
-        strncpy(cfg->name, name, 16);
-
-        if (bpf_map_update_elem(map_fd, &ifindex, &value, 0)) {
-            fprintf(stderr, "CFG.SET {%u[%u]} (%s[%s]) -> ERR (%d) \'%s\'\n",
-                    ifindex, qid, if_indextoname(ifindex, ifname),
-                    (qid) ? "TX" : "RX", errno, strerror(errno));
-            return false;
-        }
-        printf("CFG.SET {%u[%u]} (%s[%s])\t\tUPDATED\n", ifindex, qid,
-                    if_indextoname(ifindex, ifname), (qid) ? "TX" : "RX");
+    // write it back
+    if (bpf_map_update_elem(map_fd, &ifindex, &value, 0)) {
+        fprintf(stderr, "CFG.SET {%u[%u]} (%s[%s]) -> ERR (%d) \'%s\'\n",
+                ifindex, qid, if_indextoname(ifindex, ifname),
+                (qid) ? "TX" : "RX", errno, strerror(errno));
+        return false;
     }
+    printf("CFG.SET {%u[%u]} (%s[%s])\t\tCREATED\n", ifindex, qid,
+           if_indextoname(ifindex, ifname), (qid) ? "TX" : "RX");
 
     return true;
 }
