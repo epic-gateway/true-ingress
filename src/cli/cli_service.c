@@ -47,7 +47,7 @@ void usage(char *prog) {
 //};
 ////////////////////
 void map_verify_print_header() {
-    printf("TABLE-VERIFY:\n\tgid+sid -> security key\t\ttunnel-id\tendpoint\t\tifindex\n");
+    printf("TABLE-VERIFY:\n\tgid+sid ->\tsecurity key\t\ttunnel-id\tendpoint\t\tifindex\n");
     printf("--------------------------------------------------------------------------\n");
 }
 
@@ -65,7 +65,7 @@ void map_verify_print_record(struct identity *key, struct verify *value) {
     struct in_addr from;
     from.s_addr = ntohl(value->encap.ep.ip);
 
-    printf("VERIFY (%u, %u) -> ", ntohs(key->service_id), ntohs(key->group_id));
+    printf("VERIFY (%u, %u) ->\t", ntohs(key->service_id), ntohs(key->group_id));
     printf("\'%16.16s\'", value->value);
     printf("\t%u", ntohl(value->tunnel_id));
     printf("\t\t(%s %s:%u)\t%u", get_proto_name(ntohs(value->encap.ep.proto)), inet_ntoa(from), ntohs(value->encap.ep.port), ntohl(value->encap.ifindex));
