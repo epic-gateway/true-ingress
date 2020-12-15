@@ -13,48 +13,42 @@ import (
 )
 
 func usage(name string) {
-	fmt.Printf("Usage: %s <ping-delay> <sweep-delay> <sweep-count>\n", name)
+	fmt.Printf("Usage: %s <ping-delay>\n", name)
 	fmt.Printf("    <ping-delay> - delay between GUE control packets (in seconds)\n")
-	fmt.Printf("    <sweep-delay> - delay between session sweep checks (in seconds)\n")
-	fmt.Printf("    <sweep-count> - number of inactive intervals for session expiration\n")
-	fmt.Printf("\nExample : %s 10 10 60\n", name)
+	fmt.Printf("\nExample : %s 10\n", name)
 }
 
-var (
-	tunnels       = map[int]int{}
-	session_hash  = map[string]int{}
-	session_ttl   = map[string]int{}
-	sweep_counter int
+const (
+	GUEHeader uint32 = 0x2101a000
 )
 
-func send_ping(src_ip string, src_port string, dst_ip string, dst_port string, id int, pwd string) {
-	//fmt.Printf("%s:%s -> %s:%s (%d '%s')\n", src_ip, src_port, dst_ip, dst_port, id, pwd)
-	sport, _ := strconv.Atoi(src_port)
-	dport, _ := strconv.Atoi(dst_port)
+var (
+	tunnels = map[int]int{}
+)
 
-	ServerAddr := net.UDPAddr{IP: net.ParseIP(dst_ip), Port: dport}
-	LocalAddr := net.UDPAddr{IP: net.ParseIP(src_ip), Port: sport}
-
+// sendPing sends an Acnodal EPIC GUE ping packet from localAddr to
+// remoteAddr. The packet contains tunnelID and pwd.
+func sendPing(localAddr net.UDPAddr, remoteAddr net.UDPAddr, tunnelID uint32, pwd string) error {
 	b := new(bytes.Buffer)
-	binary.Write(b, binary.BigEndian, uint32(0x2101a000))
-	binary.Write(b, binary.BigEndian, uint32(id))
+	binary.Write(b, binary.BigEndian, GUEHeader)
+	binary.Write(b, binary.BigEndian, tunnelID)
 	binary.Write(b, binary.BigEndian, []byte(pwd))
 
-	conn, err := net.DialUDP("udp", &LocalAddr, &ServerAddr)
+	conn, err := net.DialUDP("udp", &localAddr, &remoteAddr)
 	if err != nil {
 		fmt.Println("DialUDP: ", err)
-		return
+		return err
 	}
-
 	defer conn.Close()
 
 	_, err = conn.Write(b.Bytes())
 	if err != nil {
 		fmt.Println("Write: ", err)
 	}
+	return err
 }
 
-func tunnel_ping(timeout int) {
+func tunnelPing(timeout int) {
 	fmt.Println("Ping check")
 
 	// set old tunnel list aside
@@ -65,7 +59,7 @@ func tunnel_ping(timeout int) {
 	tunnels = map[int]int{}
 
 	// get current tunnel list
-	cmd := "/opt/acnodal/bin/cli_service get all | grep 'VERIFY' | grep -v 'TABLE'"
+	cmd := "/opt/acnodal/bin/cli_service get all | grep '^VERIFY'"
 	out, err := exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
 		fmt.Println(out)
@@ -77,19 +71,11 @@ func tunnel_ping(timeout int) {
 	// read services for GUE HEADER info (group-id, service-id, key)"
 	verify := map[int]string{}
 	for _, service := range services[:len(services)-1] {
-		params := strings.Split(service, " ")
+		params := strings.Split(service, "\t")
 
-		if params[0] != "VERIFY" {
-			continue
-		}
-
-		g, _ := strconv.ParseInt(strings.Split(strings.Split(params[1], "(")[1], ",")[0], 10, 16)
-		s, _ := strconv.ParseInt(strings.Split(params[2], ")")[0], 10, 16)
-		gid64 := ((g & 0xFFFF) << 16) + (s & 0xFFFF)
-		fmt.Println(gid64)
-		gid := int(gid64)
-		pwd := strings.Split(params[4], "'")[1]
-		verify[gid] = pwd
+		tid, _ := strconv.Atoi(params[2])
+		pwd := strings.Split(params[1], "'")[1]
+		verify[tid] = pwd
 	}
 
 	// read tunnels for outer header assembly
@@ -97,7 +83,7 @@ func tunnel_ping(timeout int) {
 		return
 	}
 
-	cmd = "/opt/acnodal/bin/cli_tunnel get all | grep 'TUN' | grep -v 'TABLE'"
+	cmd = "/opt/acnodal/bin/cli_tunnel get all | grep '^TUN'"
 	out, err = exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
 		fmt.Println(out)
@@ -122,98 +108,32 @@ func tunnel_ping(timeout int) {
 		if ok && t < timeout {
 			tunnels[tid] = tmp[tid] + 1
 		} else {
-			fmt.Printf("  sending GUE ping %s:%s -> %s:%s (%d, '%s')\n", src[0], src[1], dst[0], dst[1], tid, verify[tid])
-			send_ping(src[0], src[1], dst[0], dst[1], tid, verify[tid])
+			sPort, _ := strconv.Atoi(src[1])
+			dPort, _ := strconv.Atoi(dst[1])
+
+			serverAddr := net.UDPAddr{IP: net.ParseIP(dst[0]), Port: dPort}
+			localAddr := net.UDPAddr{IP: net.ParseIP(src[0]), Port: sPort}
+
+			fmt.Printf("  sending GUE ping %s -> %s (%d, '%s')\n", localAddr.String(), serverAddr.String(), tid, verify[tid])
+			sendPing(localAddr, serverAddr, uint32(tid), verify[tid])
 
 			tunnels[tid] = 1
 		}
 	}
-	//fmt.Println(tunnels)
-}
-
-func session_sweep(expire int) {
-	fmt.Println("Sweep check")
-
-	cmd := "/opt/acnodal/bin/cli_gc get all | grep 'ENCAP' | grep -v 'TABLE'"
-	out, err := exec.Command("bash", "-c", cmd).Output()
-	if err != nil {
-		fmt.Println(out)
-		fmt.Println(err)
-		return
-	}
-	services := strings.Split(string(out), "\n")
-
-	for _, service := range services[:len(services)-1] {
-		params := strings.Split(service, " ")
-
-		if params[0] != "ENCAP" {
-			continue
-		}
-
-		foo := strings.Split(service, "->")
-		key := foo[0]
-		hash, _ := strconv.Atoi(strings.Split(foo[1], " ")[1])
-
-		if hash == 0 { // static record
-			continue
-		}
-
-		h, ok := session_hash[key]
-		if ok && h == hash {
-			if session_ttl[key] >= expire {
-				to_del := strings.Split(strings.Split(strings.Split(key, "(")[1], ")")[0], ",")
-
-				fmt.Printf("  delete %s%s%s\n", to_del[0], to_del[1], to_del[2])
-				cmd := fmt.Sprintf("/opt/acnodal/bin/cli_gc del %s%s%s\n", to_del[0], to_del[1], to_del[2])
-				_, err := exec.Command("bash", "-c", cmd).Output()
-				if err != nil {
-					fmt.Println("ERR: [%s] cmd failed:", cmd)
-					fmt.Println(err)
-				}
-
-				delete(session_hash, key)
-				delete(session_ttl, key)
-			} else {
-				session_ttl[key] += 1
-			}
-		} else {
-			session_hash[key] = hash
-			session_ttl[key] = 1
-		}
-	}
-    //fmt.Printf(">>>  hash size %d, ttl size %d\n", len(session_hash), len(session_ttl))
 }
 
 func main() {
-	fmt.Println(os.Args[1:])
-
-	if len(os.Args) < 4 {
+	if len(os.Args) < 2 {
 		usage(os.Args[0])
 		return
 	}
 
 	tun_delay, _ := strconv.Atoi(os.Args[1])
-	sweep_delay, _ := strconv.Atoi(os.Args[2])
-	sweep_count, _ := strconv.Atoi(os.Args[3])
 
-	counter := sweep_delay
-
-	fmt.Println("Starting PFC daemon")
+	fmt.Println("Starting GUE ping daemon")
 
 	for {
-		// GUE ping
-		if tun_delay > 0 {
-			tunnel_ping(tun_delay)
-		}
-
-		// Session expiration
-		if counter < sweep_delay {
-			counter += 1
-		} else {
-			session_sweep(sweep_count)
-			counter = 1
-		}
-
+		tunnelPing(tun_delay)
 		time.Sleep(1 * time.Second)
 	}
 }
