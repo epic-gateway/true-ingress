@@ -173,14 +173,14 @@ bool map_cfg_getall(int map_fd) {
     return true;
 }
 
-bool map_cfg_set(int map_fd, unsigned int ifindex, unsigned int qid, uint id, uint flags, char *name) {
+bool map_cfg_set(int map_fd, unsigned int ifindex, unsigned int qid, uint flags, char *name) {
     struct cfg_if value = { 0 };
     char ifname[32];
 
     if (bpf_map_lookup_elem(map_fd, &ifindex, &value)) {  // create new
         struct config *cfg = &value.queue[qid];
 
-        cfg->id = id;
+        cfg->id = 0;
         cfg->flags = flags;
         strncpy(cfg->name, name, 16);
 
@@ -277,7 +277,7 @@ int main(int argc, char **argv)
             return 1;
         }
             
-        map_cfg_set(map_fd, ifindex, qid, 0, atoi(argv[4]), argv[5]);
+        map_cfg_set(map_fd, ifindex, qid, atoi(argv[4]), argv[5]);
     } else if (!strncmp(argv[1], "get", 4)) {
         if (!strncmp(argv[2], "all", 4)) {
             map_cfg_getall(map_fd);
