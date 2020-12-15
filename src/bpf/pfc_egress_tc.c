@@ -15,7 +15,6 @@
 #include <linux/if_arp.h>
 
 #include "dump_tc.h"
-#include "cfg_tc.h"
 #include "stat_tc.h"
 #include "maps_tc.h"
 
