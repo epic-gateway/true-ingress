@@ -19,7 +19,18 @@ func usage(name string) {
 }
 
 const (
-	GUEHeader uint32 = 0x2101a000
+	// https://tools.ietf.org/html/draft-ietf-intarea-gue-01#section-3.1
+	//
+	//  0                   1                   2                   3
+	//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	// | 0 |C|   Hlen  |  Proto/ctype  |             Flags             |
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	//       \     \---\    |                    /
+	//        \         \   |     /-------------/
+	//         \--------\\  |    /
+	//                   || |   /
+	GUEHeader uint32 = 0x2601a000
 )
 
 var (
@@ -27,13 +38,15 @@ var (
 )
 
 // sendPing sends an Acnodal EPIC GUE ping packet from localAddr to
-// remoteAddr. The packet contains the groupID, serviceID and pwd.
-func sendPing(localAddr net.UDPAddr, remoteAddr net.UDPAddr, groupID uint16, serviceID uint16, pwd string) error {
+// remoteAddr. The packet contains the groupID, serviceID, tunnelID,
+// and pwd.
+func sendPing(localAddr net.UDPAddr, remoteAddr net.UDPAddr, groupID uint16, serviceID uint16, pwd string, tunnelID uint32) error {
 	b := new(bytes.Buffer)
 	binary.Write(b, binary.BigEndian, GUEHeader)
 	binary.Write(b, binary.BigEndian, groupID)
 	binary.Write(b, binary.BigEndian, serviceID)
 	binary.Write(b, binary.BigEndian, []byte(pwd))
+	binary.Write(b, binary.BigEndian, tunnelID)
 
 	conn, err := net.DialUDP("udp", &localAddr, &remoteAddr)
 	if err != nil {
@@ -121,7 +134,7 @@ func tunnelPing(timeout int) {
 			localAddr := net.UDPAddr{IP: net.ParseIP(src[0]), Port: sPort}
 
 			fmt.Printf("  sending GUE ping %s -> %s (%d, '%s')\n", localAddr.String(), serverAddr.String(), tid, verify[tid])
-			sendPing(localAddr, serverAddr, gids[tid], sids[tid], verify[tid])
+			sendPing(localAddr, serverAddr, gids[tid], sids[tid], verify[tid], uint32(tid))
 
 			tunnels[tid] = 1
 		}
