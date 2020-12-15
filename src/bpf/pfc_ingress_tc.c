@@ -42,7 +42,7 @@ int pfc_decap(struct __sk_buff *skb)
     }
 
     // log hello
-    bpf_print("ID %s(%u) Flags %u\n", cfg->name, cfg->id, cfg->flags);
+    bpf_print("ID %s Flags %u\n", cfg->name, cfg->flags);
 
     // dump packet
     if (cfg->flags & CFG_RX_DUMP) {

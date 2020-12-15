@@ -171,7 +171,6 @@ make_service(struct service  *ref,
 
 struct config {
     __u8    prog;
-    __u32   id;
     __u32   flags;
     char    name[CFG_NAME_SIZE];
 };
