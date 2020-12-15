@@ -27,11 +27,12 @@ var (
 )
 
 // sendPing sends an Acnodal EPIC GUE ping packet from localAddr to
-// remoteAddr. The packet contains tunnelID and pwd.
-func sendPing(localAddr net.UDPAddr, remoteAddr net.UDPAddr, tunnelID uint32, pwd string) error {
+// remoteAddr. The packet contains the groupID, serviceID and pwd.
+func sendPing(localAddr net.UDPAddr, remoteAddr net.UDPAddr, groupID uint16, serviceID uint16, pwd string) error {
 	b := new(bytes.Buffer)
 	binary.Write(b, binary.BigEndian, GUEHeader)
-	binary.Write(b, binary.BigEndian, tunnelID)
+	binary.Write(b, binary.BigEndian, groupID)
+	binary.Write(b, binary.BigEndian, serviceID)
 	binary.Write(b, binary.BigEndian, []byte(pwd))
 
 	conn, err := net.DialUDP("udp", &localAddr, &remoteAddr)
@@ -70,15 +71,20 @@ func tunnelPing(timeout int) {
 
 	// read services for GUE HEADER info (group-id, service-id, key)"
 	verify := map[int]string{}
+	gids := map[int]uint16{}
+	sids := map[int]uint16{}
 	for _, service := range services[:len(services)-1] {
-		params := strings.Split(service, "\t")
+		params := strings.Split(service, " ")
 
-		tid, _ := strconv.Atoi(params[2])
-		pwd := strings.Split(params[1], "'")[1]
-		verify[tid] = pwd
+		g, _ := strconv.ParseInt(strings.Split(strings.Split(params[1], "(")[1], ",")[0], 10, 16)
+		s, _ := strconv.ParseInt(strings.Split(params[2], ")")[0], 10, 16)
+		pwd := strings.Split(params[3], "'")[1]
+		tid, _ := strconv.ParseInt(strings.Split(params[3], "\t")[2], 10, 32)
+		verify[int(tid)] = pwd
+		gids[int(tid)] = uint16(g)
+		sids[int(tid)] = uint16(s)
 	}
 
-	// read tunnels for outer header assembly
 	if len(verify) == 0 {
 		return
 	}
@@ -115,7 +121,7 @@ func tunnelPing(timeout int) {
 			localAddr := net.UDPAddr{IP: net.ParseIP(src[0]), Port: sPort}
 
 			fmt.Printf("  sending GUE ping %s -> %s (%d, '%s')\n", localAddr.String(), serverAddr.String(), tid, verify[tid])
-			sendPing(localAddr, serverAddr, uint32(tid), verify[tid])
+			sendPing(localAddr, serverAddr, gids[tid], sids[tid], verify[tid])
 
 			tunnels[tid] = 1
 		}
