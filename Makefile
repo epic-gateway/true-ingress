@@ -52,7 +52,7 @@ tar: build
 	cp ./src/cli/cli_cfg ./src/cli/cli_service ./src/cli/cli_tunnel ./src/cli/cli_gc pkg/bin/
 
 	# for GUE Ping
-	cp ./src/go/gue_ping_svc_auto ./src/go/pfc_cli_go pkg/bin/
+	cp ./src/go/gue_ping_svc_auto ./src/go/pfc_cli_go  ./src/go/sweep_sessions pkg/bin/
 
 	chmod +x pkg/bin/*
 
