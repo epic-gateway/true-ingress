@@ -19,11 +19,10 @@ void usage(char *prog) {
     fprintf(stderr,"ERR: Too little arguments\n");
     fprintf(stderr,"Usage:\n");
     fprintf(stderr,"    %s get <interface|all>\n", prog);
-    fprintf(stderr,"    %s set <interface> <direction> <id> <flags> <name>\n", prog);
+    fprintf(stderr,"    %s set <interface> <direction> <flags> <name>\n", prog);
     fprintf(stderr,"    %s del <interface|all>\n\n", prog);
     fprintf(stderr,"    <interface>     - Interface where PFC is attached\n");
     fprintf(stderr,"    <direction>     - 0 for ingress, 1 for egress\n");
-    fprintf(stderr,"    <id>            - Instance identifier (numerical)\n");
     fprintf(stderr,"    <flags>         - PFC operational mode:\n");
     fprintf(stderr,"                       Ingress : 1 GUE-DECAP, 4 FWD, 8 DUMP\n");
     fprintf(stderr,"                       Egress  : 1 IS-PROXY, 2 DSR, 4 FWD, 8 DUMP, 16 FIB\n");
@@ -114,7 +113,6 @@ void map_cfg_print_record(unsigned int key, struct cfg_if *value) {
         default:
             print_unknown(CFG_IDX_RX, key, &value->queue[CFG_IDX_RX]);
     }
-
 
     switch (value->queue[CFG_IDX_TX].prog) {
         case CFG_PROG_NONE:
@@ -252,17 +250,13 @@ int main(int argc, char **argv)
             fprintf(stderr, "ERR: Interface \'%s\' err(%d):%s\n", argv[2], errno, strerror(errno));
             return 1;
         }
-        /*if (ifindex >= MAX_IFINDEX) {
-            fprintf(stderr, "ERR: Fix MAX_IFINDEX err(%d):%s\n", errno, strerror(errno));
-            return 1;
-        }*/
 
         unsigned int qid = atoi(argv[3]);
         if (qid >= CFG_IDX_MAX) {
             fprintf(stderr, "ERR: Queue index out of range \'%u\'\n", qid);
             return 1;
         }
-            
+
         map_cfg_set(map_fd, ifindex, qid, atoi(argv[4]), argv[5]);
     } else if (!strncmp(argv[1], "get", 4)) {
         if (!strncmp(argv[2], "all", 4)) {
@@ -274,10 +268,6 @@ int main(int argc, char **argv)
                 fprintf(stderr, "ERR: Interface \'%s\' err(%d):%s\n", argv[2], errno, strerror(errno));
                 return 1;
             }
-            /*if (ifindex >= MAX_IFINDEX) {
-                fprintf(stderr, "ERR: Fix MAX_IFINDEX err(%d):%s\n", errno, strerror(errno));
-                return 1;
-            }*/
             struct cfg_if value;
             int ret = map_cfg_get(map_fd, ifindex, &value);
             if (!ret) {
@@ -296,10 +286,6 @@ int main(int argc, char **argv)
                 fprintf(stderr, "ERR: Interface \'%s\' err(%d):%s\n", argv[2], errno, strerror(errno));
                 return 1;
             }
-            /*if (ifindex >= MAX_IFINDEX) {
-                fprintf(stderr, "ERR: Fix MAX_IFINDEX err(%d):%s\n", errno, strerror(errno));
-                return 1;
-            }*/
             map_cfg_del(map_fd, ifindex);
         }
     } else {
