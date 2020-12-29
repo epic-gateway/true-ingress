@@ -136,7 +136,7 @@ int pfc_decap(struct __sk_buff *skb)
 
                     // update TABLE-ENCAP
                     bpf_print("updating encap table\n");
-                    bpf_map_update_elem(&map_encap, &skey, &svc, BPF_ANY);
+                    ASSERT(bpf_map_update_elem(&map_encap, &skey, &svc, BPF_ANY) == 0, dump_action(TC_ACT_UNSPEC), "ERROR: map_encap update failed\n");
 
                     if (cfg->flags & CFG_RX_FWD) {
                         // flags: 0, BPF_FIB_LOOKUP_DIRECT 1, BPF_FIB_LOOKUP_OUTPUT 2
