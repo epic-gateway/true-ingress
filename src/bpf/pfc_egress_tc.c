@@ -141,7 +141,9 @@ int pfc_encap(struct __sk_buff *skb)
     } else {
         struct encap_key ekey = { dep, 0 };
         struct service *svc = bpf_map_lookup_elem(&map_encap, &ekey);
-        if (svc) {
+        if (!svc) {
+            bpf_print("Lookup failed: GUE Encap Service: %x:%x\n", dep.ip, dep.port);
+        } else {
             if (svc->key.encap.ep.proto) {  // DSR mode
                 bpf_print("DSR: SNAT to %x:%u\n", svc->key.encap.ep.ip, bpf_ntohs(svc->key.encap.ep.port));
 
