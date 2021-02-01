@@ -11,6 +11,7 @@ import (
 )
 
 var version string // initialized by gitlab CI via Makefile and ldflags
+var commit string  // initialized by gitlab CI via Makefile and ldflags
 
 func main() {
 	if len(os.Args) < 2 {
@@ -25,7 +26,7 @@ func main() {
 
 	switch os.Args[1] {
 	case "version":
-		fmt.Println(version)
+		fmt.Println(version, commit)
 
 	case "check":
 		check, err := pfc.Check()
