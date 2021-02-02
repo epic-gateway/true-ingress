@@ -2,8 +2,8 @@
 # usage: $0 <obj-file>
 #   <obj-file>  - path to bpf obj file
 # example:
-#    bpf_dump.sh pfc_ingress_tc.o
-#    bpf_dump.sh pfc_egress_tc.o
+#    bpf_dump.sh pfc_decap_tc.o
+#    bpf_dump.sh pfc_encap_tc.o
 
 if [ ! "$1" ]; then
     echo "usage: $0 <obj-file>"

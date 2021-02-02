@@ -63,7 +63,7 @@ DELAY=10
 if [ ! "$(docker exec -it ${PROXY} bash -c \"tc qdisc show dev ${PROXY_NIC} | grep clsact\")" ]; then
     docker exec -it ${PROXY} bash -c "sudo tc qdisc add dev ${PROXY_NIC} clsact"
 fi
-docker exec -it ${PROXY} bash -c "tc filter add dev ${PROXY_NIC} ingress bpf direct-action object-file pfc_ingress_tc.o sec .text"
+docker exec -it ${PROXY} bash -c "tc filter add dev ${PROXY_NIC} ingress bpf direct-action object-file pfc_decap_tc.o sec .text"
 
 docker exec -it ${PROXY} bash -c "cli_cfg set ${PROXY_NIC} 0 0 9 \"${PROXY}-ETH RX\""
 
@@ -80,10 +80,10 @@ if [ $EGW_BR ] ; then
     if [ ! "$(docker exec -it ${PROXY} bash -c \"tc qdisc show dev br0 | grep clsact\")" ]; then
         docker exec -it ${PROXY} bash -c "sudo tc qdisc add dev br0 clsact"
     fi
-    docker exec -it ${PROXY} bash -c "tc filter add dev br0 ingress bpf direct-action object-file pfc_egress_tc.o sec .text"
+    docker exec -it ${PROXY} bash -c "tc filter add dev br0 ingress bpf direct-action object-file pfc_encap_tc.o sec .text"
     docker exec -it ${PROXY} bash -c "cli_cfg set br0 1 0 13 '${PROXY}-BRx RX'"
 else
-    docker exec -it ${PROXY} bash -c "tc filter add dev ${PROXY_NIC} egress bpf direct-action object-file pfc_egress_tc.o sec .text"
+    docker exec -it ${PROXY} bash -c "tc filter add dev ${PROXY_NIC} egress bpf direct-action object-file pfc_encap_tc.o sec .text"
     docker exec -it ${PROXY} bash -c "cli_cfg set ${PROXY_NIC} 1 0 9 \"${PROXY}-ETH TX\""
 fi
 # <<<<
@@ -99,7 +99,7 @@ docker exec -itd ${NODE} bash -c "gue_ping_svc_auto ${DELAY} 10 3 &> /tmp/gue_pi
 if [ ! "$(docker exec -it ${NODE} bash -c \"tc qdisc show dev ${NODE_NIC} | grep clsact\")" ]; then
     docker exec -it ${NODE} bash -c "sudo tc qdisc add dev ${NODE_NIC} clsact"
 fi
-docker exec -it ${NODE} bash -c "tc filter add dev ${NODE_NIC} ingress bpf direct-action object-file pfc_ingress_tc.o sec .text"
+docker exec -it ${NODE} bash -c "tc filter add dev ${NODE_NIC} ingress bpf direct-action object-file pfc_decap_tc.o sec .text"
 docker exec -it ${NODE} bash -c "cli_cfg set ${NODE_NIC} 0 0 9 \"${NODE} RX\""
 
 #NODE_BR=1
@@ -107,11 +107,11 @@ if [ $NODE_BR ] ; then
     if [ ! "$(docker exec -it ${NODE} bash -c \"tc qdisc show dev br0 | grep clsact\")" ]; then
         docker exec -it ${NODE} bash -c "sudo tc qdisc add dev br0 clsact"
     fi
-    docker exec -it ${NODE} bash -c "tc filter add dev br0 ingress bpf direct-action object-file pfc_egress_tc.o sec .text"
+    docker exec -it ${NODE} bash -c "tc filter add dev br0 ingress bpf direct-action object-file pfc_encap_tc.o sec .text"
 
     docker exec -it ${NODE} bash -c "cli_cfg set br0 1 0 12 '${NODE}-BR RX'"
 else
-    docker exec -it ${NODE} bash -c "tc filter add dev ${NODE_NIC} egress bpf direct-action object-file pfc_egress_tc.o sec .text"
+    docker exec -it ${NODE} bash -c "tc filter add dev ${NODE_NIC} egress bpf direct-action object-file pfc_encap_tc.o sec .text"
     docker exec -it ${NODE} bash -c "cli_cfg set ${NODE_NIC} 1 0 8 \"${NODE} TX\""
 fi
 
