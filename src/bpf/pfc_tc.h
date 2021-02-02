@@ -590,9 +590,6 @@ void set_ipv4_csum(struct iphdr *iph)
     iph->check = ~((csum & 0xffff) + (csum >> 16));
 }
 
-#define MY_BPF_FIB_LOOKUP_DIRECT  1
-#define MY_BPF_FIB_LOOKUP_OUTPUT  2
-
 static __always_inline
 int fib_lookup(struct __sk_buff *skb, struct bpf_fib_lookup *fib_params, int ifindex, int flags)
 {
