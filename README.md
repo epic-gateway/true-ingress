@@ -4,10 +4,9 @@ The Packet Forwarding Component (PFC) is the eBPF program and associated infrast
 
 ## Description
 
-PFC consists of 2 binaries, one attached to ingress queue and one attached to egress queue of network interface.
+PFC consists of 2 binaries, one that encapsulates packets, and one that decapsulates.
 Both can be configured to perform certain tasks.
 They use shared maps to allow configuration from control plane.
-There is set if userspace CLIs to read and write data into maps. 
 
 ### Limitations
 
@@ -75,7 +74,7 @@ Now you are ready to proceed with building sources.
 
 ### Regular build
 
-Let's compile TC programs into *.o* files and make userspace binaries like *cli*. 
+Let's compile TC programs into *.o* files and make userspace binaries like *cli*.
 Simple version is:
 
     make build
@@ -87,8 +86,8 @@ When cource compilation is done, you can check whether kernel can load created B
 In case of success, you should see binaries were attached to both ingress and egress of an interface:
 
     ens33 (2)
-        ingress : filter protocol all pref 49152 bpf chain 0 handle 0x1 pfc_ingress_tc.o:[.text] direct-action not_in_hw id 427 tag 4ba81b9389320c66 
-        egress  : filter protocol all pref 49152 bpf chain 0 handle 0x1 pfc_egress_tc.o:[.text] direct-action not_in_hw id 428 tag fb8fc0a7fe9de7ea
+        ingress : filter protocol all pref 49152 bpf chain 0 handle 0x1 pfc_decap_tc.o:[.text] direct-action not_in_hw id 427 tag 4ba81b9389320c66
+        egress  : filter protocol all pref 49152 bpf chain 0 handle 0x1 pfc_encap_tc.o:[.text] direct-action not_in_hw id 428 tag fb8fc0a7fe9de7ea
 
 For detailed instructions go to [src](src/).
 
@@ -157,4 +156,3 @@ If root doesn't share your PATH update yet, use:
 or
 
     sudo env "PATH=$PATH" pfc_stop.sh eth0
-
