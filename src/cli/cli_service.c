@@ -66,7 +66,9 @@ void map_verify_print_record(struct identity *key, struct verify *value) {
     from.s_addr = ntohl(value->encap.ep.ip);
 
     printf("VERIFY (%u, %u) ->\t", ntohs(key->service_id), ntohs(key->group_id));
-    printf("\'%16.16s\'", value->value);
+    char *base64_encoded = base64encode(value->value, SECURITY_KEY_SIZE);
+    printf("\'%s\'", base64_encoded);
+    free(base64_encoded);
     printf("\t%u", ntohl(value->tunnel_id));
     printf("\t\t(%s %s:%u)\t%u", get_proto_name(ntohs(value->encap.ep.proto)), inet_ntoa(from), ntohs(value->encap.ep.port), ntohl(value->encap.ifindex));
     printf("\n");
@@ -171,10 +173,13 @@ void map_encap_print_count(__u32 count) {
 void map_encap_print(struct encap_key *key, struct service *value) {
     struct in_addr from;
     from.s_addr = ntohl(key->ep.ip);
+    char *base64_encoded = base64encode(value->key.value, SECURITY_KEY_SIZE);
 
     printf("ENCAP (%s %s:%u)  %u -> ", get_proto_name(ntohs(key->ep.proto)), inet_ntoa(from), ntohs(key->ep.port), ntohl(key->ifindex));
-    printf("%u\t\t(%u, %u)\t\'%16.16s\'\t%u", ntohl(value->key.tunnel_id), ntohs(value->identity.service_id), ntohs(value->identity.group_id), (char*)value->key.value, value->hash);
+    printf("%u\t\t(%u, %u)\t\'%s\'\t%u", ntohl(value->key.tunnel_id), ntohs(value->identity.service_id), ntohs(value->identity.group_id), base64_encoded, value->hash);
     printf("\n");
+
+    free(base64_encoded);
 }
 
 bool map_encap_get(int map_fd, struct encap_key *key, struct service *value) {
@@ -409,7 +414,14 @@ int main(int argc, char **argv)
             make_encap_key(&ekey, to.s_addr, atoi(argv[8]), proto, 0);
         }
 
-        strncpy((char*)pwd.value, argv[4], SECURITY_KEY_SIZE);
+        // Decode password
+        char *base64_decoded = base64decode(argv[4], strlen(argv[4]));
+        if (strlen(base64_decoded) != SECURITY_KEY_SIZE) {
+            fprintf(stderr, "Password is %ld bytes but needs to be %d\n", strlen(base64_decoded), SECURITY_KEY_SIZE);
+            return 1;
+        }
+        memcpy(pwd.value, base64_decoded, SECURITY_KEY_SIZE);
+        free(base64_decoded);
 
         make_identity(&id, atoi(argv[2]), atoi(argv[3]));
         make_verify(&pwd, tid, &ekey);

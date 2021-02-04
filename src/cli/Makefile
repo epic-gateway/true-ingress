@@ -5,7 +5,7 @@ USER_TARGETS := \
     cli_nat \
     cli_gc
 
-USER_LIBS := -lz
+USER_LIBS := -lz -lssl -lcrypto
 
 COMMON_DIR = ../../common
 HEADER_DIR = ../../headers
