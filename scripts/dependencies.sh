@@ -8,6 +8,7 @@ PACKAGES="clang \
     python3 \
     python3-pip \
     linux-headers-virtual \
+    libssl-dev \
     libelf-dev \
     zlib1g-dev \
     vagrant"

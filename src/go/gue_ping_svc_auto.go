@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/binary"
 	"fmt"
 	"net"
@@ -40,12 +41,12 @@ var (
 // sendPing sends an Acnodal EPIC GUE ping packet from localAddr to
 // remoteAddr. The packet contains the groupID, serviceID, tunnelID,
 // and pwd.
-func sendPing(localAddr net.UDPAddr, remoteAddr net.UDPAddr, groupID uint16, serviceID uint16, pwd string, tunnelID uint32) error {
+func sendPing(localAddr net.UDPAddr, remoteAddr net.UDPAddr, groupID uint16, serviceID uint16, pwd []byte, tunnelID uint32) error {
 	b := new(bytes.Buffer)
 	binary.Write(b, binary.BigEndian, GUEHeader)
 	binary.Write(b, binary.BigEndian, groupID)
 	binary.Write(b, binary.BigEndian, serviceID)
-	binary.Write(b, binary.BigEndian, []byte(pwd))
+	binary.Write(b, binary.BigEndian, pwd)
 	binary.Write(b, binary.BigEndian, tunnelID)
 
 	conn, err := net.DialUDP("udp", &localAddr, &remoteAddr)
@@ -83,7 +84,7 @@ func tunnelPing(timeout int) {
 	services := strings.Split(string(out), "\n")
 
 	// read services for GUE HEADER info (group-id, service-id, key)"
-	verify := map[int]string{}
+	verify := map[int][]byte{}
 	gids := map[int]uint16{}
 	sids := map[int]uint16{}
 	for _, service := range services[:len(services)-1] {
@@ -93,7 +94,10 @@ func tunnelPing(timeout int) {
 		s, _ := strconv.ParseInt(strings.Split(params[2], ")")[0], 10, 16)
 		pwd := strings.Split(params[3], "'")[1]
 		tid, _ := strconv.ParseInt(strings.Split(params[3], "\t")[2], 10, 32)
-		verify[int(tid)] = pwd
+		if verify[int(tid)], err = base64.StdEncoding.DecodeString(pwd); err != nil {
+			fmt.Println("error:", err)
+			return
+		}
 		gids[int(tid)] = uint16(g)
 		sids[int(tid)] = uint16(s)
 	}
@@ -133,7 +137,7 @@ func tunnelPing(timeout int) {
 			serverAddr := net.UDPAddr{IP: net.ParseIP(dst[0]), Port: dPort}
 			localAddr := net.UDPAddr{IP: net.ParseIP(src[0]), Port: sPort}
 
-			fmt.Printf("  sending GUE ping %s -> %s (%d, '%s')\n", localAddr.String(), serverAddr.String(), tid, verify[tid])
+			fmt.Printf("  sending GUE ping %s -> %s (%d, '%s')\n", localAddr.String(), serverAddr.String(), tid, base64.StdEncoding.EncodeToString(verify[tid]))
 			sendPing(localAddr, serverAddr, gids[tid], sids[tid], verify[tid], uint32(tid))
 
 			tunnels[tid] = 1
