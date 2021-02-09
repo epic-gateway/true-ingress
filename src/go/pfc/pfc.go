@@ -3,7 +3,9 @@ package pfc
 import (
 	"fmt"
 	"net"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -16,6 +18,28 @@ func Check() (bool, string) {
 	}
 
 	return true, string(bytes)
+}
+
+func Initialize() error {
+	var bytes []byte
+	var err error
+
+	ex, err := os.Executable()
+	if err != nil {
+		return err
+	}
+	exPath := filepath.Dir(ex)
+
+	bytes, err = exec.Command(filepath.Join(exPath, "cli_service"), "del", "all").CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("cli_service FAILED: %s, %s", err.Error(), string(bytes))
+	}
+	bytes, err = exec.Command(filepath.Join(exPath, "cli_tunnel"), "del", "zork").CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("cli_tunnel FAILED: %s, %s", err.Error(), string(bytes))
+	}
+
+	return nil
 }
 
 type Tunnel struct {

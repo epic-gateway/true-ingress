@@ -20,6 +20,7 @@ func main() {
 		fmt.Println(os.Args[0], "add <interface> <group-id> <service-id> <pwd> <proto> <proxy-ip> <proxy-port> <service-ip> <service-port> <gue-ip> <gue-port>")
 		fmt.Println(os.Args[0], "del <group-id> <service-id>")
 		fmt.Println(os.Args[0], "list")
+		fmt.Println(os.Args[0], "initialize - empty service and tunnel tables")
 		fmt.Println(os.Args[0], "help")
 		return
 	}
@@ -34,6 +35,14 @@ func main() {
 			fmt.Printf("PFC ready: %s\n", err)
 		} else {
 			fmt.Println(err)
+		}
+
+	case "initialize":
+		err := pfc.Initialize()
+		if err != nil {
+			fmt.Println(err.Error())
+		} else {
+			fmt.Println("PFC Initialized")
 		}
 
 	case "add":
