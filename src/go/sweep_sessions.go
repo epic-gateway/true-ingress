@@ -58,8 +58,7 @@ func session_sweep(expire int) {
 				cmd := fmt.Sprintf("/opt/acnodal/bin/cli_gc del %s%s%s\n", to_del[0], to_del[1], to_del[2])
 				_, err := exec.Command("bash", "-c", cmd).Output()
 				if err != nil {
-					fmt.Println("ERR: [%s] cmd failed:", cmd)
-					fmt.Println(err)
+					fmt.Printf("ERR: [%s] cmd failed: %s\n", cmd, err)
 				}
 
 				delete(session_hash, key)
