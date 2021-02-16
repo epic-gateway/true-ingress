@@ -355,10 +355,6 @@ int main(int argc, char **argv)
 
         // Decode password
         char *base64_decoded = base64decode(argv[4], strlen(argv[4]));
-        if (strlen(base64_decoded) != SECURITY_KEY_SIZE) {
-            fprintf(stderr, "Password is %ld bytes but needs to be %d\n", strlen(base64_decoded), SECURITY_KEY_SIZE);
-            return 1;
-        }
         memcpy(pwd.value, base64_decoded, SECURITY_KEY_SIZE);
         free(base64_decoded);
 
@@ -423,10 +419,6 @@ int main(int argc, char **argv)
 
         // Decode password
         char *base64_decoded = base64decode(argv[4], strlen(argv[4]));
-        if (strlen(base64_decoded) != SECURITY_KEY_SIZE) {
-            fprintf(stderr, "Password is %ld bytes but needs to be %d\n", strlen(base64_decoded), SECURITY_KEY_SIZE);
-            return 1;
-        }
         memcpy(pwd.value, base64_decoded, SECURITY_KEY_SIZE);
         free(base64_decoded);
 
