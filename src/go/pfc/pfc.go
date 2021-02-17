@@ -34,7 +34,7 @@ func Initialize() error {
 	if err != nil {
 		return fmt.Errorf("cli_service FAILED: %s, %s", err.Error(), string(bytes))
 	}
-	bytes, err = exec.Command(filepath.Join(exPath, "cli_tunnel"), "del", "zork").CombinedOutput()
+	bytes, err = exec.Command(filepath.Join(exPath, "cli_tunnel"), "del", "all").CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("cli_tunnel FAILED: %s, %s", err.Error(), string(bytes))
 	}
