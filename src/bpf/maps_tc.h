@@ -39,7 +39,7 @@ struct bpf_elf_map SEC(ELF_SECTION_MAPS) map_decap = {
 BPF_ANNOTATE_KV_PAIR(map_decap, struct endpoint, __u32);
 
 ////////////////////////////////
-// TABLE-ENCAP      EP -> SERVICE (56B)
+// 3: TABLE-ENCAP      EP (12B) -> SERVICE (40B)
 
 struct bpf_elf_map SEC(ELF_SECTION_MAPS) map_encap = {
     .type           = BPF_MAP_TYPE_HASH,
@@ -51,7 +51,7 @@ struct bpf_elf_map SEC(ELF_SECTION_MAPS) map_encap = {
 BPF_ANNOTATE_KV_PAIR(map_encap, struct encap_key, struct service);
 
 ////////////////////////////////
-// TABLE-VERIFY     SID -> KEY (40B)
+// 4: TABLE-VERIFY     tunnel-id (4B) -> verify (32B)
 
 struct bpf_elf_map SEC(ELF_SECTION_MAPS) map_verify = {
     .type           = BPF_MAP_TYPE_HASH,
@@ -63,7 +63,7 @@ struct bpf_elf_map SEC(ELF_SECTION_MAPS) map_verify = {
 BPF_ANNOTATE_KV_PAIR(map_verify, struct identity, struct verify);
 
 ////////////////////////////////
-// TABLE-TUNNEL tunnel-id -> GUE (18B)
+// TABLE-TUNNEL tunnel-id (4B) -> GUE (18B)
 
 struct bpf_elf_map SEC(ELF_SECTION_MAPS) map_tunnel = {
     .type           = BPF_MAP_TYPE_HASH,
