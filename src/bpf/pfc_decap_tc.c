@@ -110,26 +110,32 @@ int pfc_decap(struct __sk_buff *skb)
 
                 ASSERT (TC_ACT_OK == gue_decap_v4(skb), dump_action(TC_ACT_SHOT), "GUE Decap Failed!\n");
 
-                if (verify->encap.ifindex) {  // usually EGW
-                    __u32 ifindex = bpf_ntohl(verify->encap.ifindex);
+                if (verify->encap.ifindex) {  // EPIC
+                    if (cfg->flags & CFG_RX_FWD) {
+                        __u32 ifindex = bpf_ntohl(verify->encap.ifindex);
 
-                    // update TABLE-PROXY
-                    struct mac *mac_remote = bpf_map_lookup_elem(&map_proxy, &ifindex);
-                    ASSERT(mac_remote != 0, dump_action(TC_ACT_UNSPEC), "ERROR: Proxy MAC for ifindex %u not found!\n", ifindex);
+                        // update TABLE-PROXY
+                        struct mac *mac_remote = bpf_map_lookup_elem(&map_proxy, &ifindex);
+                        ASSERT(mac_remote != 0, dump_action(TC_ACT_UNSPEC), "ERROR: Proxy MAC for ifindex %u not found!\n", ifindex);
 
-                    bpf_print("Set D-MAC: ifindex %u -> MAC %x\n", ifindex, bpf_ntohl(*(__u32*)&(mac_remote->value[2])));
-                    ret = bpf_skb_store_bytes(skb, 0, mac_remote->value, 6, BPF_F_INVALIDATE_HASH);
-                    if (ret < 0) {
-                        bpf_print("bpf_skb_store_bytes: %d\n", ret);
+                        bpf_print("Set D-MAC: ifindex %u -> MAC %x\n", ifindex, bpf_ntohl(*(__u32*)&(mac_remote->value[2])));
+                        ret = bpf_skb_store_bytes(skb, 0, mac_remote->value, 6, BPF_F_INVALIDATE_HASH);
+                        if (ret < 0) {
+                            bpf_print("bpf_skb_store_bytes: %d\n", ret);
+                        }
+
+                        if (cfg->flags & CFG_TX_DUMP) {
+                            dump_pkt(skb);
+                        }
+
+                        bpf_print("Redirecting to container ifindex %u TX\n", ifindex);
+                        return dump_action(bpf_redirect(ifindex, 0));
                     }
 
                     if (cfg->flags & CFG_TX_DUMP) {
                         dump_pkt(skb);
                     }
-
-                    bpf_print("Redirecting to container ifindex %u TX\n", ifindex);
-                    return dump_action(bpf_redirect(ifindex, 0));
-                } else {                // usually NODE
+                } else {                      // PureLB
                     struct encap_key skey = { { 0 } , 0 };
                     struct endpoint dep = { 0 };
                     ASSERT(parse_ep(skb, &skey.ep, &dep) != TC_ACT_SHOT, dump_action(TC_ACT_UNSPEC), "ERROR: SRC EP parsing failed!\n");
