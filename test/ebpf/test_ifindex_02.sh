@@ -1,6 +1,6 @@
 #!/bin/bash
-# Setup HTTP service on NODE on same network as EGW, expose it on EGW and send request from CLIENT.
-# Attach and configure PFC on NODE and EGW.
+# Setup HTTP service on NODE on same network as EPIC, expose it on EPIC and send request from CLIENT.
+# Attach and configure PFC on NODE and EPIC.
 # Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*.
 # Setup HTTP service and forwarding.
 # Send HTTP request from client to *proxy ip:port*.
@@ -32,7 +32,7 @@ TOPO=basic.cfg
 CLIENT="client"
 GROUP_ID=1
 
-PROXY="egw"
+PROXY="epic"
 PROXY_NS="proxy1"
 PROXY_IP="1.2.3.4"
 
@@ -59,7 +59,7 @@ DELAY=10
 #set -x
 
 
-# PFC >>>> Attach PFC to eth on EGW
+# PFC >>>> Attach PFC to eth on EPIC
 if [ ! "$(docker exec -it ${PROXY} bash -c \"tc qdisc show dev ${PROXY_NIC} | grep clsact\")" ]; then
     docker exec -it ${PROXY} bash -c "sudo tc qdisc add dev ${PROXY_NIC} clsact"
 fi
@@ -71,7 +71,7 @@ docker exec -it ${PROXY} bash -c "port_init.sh ${PROXY_PORT_MIN} ${PROXY_PORT_MA
 # <<<<
 
 
-# PFC >>>> Attach PFC to br on EGW
+# PFC >>>> Attach PFC to br on EPIC
 DEFAULT_IFINDEX=$(docker exec -it ${PROXY} bash -c "ip link show ${PROXY_NIC}" | grep mtu | awk '{print $1}' | sed 's/://')
 echo "[${DEFAULT_IFINDEX}]"
 
@@ -80,7 +80,7 @@ if [ ! "$(docker exec -it ${PROXY} bash -c \"tc qdisc show dev br0 | grep clsact
 fi
 docker exec -it ${PROXY} bash -c "tc filter add dev br0 ingress bpf direct-action object-file pfc_encap_tc.o sec .text"
 
-docker exec -it ${PROXY} bash -c "cli_cfg set br0 1 ${DEFAULT_IFINDEX} 9 'EGW-BRx RX'"
+docker exec -it ${PROXY} bash -c "cli_cfg set br0 1 ${DEFAULT_IFINDEX} 9 'EPIC-BRx RX'"
 # <<<<
 
 
@@ -115,9 +115,9 @@ else
 fi
 # <<<<
 
-# get egw interface IP
+# get epic interface IP
 PROXY_TUN_IP=$(docker exec -it ${PROXY} bash -c "ip addr show dev ${PROXY_NIC}" | grep inet | awk '{print $2}' | sed 's/\// /g' | awk '{print $1}')
-# get egw interface IP
+# get epic interface IP
 NODE_TUN_IP=$(docker exec -it ${NODE} bash -c "ip addr show dev ${NODE_NIC}" | grep inet | awk '{print $2}' | sed 's/\// /g' | awk '{print $1}')
 # compute tunnel-id as group-id "+" servie-id
 TUNNEL_ID=${GROUP_ID}

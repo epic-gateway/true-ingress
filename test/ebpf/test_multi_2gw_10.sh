@@ -1,6 +1,6 @@
 #!/bin/bash
-# Setup 2 HTTP services via separate GUE tunnels on NODE on same network as EGW, expose it on EGW and send request from CLIENT.
-# Attach and configure PFC on NODE and EGW.
+# Setup 2 HTTP services via separate GUE tunnels on NODE on same network as EPIC, expose it on EPIC and send request from CLIENT.
+# Attach and configure PFC on NODE and EPIC.
 # Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*.
 # Setup HTTP service and forwarding.
 # Send HTTP request from client to *proxy ip:port*.
@@ -36,7 +36,7 @@ fi
 CLIENT="client"
 GROUP_ID=1
 
-PROXY="egw2"
+PROXY="epic2"
 PROXY_IP="6.6.6.6"
 
 NODE="node1"

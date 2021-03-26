@@ -1,6 +1,6 @@
 SOURCES = libbpf/src headers common src/cli src/bpf src/go
 CLEAN = $(addsuffix _clean,$(SOURCES))
-TARFILE = pkg/pfc.tar.bz2
+TARFILE = pkg/true-ingress.tar.bz2
 
 .PHONY: clean $(SOURCES) $(CLEAN) clean-tar check test prod-img
 

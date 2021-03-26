@@ -112,13 +112,13 @@ For detailed information about testing topology and additional test cases procee
 
 ### Install
 
-On order to run PFC on your local setup create pfc.tar.bz2:
+On order to run PFC on your local setup create true-ingress.tar.bz2:
 
     make tar
 
 Copy this archive to machine where you want to execute it and unpack to desired location e.g.:
 
-    tar -jvxf pfc.tar.bz2 -C /opt/pfc/
+    tar -jvxf true-ingress.tar.bz2 -C /opt/pfc/
 
 Don't forget to add new location to your PATH:
 

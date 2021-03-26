@@ -11,4 +11,4 @@ make:
     - make tar
   artifacts:
     paths:
-      - pkg/pfc.tar.bz2
+      - pkg/true-ingress.tar.bz2

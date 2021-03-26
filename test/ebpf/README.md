@@ -1,6 +1,6 @@
 # eBPF tests
 
-Tests to attach and detach TC programs to **EGW** and/or **NODE**.
+Tests to attach and detach TC programs to **EPIC** and/or **NODE**.
 Check kernel trace */sys/kernel/debug/tracing/trace* for output.
 
 ## Dev tests
@@ -12,7 +12,7 @@ Simple tests using Go API (`src/go/pfc_cli_go`) to setup forwarding instead of b
 ### test_go_01.sh
 
 Variation to `test_simple_2gw_01.sh`.
-Test creating single forwarding on **EGW** for service running on **Node1**.
+Test creating single forwarding on **EPIC** for service running on **Node1**.
 
 Run:
 
@@ -26,7 +26,7 @@ Status: PASS
 
 ### test_go_02.sh
 
-Test creating 2 forwardings on **EGW** for 2 services, both located on **Node1**.
+Test creating 2 forwardings on **EPIC** for 2 services, both located on **Node1**.
 
 Run:
 
@@ -44,12 +44,12 @@ Tests for GUE ping resolution.
 
 ### test_gue_01.sh
 
-TC attached and configured on both **EGW** and **Node1**.
+TC attached and configured on both **EPIC** and **Node1**.
 
 - load PFC
 - Start GUE ping daemon on **Node1**
 - Configure tunnel with empty *remote ip:port*.
-- Check whether tunnel remote endpoint on **EGW** was resolved properly
+- Check whether tunnel remote endpoint on **EPIC** was resolved properly
 
 Run:
 
@@ -65,12 +65,12 @@ Status: PASS
 
 ### test_gue_02.sh
 
-TC attached and configured on both **EGW** and **Node2**.
+TC attached and configured on both **EPIC** and **Node2**.
 
 - load PFC
 - Start GUE ping daemon on **Node2**
 - Configure tunnel with empty *remote ip:port*.
-- Check whether tunnel remote endpoint on **EGW** was resolved properly
+- Check whether tunnel remote endpoint on **EPIC** was resolved properly
 
 Run:
 
@@ -239,8 +239,8 @@ Check different GUE tunnel source/destination port combinations.
 
 ### test_simple_2gw_01.sh
 
-Setup service on *Node1* (same network) and configure forwarding on **EGW1**.
-Iptables does DNAT/SNAT on **EGW1**, TC does GUE encap/decap.
+Setup service on *Node1* (same network) and configure forwarding on **EPIC1**.
+Iptables does DNAT/SNAT on **EPIC1**, TC does GUE encap/decap.
 Working in regular mode.
 Check service reachability.
 
@@ -256,8 +256,8 @@ Status: PASS
 
 ### test_simple_2gw_02.sh
 
-Setup service on *Node2* (behind NAT) and configure forwarding on **EGW1**.
-Iptables does DNAT/SNAT on **EGW1**, TC does GUE encap/decap.
+Setup service on *Node2* (behind NAT) and configure forwarding on **EPIC1**.
+Iptables does DNAT/SNAT on **EPIC1**, TC does GUE encap/decap.
 Working in regular mode.
 Check service reachability.
 
@@ -273,8 +273,8 @@ Status: PASS
 
 ### test_simple_2gw_03.sh
 
-Setup service on *Node1* (same network) and configure forwarding on **EGW2**.
-Iptables does DNAT/SNAT on **EGW2**, TC does GUE encap/decap.
+Setup service on *Node1* (same network) and configure forwarding on **EPIC2**.
+Iptables does DNAT/SNAT on **EPIC2**, TC does GUE encap/decap.
 Working in regular mode.
 Check service reachability.
 
@@ -290,8 +290,8 @@ Status: PASS
 
 ### test_simple_2gw_04.sh
 
-Setup service on *Node2* (behind NAT) and configure forwarding on **EGW2**.
-Iptables does DNAT/SNAT on **EGW2**, TC does GUE encap/decap.
+Setup service on *Node2* (behind NAT) and configure forwarding on **EPIC2**.
+Iptables does DNAT/SNAT on **EPIC2**, TC does GUE encap/decap.
 Working in regular mode.
 Check service reachability.
 
@@ -307,8 +307,8 @@ Status: PASS
 
 ### test_multi_2gw_01.sh
 
-Setup 2 services on *Node1* (same network) and configure forwarding on **EGW1**.
-Iptables does DNAT/SNAT on **EGW1**, TC does GUE encap/decap.
+Setup 2 services on *Node1* (same network) and configure forwarding on **EPIC1**.
+Iptables does DNAT/SNAT on **EPIC1**, TC does GUE encap/decap.
 Working in regular mode.
 Check both services reachability.
 
@@ -324,8 +324,8 @@ Status: PASS
 
 ### test_multi_2gw_02.sh
 
-Setup 2 services on *Node2* (behind NAT) and configure forwarding on **EGW1**.
-Iptables does DNAT/SNAT on **EGW1**, TC does GUE encap/decap.
+Setup 2 services on *Node2* (behind NAT) and configure forwarding on **EPIC1**.
+Iptables does DNAT/SNAT on **EPIC1**, TC does GUE encap/decap.
 Working in regular mode.
 Check both services reachability.
 
@@ -341,8 +341,8 @@ Status: PASS
 
 ### test_multi_2gw_03.sh
 
-Setup 2 services on *Node1* (same network) and configure forwarding on **EGW2**.
-Iptables does DNAT/SNAT on **EGW2**, TC does GUE encap/decap.
+Setup 2 services on *Node1* (same network) and configure forwarding on **EPIC2**.
+Iptables does DNAT/SNAT on **EPIC2**, TC does GUE encap/decap.
 Working in regular mode.
 Check both services reachability.
 
@@ -358,8 +358,8 @@ Status: PASS
 
 ### test_multi_2gw_04.sh
 
-Setup 2 services on *Node2* (behind NAT) and configure forwarding on **EGW2**.
-Iptables does DNAT/SNAT on **EGW2**, TC does GUE encap/decap.
+Setup 2 services on *Node2* (behind NAT) and configure forwarding on **EPIC2**.
+Iptables does DNAT/SNAT on **EPIC2**, TC does GUE encap/decap.
 Working in regular mode.
 Check both services reachability.
 
@@ -375,8 +375,8 @@ Status: PASS
 
 ### test_multi_2gw_05.sh
 
-Setup 2 services, one on *Node1* (same network) via **EGW1** and second on *Node2* (behind NAT) via **EGW2**.
-Iptables does DNAT/SNAT on **EGWx**, TC does GUE encap/decap.
+Setup 2 services, one on *Node1* (same network) via **EPIC1** and second on *Node2* (behind NAT) via **EPIC2**.
+Iptables does DNAT/SNAT on **EPICx**, TC does GUE encap/decap.
 Working in regular mode.
 Check both services reachability.
 
@@ -392,8 +392,8 @@ Status: PASS
 
 ### test_multi_2gw_09.sh
 
-Setup 2 services, one on *Node1* (same network) and second on *Node2*, configure forwarding for both via **EGW1**.
-Iptables does DNAT/SNAT on **EGW1**, TC does GUE encap/decap.
+Setup 2 services, one on *Node1* (same network) and second on *Node2*, configure forwarding for both via **EPIC1**.
+Iptables does DNAT/SNAT on **EPIC1**, TC does GUE encap/decap.
 Working in regular mode.
 Check both services reachability.
 
@@ -409,8 +409,8 @@ Status: PASS
 
 ### test_multi_2gw_10.sh
 
-Setup 2 services, one on *Node1* (same network) and second on *Node2*, configure forwarding for both via **EGW2**.
-Iptables does DNAT/SNAT on **EGW2**, TC does GUE encap/decap.
+Setup 2 services, one on *Node1* (same network) and second on *Node2*, configure forwarding for both via **EPIC2**.
+Iptables does DNAT/SNAT on **EPIC2**, TC does GUE encap/decap.
 Working in regular mode.
 Check both services reachability.
 
@@ -480,13 +480,13 @@ Status: PASS
 
 ## PFC session tracking tests
 
-Check whether dynamic sessions steer response toward proper EGW.
+Check whether dynamic sessions steer response toward proper EPIC.
 
 ### test_split_2gw_01.sh
 
-Create service on **Node1** and create 2 forwardings via **EGW1** and **EGW2**.
-Send 2 succesive requests from same client via **EGW1** and then via **EGW2** using random source port.
-Check whether server could deliver responses via correct EGW.
+Create service on **Node1** and create 2 forwardings via **EPIC1** and **EPIC2**.
+Send 2 succesive requests from same client via **EPIC1** and then via **EPIC2** using random source port.
+Check whether server could deliver responses via correct EPIC.
 
 Run:
 
@@ -500,9 +500,9 @@ Status: PASS
 
 ### test_split_2gw_02.sh
 
-Create service on **Node2** and create 2 forwardings via **EGW1** and **EGW2**.
-Send 2 succesive requests from same client via **EGW1** and then via **EGW2** using random source port.
-Check whether server could deliver responses via correct EGW.
+Create service on **Node2** and create 2 forwardings via **EPIC1** and **EPIC2**.
+Send 2 succesive requests from same client via **EPIC1** and then via **EPIC2** using random source port.
+Check whether server could deliver responses via correct EPIC.
 
 Run:
 
@@ -516,9 +516,9 @@ Status: PASS
 
 ### test_split_2gw_03.sh
 
-Create service on **Node1** and create 2 forwardings via **EGW1** and **EGW2**.
-Send 2 succesive requests from same client via **EGW1** and then via **EGW2** using same source port.
-Check whether server could deliver responses via correct EGW.
+Create service on **Node1** and create 2 forwardings via **EPIC1** and **EPIC2**.
+Send 2 succesive requests from same client via **EPIC1** and then via **EPIC2** using same source port.
+Check whether server could deliver responses via correct EPIC.
 
 Run:
 
@@ -532,9 +532,9 @@ Status: PASS
 
 ### test_split_2gw_04.sh
 
-Create service on **Node2** and create 2 forwardings via **EGW1** and **EGW2**.
-Send 2 succesive requests from same client via **EGW1** and then via **EGW2** using same source port.
-Check whether server could deliver responses via correct EGW.
+Create service on **Node2** and create 2 forwardings via **EPIC1** and **EPIC2**.
+Send 2 succesive requests from same client via **EPIC1** and then via **EPIC2** using same source port.
+Check whether server could deliver responses via correct EPIC.
 
 Run:
 

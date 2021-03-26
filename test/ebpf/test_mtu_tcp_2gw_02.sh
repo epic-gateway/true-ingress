@@ -1,6 +1,6 @@
 #!/bin/bash
-# Setup HTTP service on NODE behind NAT, expose it on EGW and send request from CLIENT.
-# Attach and configure PFC on NODE and EGW.
+# Setup HTTP service on NODE behind NAT, expose it on EPIC and send request from CLIENT.
+# Attach and configure PFC on NODE and EPIC.
 # Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*.
 # Setup HTTP service and forwarding.
 # Send HTTP request from client to *proxy ip:port*.
@@ -36,7 +36,7 @@ fi
 CLIENT="client"
 GROUP_ID=1
 
-PROXY="egw1"
+PROXY="epic1"
 PROXY_IP="5.5.5.5"
 
 NODE="node2"
