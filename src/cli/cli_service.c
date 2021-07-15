@@ -21,8 +21,9 @@ void usage(char *prog) {
     fprintf(stderr,"ERR: Too little arguments\n");
     fprintf(stderr,"Usage:\n");
     fprintf(stderr,"    %s get all|<group-id> <service-id>\n", prog);
+    fprintf(stderr,"    %s del-service <group-id> <service-id>\n", prog);
     fprintf(stderr,"    %s set-gw <group-id> <service-id> <key> <tunnel-id> <proto> <ip-ep> <port-ep> <ifindex>\n", prog);
-    fprintf(stderr,"    %s del-gw <group-id> <service-id> <key> <tunnel-id> <proto> <ip-ep> <port-ep> <ifindex>\n", prog);
+    fprintf(stderr,"    %s del-gw <group-id> <service-id> <key> unused <proto> <ip-ep> <port-ep> <ifindex>\n", prog);
     fprintf(stderr,"    %s set-node <group-id> <service-id> <key> <tunnel-id>\n", prog);
     fprintf(stderr,"    %s del all|<group-id> <service-id>\n\n", prog);
     fprintf(stderr,"    <group-id>      - GUE header group id\n");
@@ -269,7 +270,7 @@ void map_encap_del_verify(int map_fd, struct identity *id) {
  * Delete the specified encap, and if there are no encaps left for
  * that verify, delete the verify also.
  */
-int map_encap_del_service(int map_encap_fd, int map_verify_fd, struct identity *id, __u16 proto, __u32 s_addr, __u16 port, __u32 ifindex) {
+int map_encap_del_service_gw(int map_encap_fd, int map_verify_fd, struct identity *id, __u16 proto, __u32 s_addr, __u16 port, __u32 ifindex) {
     struct encap_key prev_key, key;
     struct service encap;
     bool encaps_remaining = false;
@@ -301,6 +302,30 @@ int map_encap_del_service(int map_encap_fd, int map_verify_fd, struct identity *
     if (!encaps_remaining) {
         map_verify_del(map_verify_fd, id);
     }
+
+    return 0;
+}
+
+/*
+ * Delete the encaps and verify that belong to the service.
+ */
+int map_encap_del_service(int map_encap_fd, int map_verify_fd, struct identity *id) {
+    struct encap_key prev_key, key;
+    struct service encap;
+
+    while (bpf_map_get_next_key(map_encap_fd, &prev_key, &key) == 0) {
+        // Does this encap belong to this verify?
+        if (map_encap_get(map_encap_fd, &key, &encap)
+            && encap.identity.service_id == id->service_id
+            && encap.identity.group_id == id->group_id) {
+
+            map_encap_del(map_encap_fd, &key);
+        }
+        prev_key=key;
+    }
+
+    // delete the corresponding verify
+    map_verify_del(map_verify_fd, id);
 
     return 0;
 }
@@ -365,7 +390,7 @@ int main(int argc, char **argv)
         make_service(&svc, &id, &pwd);
         map_encap_set(map_encap_fd, &ekey, &svc);
         map_verify_set(map_verify_fd, &id, &pwd);
-    } else if (!strncmp(argv[1], "del-gw", 7)) { // del-gw <group-id>2 <service-id>3 <key>4 <tunnel-id>5 <proto>6 <ip-ep>7 <port-ep>8 <ifindex>9
+    } else if (!strncmp(argv[1], "del-gw", 7)) { // del-gw <group-id>2 <service-id>3 <key>4 unused <proto>6 <ip-ep>7 <port-ep>8 <ifindex>9
         if (argc < 9) {
             usage(argv[0]);
             return 1;
@@ -390,7 +415,15 @@ int main(int argc, char **argv)
         make_identity(&id, atoi(argv[2]), atoi(argv[3]));
 
         // Delete the service (i.e., delete encap and maybe verify)
-        return map_encap_del_service(map_encap_fd, map_verify_fd, &id, bpf_htons(proto), bpf_htonl(to.s_addr), bpf_htons(port), bpf_htonl(ifindex));
+        return map_encap_del_service_gw(map_encap_fd, map_verify_fd, &id, bpf_htons(proto), bpf_htonl(to.s_addr), bpf_htons(port), bpf_htonl(ifindex));
+
+    } else if (!strncmp(argv[1], "del-service", 12)) { // del-gw <group-id>2 <service-id>3
+        // Parse arguments
+        struct identity id = { 0 };
+        make_identity(&id, atoi(argv[2]), atoi(argv[3]));
+
+        // Delete the service (i.e., delete encap gws and verify)
+        return map_encap_del_service(map_encap_fd, map_verify_fd, &id);
 
     } else if (!strncmp(argv[1], "set-node", 9)) {  // set-node <group-id>2 <service-id>3 <key>4 <tunnel-id>5
         if (argc < 5) {
