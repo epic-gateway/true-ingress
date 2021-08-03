@@ -385,4 +385,13 @@ int dump_action(int action) {
     return action;
 }
 
+static inline
+int debug_action(int action, int debug) {
+    if (debug) {
+        return dump_action(action);
+    }
+
+    return action;
+}
+
 #endif /* TC_DUMP_H_ */
