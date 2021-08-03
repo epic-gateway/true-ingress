@@ -69,7 +69,12 @@ int pfc_decap(struct __sk_buff *skb)
             // control or data
             struct guehdr *gue = hdr.payload;
 
-            ASSERT((void*)&gue[1] <= data_end, dump_action(TC_ACT_SHOT), "ERROR: (GUE) Invalid packet size\n");
+            bpf_print("        &gue[1]: %u\n", (void*)&gue[1]);
+            bpf_print("       data_end: %u\n", data_end);
+            if ((void*)&gue[1] > data_end) {
+                bpf_print("ERROR: (GUE) Invalid packet size\n");
+                return dump_action(TC_ACT_SHOT);
+            }
 
             ASSERT1(gue->version == 0, dump_action(TC_ACT_SHOT), bpf_print("ERROR: Unsupported GUE version %u\n", gue->version));
 
@@ -94,7 +99,12 @@ int pfc_decap(struct __sk_buff *skb)
                 ASSERT(gue->hlen == 5, dump_action(TC_ACT_SHOT), "Unexpected GUE data HLEN %u\n", gue->hlen);
 
                 struct gueexthdr *gueext = (struct gueexthdr *)&gue[1];
-                ASSERT((void*)&gueext[1] <= data_end, dump_action(TC_ACT_SHOT), "ERROR: (GUEext) Invalid packet size\n");
+                bpf_print("     &gueext[1]: %u\n", (void*)&gueext[1]);
+                bpf_print("       data_end: %u\n", data_end);
+                if ((void*)&gueext[1] > data_end) {
+                    bpf_print("ERROR: (GUEext) Invalid packet size\n");
+                    return dump_action(TC_ACT_SHOT);
+                }
 
                 // check service identity
                 ASSERT1(service_verify(gueext) == 0, dump_action(TC_ACT_SHOT), );
