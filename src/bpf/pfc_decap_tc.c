@@ -56,6 +56,9 @@ int pfc_decap(struct __sk_buff *skb)
     if (parse_headers(skb, &hdr) == TC_ACT_SHOT) {
         return debug_action(TC_ACT_UNSPEC, debug);
     }
+    if (debug) {
+        dump_headers(&hdr);
+    }
 
     // start processing
     struct endpoint ep = { 0 };

@@ -312,6 +312,8 @@ int dump_eth(void *data, void *data_end)
     __u32 *dst = (__u32*)&eth->h_dest[2];
 
     bpf_print("  ETH  : %x -> %x, proto %x\n", bpf_ntohl(*src), bpf_ntohl(*dst), bpf_ntohs(h_proto));
+    bpf_print("         data: %u\n", data);
+    bpf_print("     data_end: %u\n", data_end);
 
     if (h_proto == bpf_htons(ETH_P_IP))
         dump_ipv4(&eth[1], data_end);
