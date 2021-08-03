@@ -134,9 +134,10 @@ int parse_headers(struct __sk_buff *skb, struct headers *hdr)
 static inline
 int dump_headers(struct headers *headers) {
     bpf_print("HEADERS: ==================\n");
-    bpf_print("  eth: %u\n", headers->eth);
-    bpf_print("   ip: %u\n", headers->iph);
-    bpf_print("  udp: %u\n", headers->udph);
+    bpf_print("    eth: %u\n", headers->eth);
+    bpf_print("     ip: %u\n", headers->iph);
+    bpf_print("   udph: %u\n", headers->udph);
+    bpf_print("udph[1]: %u\n", &headers->udph[1]);
     bpf_print("HEADERS: ==================\n");
     return TC_ACT_OK;
 }

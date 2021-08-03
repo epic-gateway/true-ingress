@@ -102,6 +102,7 @@ int pfc_decap(struct __sk_buff *skb)
                 ASSERT(gue->hlen == 5, debug_action(TC_ACT_SHOT, debug), "Unexpected GUE data HLEN %u\n", gue->hlen);
 
                 struct gueexthdr *gueext = (struct gueexthdr *)&gue[1];
+                bpf_print("            gue: %u\n", gue);
                 bpf_print("        &gue[1]: %u\n", (void*)&gue[1]);
                 bpf_print("     &gueext[1]: %u\n", (void*)&gueext[1]);
                 bpf_print("       data_end: %u\n", data_end);
