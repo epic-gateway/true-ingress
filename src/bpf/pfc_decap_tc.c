@@ -22,18 +22,12 @@
 
 int pfc_decap(struct __sk_buff *skb)
 {
-    __u32 pktnum = stats_update(skb->ifindex, STAT_IDX_RX, skb);
-    if (skb->ifindex == skb->ingress_ifindex) {
-        bpf_print("PFC-Decap (iif %u RX) >>>> PKT # %u, len %u\n", skb->ifindex, pktnum, skb->len);
-    } else {
-        bpf_print("PFC-Decap (iif %u TX) >>>> PKT # %u, len %u\n", skb->ifindex, pktnum, skb->len);
-    }
-
     // get config
     __u32 key = skb->ifindex;
     struct cfg_if *iface = bpf_map_lookup_elem(&map_config, &key);
     ASSERT(iface != 0, dump_action(TC_ACT_UNSPEC), "ERROR: Config not found!\n", dump_pkt(skb));
     struct config *cfg = &iface->queue[(skb->ifindex == skb->ingress_ifindex) ? CFG_IDX_RX : CFG_IDX_TX];
+    int debug = cfg->flags & CFG_RX_DUMP;
 
     if (cfg->prog == CFG_PROG_NONE) {
         bpf_print("cfg[%u]->prog = CFG_PROG_DECAP\n", (skb->ifindex == skb->ingress_ifindex) ? CFG_IDX_RX : CFG_IDX_TX);
@@ -41,18 +35,26 @@ int pfc_decap(struct __sk_buff *skb)
         bpf_map_update_elem(&map_config, &key, iface, BPF_ANY);
     }
 
-    // log hello
-    bpf_print("ID %s Flags %u\n", cfg->name, cfg->flags);
+    __u32 pktnum = stats_update(skb->ifindex, STAT_IDX_RX, skb);
 
     // dump packet
-    if (cfg->flags & CFG_RX_DUMP) {
+    if (debug) {
+        if (skb->ifindex == skb->ingress_ifindex) {
+            bpf_print("PFC-Decap (iif %u RX) >>>> PKT # %u, len %u\n", skb->ifindex, pktnum, skb->len);
+        } else {
+            bpf_print("PFC-Decap (iif %u TX) >>>> PKT # %u, len %u\n", skb->ifindex, pktnum, skb->len);
+        }
+
+        // log hello
+        bpf_print("ID %s Flags %u\n", cfg->name, cfg->flags);
+
         dump_pkt(skb);
     }
 
     // parse packet
     struct headers hdr = { 0 };
     if (parse_headers(skb, &hdr) == TC_ACT_SHOT) {
-        return dump_action(TC_ACT_UNSPEC);
+        return debug_action(TC_ACT_UNSPEC, debug);
     }
 
     // start processing
@@ -69,56 +71,55 @@ int pfc_decap(struct __sk_buff *skb)
             // control or data
             struct guehdr *gue = hdr.payload;
 
-            bpf_print("        &gue[1]: %u\n", (void*)&gue[1]);
-            bpf_print("       data_end: %u\n", data_end);
             if ((void*)&gue[1] > data_end) {
                 bpf_print("ERROR: (GUE) Invalid packet size\n");
-                return dump_action(TC_ACT_SHOT);
+                return debug_action(TC_ACT_SHOT, debug);
             }
 
-            ASSERT1(gue->version == 0, dump_action(TC_ACT_SHOT), bpf_print("ERROR: Unsupported GUE version %u\n", gue->version));
+            ASSERT1(gue->version == 0, debug_action(TC_ACT_SHOT, debug), bpf_print("ERROR: Unsupported GUE version %u\n", gue->version));
 
             if (gue->control) {
                 if (gue->hlen == 6) {
                     bpf_print("GUE Control: IDs + KEY\n");
                     struct guepinghdr *gueext = (struct guepinghdr *)&gue[1];
-                    ASSERT1((void*)&gueext[1] <= data_end, dump_action(TC_ACT_SHOT), bpf_print("ERROR: (GUEext) Invalid packet size\n"));
+                    ASSERT1((void*)&gueext[1] <= data_end, debug_action(TC_ACT_SHOT, debug), bpf_print("ERROR: (GUEext) Invalid packet size\n"));
 
-                    ASSERT1(service_verify(&gueext->ext) == 0, dump_action(TC_ACT_SHOT), bpf_print("ERROR: (GUEext) Service verify failure\n"));
+                    ASSERT1(service_verify(&gueext->ext) == 0, debug_action(TC_ACT_SHOT, debug), bpf_print("ERROR: (GUEext) Service verify failure\n"));
 
-                    return dump_action(update_tunnel_from_guec(bpf_ntohl(gueext->tunnelid), &hdr));
+                    return debug_action(update_tunnel_from_guec(bpf_ntohl(gueext->tunnelid), &hdr), debug);
                 } else {
-                    ASSERT(0, dump_action(TC_ACT_SHOT), "ERROR: Unexpected GUE control HLEN %u\n", gue->hlen);
+                    ASSERT(0, debug_action(TC_ACT_SHOT, debug), "ERROR: Unexpected GUE control HLEN %u\n", gue->hlen);
                 }
 
-                return dump_action(TC_ACT_SHOT);
+                return debug_action(TC_ACT_SHOT, debug);
             } else {
                 bpf_print("GUE Data: Decap\n");
 
-                ASSERT(gue->hlen != 0, dump_action(TC_ACT_UNSPEC), "Linux GUE (no ext fields)\n");              // FIXME: remove when linux infra not used anymore
-                ASSERT(gue->hlen == 5, dump_action(TC_ACT_SHOT), "Unexpected GUE data HLEN %u\n", gue->hlen);
+                ASSERT(gue->hlen != 0, debug_action(TC_ACT_UNSPEC, debug), "Linux GUE (no ext fields)\n");              // FIXME: remove when linux infra not used anymore
+                ASSERT(gue->hlen == 5, debug_action(TC_ACT_SHOT, debug), "Unexpected GUE data HLEN %u\n", gue->hlen);
 
                 struct gueexthdr *gueext = (struct gueexthdr *)&gue[1];
+                bpf_print("        &gue[1]: %u\n", (void*)&gue[1]);
                 bpf_print("     &gueext[1]: %u\n", (void*)&gueext[1]);
                 bpf_print("       data_end: %u\n", data_end);
                 if ((void*)&gueext[1] > data_end) {
                     bpf_print("ERROR: (GUEext) Invalid packet size\n");
-                    return dump_action(TC_ACT_SHOT);
+                    return debug_action(TC_ACT_SHOT, debug);
                 }
 
                 // check service identity
-                ASSERT1(service_verify(gueext) == 0, dump_action(TC_ACT_SHOT), );
+                ASSERT1(service_verify(gueext) == 0, debug_action(TC_ACT_SHOT, debug), );
 
                 // get verify structure
                 struct verify *verify = bpf_map_lookup_elem(&map_verify, (struct identity *)&gueext->gidsid);
-                ASSERT(verify != 0, dump_action(TC_ACT_UNSPEC), "ERROR: Service id %u not found!\n", bpf_ntohl(gueext->gidsid));
+                ASSERT(verify != 0, debug_action(TC_ACT_UNSPEC, debug), "ERROR: Service id %u not found!\n", bpf_ntohl(gueext->gidsid));
 
                 struct service svc = {{ 0 }, {{ 0 }, 0, {{ 0 }, 0 }}, 0 };
                 __builtin_memcpy(&svc.key, verify, sizeof(*verify));
                 svc.identity = *(struct identity *)&gueext->gidsid;
                 svc.hash = pktnum;
 
-                ASSERT (TC_ACT_OK == gue_decap_v4(skb), dump_action(TC_ACT_SHOT), "GUE Decap Failed!\n");
+                ASSERT (TC_ACT_OK == gue_decap_v4(skb), debug_action(TC_ACT_SHOT, debug), "GUE Decap Failed!\n");
 
                 if (verify->encap.ifindex) {  // EPIC
                     if (cfg->flags & CFG_RX_FWD) {
@@ -126,7 +127,7 @@ int pfc_decap(struct __sk_buff *skb)
 
                         // update TABLE-PROXY
                         struct mac *mac_remote = bpf_map_lookup_elem(&map_proxy, &ifindex);
-                        ASSERT(mac_remote != 0, dump_action(TC_ACT_UNSPEC), "ERROR: Proxy MAC for ifindex %u not found!\n", ifindex);
+                        ASSERT(mac_remote != 0, debug_action(TC_ACT_UNSPEC, debug), "ERROR: Proxy MAC for ifindex %u not found!\n", ifindex);
 
                         bpf_print("Set D-MAC: ifindex %u -> MAC %x\n", ifindex, bpf_ntohl(*(__u32*)&(mac_remote->value[2])));
                         ret = bpf_skb_store_bytes(skb, 0, mac_remote->value, 6, BPF_F_INVALIDATE_HASH);
@@ -134,25 +135,25 @@ int pfc_decap(struct __sk_buff *skb)
                             bpf_print("bpf_skb_store_bytes: %d\n", ret);
                         }
 
-                        if (cfg->flags & CFG_TX_DUMP) {
+                        if (debug) {
                             dump_pkt(skb);
                         }
 
                         bpf_print("Redirecting to container ifindex %u TX\n", ifindex);
-                        return dump_action(bpf_redirect(ifindex, 0));
+                        return debug_action(bpf_redirect(ifindex, 0), debug);
                     }
 
-                    if (cfg->flags & CFG_TX_DUMP) {
+                    if (debug) {
                         dump_pkt(skb);
                     }
                 } else {                      // PureLB
                     struct encap_key skey = { { 0 } , 0 };
                     struct endpoint dep = { 0 };
-                    ASSERT(parse_ep(skb, &skey.ep, &dep) != TC_ACT_SHOT, dump_action(TC_ACT_UNSPEC), "ERROR: SRC EP parsing failed!\n");
+                    ASSERT(parse_ep(skb, &skey.ep, &dep) != TC_ACT_SHOT, debug_action(TC_ACT_UNSPEC, debug), "ERROR: SRC EP parsing failed!\n");
 
                     // update TABLE-ENCAP
                     bpf_print("updating encap table: %x:%x:%x\n", skey.ep.ip, skey.ep.port, skey.ep.proto);
-                    ASSERT(bpf_map_update_elem(&map_encap, &skey, &svc, BPF_ANY) == 0, dump_action(TC_ACT_UNSPEC), "ERROR: map_encap update failed\n");
+                    ASSERT(bpf_map_update_elem(&map_encap, &skey, &svc, BPF_ANY) == 0, debug_action(TC_ACT_UNSPEC, debug), "ERROR: map_encap update failed\n");
 
                     if (cfg->flags & CFG_RX_FWD) {
                         // flags: 0, BPF_FIB_LOOKUP_DIRECT 1, BPF_FIB_LOOKUP_OUTPUT 2
@@ -171,21 +172,21 @@ int pfc_decap(struct __sk_buff *skb)
                                 bpf_print("bpf_skb_store_bytes(S-MAC): %d\n", ret);
                             }
 
-                            if (cfg->flags & CFG_TX_DUMP) {
+                            if (debug) {
                                 dump_pkt(skb);
                             }
 
                             bpf_print("Redirecting to interface ifindex %u TX\n", fib_params.ifindex);
-                            return dump_action(bpf_redirect(fib_params.ifindex, 0));
+                            return debug_action(bpf_redirect(fib_params.ifindex, 0), debug);
                         }
                     }
 
-                    if (cfg->flags & CFG_TX_DUMP) {
+                    if (debug) {
                         dump_pkt(skb);
                     }
                 }
 
-                return dump_action(TC_ACT_UNSPEC);
+                return debug_action(TC_ACT_UNSPEC, debug);
             }
         }
     }
@@ -198,15 +199,15 @@ int pfc_decap(struct __sk_buff *skb)
             bpf_print("DNAT to %x:%u\n", dnat->ip, bpf_ntohs(dnat->port));
 
             dnat4(skb, &hdr, bpf_htonl(dnat->ip), dnat->port);
-            if (cfg->flags & CFG_RX_DUMP) {
+            if (debug) {
                 dump_pkt(skb);
             }
 
-            return dump_action(TC_ACT_OK);
+            return debug_action(TC_ACT_OK, debug);
         }
     }
 
-    return dump_action(TC_ACT_UNSPEC);
+    return debug_action(TC_ACT_UNSPEC, debug);
 }
 
 char _license[] SEC("license") = "GPL";
