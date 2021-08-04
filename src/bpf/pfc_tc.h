@@ -55,6 +55,15 @@ struct tunhdr {
     __u64               gue_key[2];
 } __attribute__((packed));
 
+// In order to safely parse a GUE packet we need to ensure that there
+// are at least this many bytes in the packet's skb data. Not all
+// packets have that at first. In some cases we need to
+// bpf_skb_pull_data() this many bytes before we can parse.
+#define TOTAL_GUE_HEADER_SIZE sizeof(struct ethhdr) \
+    + sizeof(struct iphdr) \
+    + sizeof(struct udphdr) \
+    + sizeof(struct guehdr)
+
 struct headers {
     struct ethhdr *eth;
     struct iphdr *iph;
