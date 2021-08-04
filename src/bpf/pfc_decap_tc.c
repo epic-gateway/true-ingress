@@ -99,7 +99,7 @@ int pfc_decap(struct __sk_buff *skb)
 
             // This check is redundant with the one in parse_headers()
             // but the verifier fails if I don't have it here, also.
-            if (hdr.gueh + sizeof(struct guehdr) > data_end) {
+            if ((void *)(long)hdr.gueh + sizeof(struct guehdr) > (void *)(long)data_end) {
                 bpf_print("ERROR: (GUE) Invalid packet size\n");
                 return debug_action(TC_ACT_SHOT, debug);
             }
