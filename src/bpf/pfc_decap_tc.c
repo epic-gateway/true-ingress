@@ -73,6 +73,12 @@ int pfc_decap(struct __sk_buff *skb)
             void *data_end = (void *)(long)skb->data_end;
             // control or data
             struct guehdr *gue = hdr.payload;
+            bpf_print("            gue: %u\n", gue);
+            bpf_print("        &gue[1]: %u\n", (void*)&gue[1]);
+            // FIXME: remove the next three lines when we've found the pointer bug
+            struct gueexthdr *gueext2 = (struct gueexthdr *)&gue[1];
+            bpf_print("         gueext: %u\n", gueext2);
+            bpf_print("     &gueext[1]: %u\n", (void*)&gueext2[1]);
 
             if ((void*)&gue[1] > data_end) {
                 bpf_print("ERROR: (GUE) Invalid packet size\n");
@@ -102,10 +108,6 @@ int pfc_decap(struct __sk_buff *skb)
                 ASSERT(gue->hlen == 5, debug_action(TC_ACT_SHOT, debug), "Unexpected GUE data HLEN %u\n", gue->hlen);
 
                 struct gueexthdr *gueext = (struct gueexthdr *)&gue[1];
-                bpf_print("            gue: %u\n", gue);
-                bpf_print("        &gue[1]: %u\n", (void*)&gue[1]);
-                bpf_print("     &gueext[1]: %u\n", (void*)&gueext[1]);
-                bpf_print("       data_end: %u\n", data_end);
                 if ((void*)&gueext[1] > data_end) {
                     bpf_print("ERROR: (GUEext) Invalid packet size\n");
                     return debug_action(TC_ACT_SHOT, debug);
