@@ -60,12 +60,12 @@ struct headers {
     struct iphdr *iph;
     struct tcphdr *tcph;
     struct udphdr *udph;
-    void *payload;
+    struct guehdr *gueh;
     __u32 off_eth;
     __u32 off_iph;
     __u32 off_tcph;
     __u32 off_udph;
-    __u32 off_payload;
+    __u32 off_gueh;
 };
 
 static inline
@@ -109,8 +109,8 @@ int parse_headers(struct __sk_buff *skb, struct headers *hdr)
             bpf_print("ERROR: (TCP) Invalid packet size\n");
             return TC_ACT_SHOT;
         }
-        hdr->payload = (void*)&hdr->tcph[1];
-        hdr->off_payload = nh_off;
+        hdr->gueh = data + nh_off;
+        hdr->off_gueh = nh_off;
         return TC_ACT_OK;
     }
     else if (hdr->iph->protocol == IPPROTO_UDP)
@@ -123,8 +123,21 @@ int parse_headers(struct __sk_buff *skb, struct headers *hdr)
             bpf_print("ERROR: (UDP) Invalid packet size\n");
             return TC_ACT_SHOT;
         }
-        hdr->payload = (void*)&hdr->udph[1];
-        hdr->off_payload = nh_off;
+
+        // GUE Header
+        hdr->gueh = data + nh_off;
+        hdr->off_gueh = nh_off;
+        nh_off += sizeof(struct guehdr);
+        if ((void *)(long)hdr->gueh + sizeof(struct guehdr) > (void *)(long)data_end)
+        {
+            bpf_print("ERROR: (GUE) Invalid packet size (gueh + sizeof(struct guehdr) > data_end): \n");
+            bpf_print("                  data: %u\n", data);
+            bpf_print("                  gueh: %u\n", hdr->gueh);
+            bpf_print(" sizeof(struct guehdr): %u\n", sizeof(struct guehdr));
+            bpf_print("              data_end: %u\n", data_end);
+            return TC_ACT_SHOT;
+        }
+
         return TC_ACT_OK;
     }
 
