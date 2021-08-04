@@ -331,7 +331,7 @@ static inline
 int dump_pkt(struct __sk_buff *skb)
 {
     bpf_print("DUMP: =====================\n");
-    bpf_print("  Size : %u B\n", skb->len);
+    bpf_print("   len : %u B\n", skb->len);
 
     void *data = (void *)(long)skb->data;
     void *data_end = (void *)(long)skb->data_end;
