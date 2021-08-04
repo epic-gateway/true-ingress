@@ -62,7 +62,8 @@ struct tunhdr {
 #define TOTAL_GUE_HEADER_SIZE sizeof(struct ethhdr) \
     + sizeof(struct iphdr) \
     + sizeof(struct udphdr) \
-    + sizeof(struct guehdr)
+    + sizeof(struct guehdr) \
+    + sizeof(struct gueexthdr)
 
 struct headers {
     struct ethhdr *eth;
