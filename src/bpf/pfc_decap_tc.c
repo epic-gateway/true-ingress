@@ -37,6 +37,24 @@ int pfc_decap(struct __sk_buff *skb)
 
     __u32 pktnum = stats_update(skb->ifindex, STAT_IDX_RX, skb);
 
+    // Pull (i.e. "linearize") the packet if needed.
+    // https://github.com/torvalds/linux/blob/master/include/uapi/linux/bpf.h#L2301
+    // If len is greater than the distance between data and data_end.
+    long pull_amount = (skb->len > TOTAL_GUE_HEADER_SIZE) ? TOTAL_GUE_HEADER_SIZE : skb->len;
+    if ((void *)(long)skb->data + pull_amount > (void *)(long)skb->data_end) {
+        if (debug) {
+            bpf_print("*** Pulling packet headers\n");
+            bpf_print("      skb len: %u\n", skb->len);
+            bpf_print("  pull amount: %u\n", pull_amount);
+            bpf_print("         data: %u\n", skb->data);
+            bpf_print("     data_end: %u\n", skb->data_end);
+        }
+        if (bpf_skb_pull_data(skb, pull_amount) < 0) {
+            bpf_print("failure to pull data\n");
+            return debug_action(TC_ACT_SHOT, debug);
+        }
+    }
+
     // dump packet
     if (debug) {
         if (skb->ifindex == skb->ingress_ifindex) {
@@ -72,42 +90,43 @@ int pfc_decap(struct __sk_buff *skb)
         if (bpf_map_lookup_elem(&map_decap, &ep)) {
             void *data_end = (void *)(long)skb->data_end;
             // control or data
-            struct guehdr *gue = hdr.payload;
-            bpf_print("            gue: %u\n", gue);
-            bpf_print("        &gue[1]: %u\n", (void*)&gue[1]);
+            bpf_print("            gueh: %u\n", hdr.gueh);
+            bpf_print("        &gueh[1]: %u\n", (void*)&hdr.gueh[1]);
             // FIXME: remove the next three lines when we've found the pointer bug
-            struct gueexthdr *gueext2 = (struct gueexthdr *)&gue[1];
-            bpf_print("         gueext: %u\n", gueext2);
-            bpf_print("     &gueext[1]: %u\n", (void*)&gueext2[1]);
+            struct gueexthdr *gueext2 = (struct gueexthdr *)&hdr.gueh[1];
+            bpf_print("          gueext: %u\n", gueext2);
+            bpf_print("      &gueext[1]: %u\n", (void*)&gueext2[1]);
 
-            if ((void*)&gue[1] > data_end) {
+            // This check is redundant with the one in parse_headers()
+            // but the verifier fails if I don't have it here, also.
+            if ((void *)(long)hdr.gueh + sizeof(struct guehdr) > (void *)(long)data_end) {
                 bpf_print("ERROR: (GUE) Invalid packet size\n");
                 return debug_action(TC_ACT_SHOT, debug);
             }
 
-            ASSERT1(gue->version == 0, debug_action(TC_ACT_SHOT, debug), bpf_print("ERROR: Unsupported GUE version %u\n", gue->version));
+            ASSERT1(hdr.gueh->version == 0, debug_action(TC_ACT_SHOT, debug), bpf_print("ERROR: Unsupported GUE version %u\n", hdr.gueh->version));
 
-            if (gue->control) {
-                if (gue->hlen == 6) {
+            if (hdr.gueh->control) {
+                if (hdr.gueh->hlen == 6) {
                     bpf_print("GUE Control: IDs + KEY\n");
-                    struct guepinghdr *gueext = (struct guepinghdr *)&gue[1];
+                    struct guepinghdr *gueext = (struct guepinghdr *)&hdr.gueh[1];
                     ASSERT1((void*)&gueext[1] <= data_end, debug_action(TC_ACT_SHOT, debug), bpf_print("ERROR: (GUEext) Invalid packet size\n"));
 
                     ASSERT1(service_verify(&gueext->ext) == 0, debug_action(TC_ACT_SHOT, debug), bpf_print("ERROR: (GUEext) Service verify failure\n"));
 
                     return debug_action(update_tunnel_from_guec(bpf_ntohl(gueext->tunnelid), &hdr), debug);
                 } else {
-                    ASSERT(0, debug_action(TC_ACT_SHOT, debug), "ERROR: Unexpected GUE control HLEN %u\n", gue->hlen);
+                    ASSERT(0, debug_action(TC_ACT_SHOT, debug), "ERROR: Unexpected GUE control HLEN %u\n", hdr.gueh->hlen);
                 }
 
                 return debug_action(TC_ACT_SHOT, debug);
             } else {
                 bpf_print("GUE Data: Decap\n");
 
-                ASSERT(gue->hlen != 0, debug_action(TC_ACT_UNSPEC, debug), "Linux GUE (no ext fields)\n");              // FIXME: remove when linux infra not used anymore
-                ASSERT(gue->hlen == 5, debug_action(TC_ACT_SHOT, debug), "Unexpected GUE data HLEN %u\n", gue->hlen);
+                ASSERT(hdr.gueh->hlen != 0, debug_action(TC_ACT_UNSPEC, debug), "Linux GUE (no ext fields)\n");              // FIXME: remove when linux infra not used anymore
+                ASSERT(hdr.gueh->hlen == 5, debug_action(TC_ACT_SHOT, debug), "Unexpected GUE data HLEN %u\n", hdr.gueh->hlen);
 
-                struct gueexthdr *gueext = (struct gueexthdr *)&gue[1];
+                struct gueexthdr *gueext = (struct gueexthdr *)&hdr.gueh[1];
                 if ((void*)&gueext[1] > data_end) {
                     bpf_print("ERROR: (GUEext) Invalid packet size\n");
                     return debug_action(TC_ACT_SHOT, debug);
