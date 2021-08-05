@@ -89,7 +89,7 @@ int parse_headers(struct __sk_buff *skb, struct headers *hdr)
     {
         return TC_ACT_SHOT;
     }
-    
+
     hdr->iph = data + nh_off;
     hdr->off_iph = nh_off;
     nh_off += sizeof(struct iphdr);
@@ -104,9 +104,9 @@ int parse_headers(struct __sk_buff *skb, struct headers *hdr)
         hdr->tcph = data + nh_off;
         hdr->off_tcph = nh_off;
         nh_off += sizeof(struct tcphdr);
-        if ((void*)&hdr->tcph[1] > data_end)
+        if (data + nh_off > data_end)
         {
-            bpf_print("ERROR: (UDP) Invalid packet size\n");
+            bpf_print("ERROR: (TCP) Invalid packet size\n");
             return TC_ACT_SHOT;
         }
         hdr->payload = (void*)&hdr->tcph[1];
@@ -118,7 +118,7 @@ int parse_headers(struct __sk_buff *skb, struct headers *hdr)
         hdr->udph = data + nh_off;
         hdr->off_udph = nh_off;
         nh_off += sizeof(struct udphdr);
-        if ((void*)&hdr->udph[1] > data_end)
+        if (data + nh_off > data_end)
         {
             bpf_print("ERROR: (UDP) Invalid packet size\n");
             return TC_ACT_SHOT;
@@ -129,6 +129,17 @@ int parse_headers(struct __sk_buff *skb, struct headers *hdr)
     }
 
     return TC_ACT_SHOT;
+}
+
+static inline
+int dump_headers(struct headers *headers) {
+    bpf_print("HEADERS: ==================\n");
+    bpf_print("    eth: %u\n", headers->eth);
+    bpf_print("     ip: %u\n", headers->iph);
+    bpf_print("   udph: %u\n", headers->udph);
+    bpf_print("udph[1]: %u\n", &headers->udph[1]);
+    bpf_print("HEADERS: ==================\n");
+    return TC_ACT_OK;
 }
 
 static inline

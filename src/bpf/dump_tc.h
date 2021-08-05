@@ -312,6 +312,8 @@ int dump_eth(void *data, void *data_end)
     __u32 *dst = (__u32*)&eth->h_dest[2];
 
     bpf_print("  ETH  : %x -> %x, proto %x\n", bpf_ntohl(*src), bpf_ntohl(*dst), bpf_ntohs(h_proto));
+    bpf_print("         data: %u\n", data);
+    bpf_print("     data_end: %u\n", data_end);
 
     if (h_proto == bpf_htons(ETH_P_IP))
         dump_ipv4(&eth[1], data_end);
@@ -329,7 +331,7 @@ static inline
 int dump_pkt(struct __sk_buff *skb)
 {
     bpf_print("DUMP: =====================\n");
-    bpf_print("  Size : %u B\n", skb->len);
+    bpf_print("   len : %u B\n", skb->len);
 
     void *data = (void *)(long)skb->data;
     void *data_end = (void *)(long)skb->data_end;
@@ -380,6 +382,15 @@ int dump_action(int action) {
             bpf_print("Action: UNKNOWN (%d)\n\n");
             break;
         }
+    }
+
+    return action;
+}
+
+static inline
+int debug_action(int action, int debug) {
+    if (debug) {
+        return dump_action(action);
     }
 
     return action;
