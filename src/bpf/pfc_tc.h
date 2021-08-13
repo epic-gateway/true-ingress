@@ -421,7 +421,7 @@ int parse_ep(struct __sk_buff *skb, struct endpoint *sep, struct endpoint *dep)
         nh_off += sizeof(struct tcphdr);
         if ((void*)&tcph[1] > data_end)
         {
-            bpf_print("ERROR: (UDP) Invalid packet size\n");
+            bpf_print("ERROR: (TCP) Invalid packet size\n");
             return TC_ACT_SHOT;
         }
         sep->port = tcph->source;
