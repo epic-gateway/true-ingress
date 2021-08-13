@@ -65,6 +65,14 @@ struct tunhdr {
     + sizeof(struct guehdr) \
     + sizeof(struct gueexthdr)
 
+// In order to safely call parse_ep() on a packet we need to ensure
+// that there are at least this many linear bytes in the packet's skb
+// data. Not all packets have that at first. In some cases we need to
+// bpf_skb_pull_data() this many bytes before we can parse.
+#define TOTAL_EP_HEADER_SIZE sizeof(struct ethhdr) \
+    + sizeof(struct iphdr) \
+    + (sizeof(struct tcphdr) > sizeof(struct udphdr) ? sizeof(struct tcphdr) : sizeof(struct udphdr))
+
 struct headers {
     struct ethhdr *eth;
     struct iphdr *iph;

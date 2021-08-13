@@ -146,6 +146,26 @@ int pfc_decap(struct __sk_buff *skb)
 
                 ASSERT (TC_ACT_OK == gue_decap_v4(skb), debug_action(TC_ACT_SHOT, debug), "GUE Decap Failed!\n");
 
+                // Pull (i.e. "linearize") the packet if needed. We
+                // did this above with the encapsulated packet, but
+                // when we decap the packet we evidently get a new skb
+                // that might not have enough linear bytes to parse
+                // the header so we need to do this again.
+                pull_amount = (skb->len > TOTAL_EP_HEADER_SIZE) ? TOTAL_EP_HEADER_SIZE : skb->len;
+                if ((void *)(long)skb->data + pull_amount > (void *)(long)skb->data_end) {
+                    if (debug) {
+                        bpf_print("*** AFTER DECAP Pulling packet headers\n");
+                        bpf_print("      skb len: %u\n", skb->len);
+                        bpf_print("  pull amount: %u\n", pull_amount);
+                        bpf_print("         data: %u\n", skb->data);
+                        bpf_print("     data_end: %u\n", skb->data_end);
+                    }
+                    if (bpf_skb_pull_data(skb, pull_amount) < 0) {
+                        bpf_print("failure to pull data\n");
+                        return debug_action(TC_ACT_SHOT, debug);
+                    }
+                }
+
                 if (verify->encap.ifindex) {  // EPIC
                     if (cfg->flags & CFG_RX_FWD) {
                         __u32 ifindex = bpf_ntohl(verify->encap.ifindex);
