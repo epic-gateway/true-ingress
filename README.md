@@ -132,7 +132,7 @@ Now the PFC is installed, you can attach it to interface eth0:
 
 Where:
 
-    syntax: $0 <nic> <name> <conf-rx> <conf-tx> <port-min> <port-max> [<gue-delay>] [<sweep-delay>] [<sweep-count>]
+    syntax: $0 <nic> <name> <conf-rx> <conf-tx> <port-min> <port-max>
         <nic>             - Interface to bind PFC to
         <name>            - Instance name
         <conf-rx>         - PFC Inress configuration flags
@@ -140,8 +140,6 @@ Where:
         <port-min>        - Gue tunnel port range lower bound
         <port-max>        - Gue tunnel port range upper bound
         <gue-delay>       - (Optional) Interval of sending GUE pings (in seconds)
-        <sweep-delay>     - (Optional) Interval of checking stale session (in seconds)
-        <sweep-count>     - (Optional) Number of inactivity cycles before expiration
 
 > Note: Ingress and Egress configuration flags are described [here](src/README.md)
 

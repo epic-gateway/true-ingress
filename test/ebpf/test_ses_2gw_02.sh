@@ -57,13 +57,11 @@ NODE_PORT_MAX=6010
 PROXY_NIC="eth1"
 NODE_NIC="eth1"
 DELAY=10
-SWEEP_DELAY=1
-SWEEP_COUNT=5
 
 # PFC: Start PFC
 if [ "${VERBOSE}" ]; then
     docker exec -it ${PROXY} bash -c "pfc_start.sh ${PROXY_NIC} "${PROXY}" 9 9 ${PROXY_PORT_MIN} ${PROXY_PORT_MAX}"
-    docker exec -it ${NODE} bash -c "pfc_start.sh ${NODE_NIC} "${NODE}" 9 8 ${NODE_PORT_MIN} ${NODE_PORT_MAX} ${DELAY} ${SWEEP_DELAY} ${SWEEP_COUNT}"
+    docker exec -it ${NODE} bash -c "pfc_start.sh ${NODE_NIC} "${NODE}" 9 8 ${NODE_PORT_MIN} ${NODE_PORT_MAX} ${DELAY}"
 
     docker exec -it ${NODE} bash -c "ps aux | grep 'gue_ping'"
 else
@@ -71,7 +69,7 @@ else
     echo "  ${PROXY}"
     docker exec -it ${PROXY} bash -c "pfc_start.sh ${PROXY_NIC} "${PROXY}" 9 9 ${PROXY_PORT_MIN} ${PROXY_PORT_MAX}" > /dev/null
     echo "  ${NODE}"
-    docker exec -it ${NODE} bash -c "pfc_start.sh ${NODE_NIC} "${NODE}" 9 8 ${NODE_PORT_MIN} ${NODE_PORT_MAX} ${DELAY} ${SWEEP_DELAY} ${SWEEP_COUNT}" > /dev/null
+    docker exec -it ${NODE} bash -c "pfc_start.sh ${NODE_NIC} "${NODE}" 9 8 ${NODE_PORT_MIN} ${NODE_PORT_MAX} ${DELAY}" > /dev/null
 fi
 
 # INFRA: Setup HTTP service on ${NODE}
@@ -142,7 +140,7 @@ if [ ! "$(docker exec -it ${PROXY} bash -c "cli_tunnel get ${TUNNEL_ID}" | grep 
     echo -e "\nGUE Ping for '${SERVICE_NAME}' \e[31mFAILED\e[0m\n"
     RETURN=1
 else
-    echo -e "\nCreating session #1 (expiration set to ${SWEEP_DELAY}x${SWEEP_COUNT} s)"
+    echo -e "\nCreating session #1"
     TMP=$(./${SERVICE_TYPE}_check.sh ${CLIENT} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_ID})
     if [ "${VERBOSE}" ]; then
         echo "${TMP}"

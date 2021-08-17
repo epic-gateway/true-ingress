@@ -54,8 +54,6 @@ NODE_PORT_MAX=6010
 PROXY_NIC="eth1"
 NODE_NIC="eth1"
 DELAY=100
-SWEEP_DELAY=2
-SWEEP_COUNT=5
 # <<<<
 
 #set -x
@@ -91,7 +89,7 @@ docker exec -it ${PROXY} bash -c "show_tc.sh ; cli_cfg get all"
 
 
 # PFC >>>> Attach PFC to eth on NODE
-docker exec -itd ${NODE} bash -c "gue_ping_svc_auto ${DELAY} ${SWEEP_DELAY} ${SWEEP_COUNT} &> /tmp/gue_ping.log"
+docker exec -itd ${NODE} bash -c "gue_ping_svc_auto ${DELAY} &> /tmp/gue_ping.log"
 
 if [ ! "$(docker exec -it ${NODE} bash -c \"tc qdisc show dev ${NODE_NIC} | grep clsact\")" ]; then
     docker exec -it ${NODE} bash -c "sudo tc qdisc add dev ${NODE_NIC} clsact"
