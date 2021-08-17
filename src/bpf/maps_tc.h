@@ -42,7 +42,7 @@ BPF_ANNOTATE_KV_PAIR(map_decap, struct endpoint, __u32);
 // 3: TABLE-ENCAP      EP (12B) -> SERVICE (40B)
 
 struct bpf_elf_map SEC(ELF_SECTION_MAPS) map_encap = {
-    .type           = BPF_MAP_TYPE_HASH,
+    .type           = BPF_MAP_TYPE_LRU_HASH,
     .size_key       = sizeof(struct encap_key),
     .size_value     = sizeof(struct service),
     .max_elem       = MAX_SERVICE_ENTRIES,
