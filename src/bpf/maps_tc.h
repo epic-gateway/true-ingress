@@ -12,6 +12,7 @@
 #define MAX_CONFIG_ENTRIES      1024
 #define MAX_TUNNEL_ENTRIES      1024    /* service records */
 #define MAX_SERVICE_ENTRIES     65535
+#define MAX_ENTRIES_FOR_DEBUG   10
 
 ////////////////////////////////
 // TABLE-NAT        EP -> EP (8B)
@@ -45,7 +46,7 @@ struct bpf_elf_map SEC(ELF_SECTION_MAPS) map_encap = {
     .type           = BPF_MAP_TYPE_LRU_HASH,
     .size_key       = sizeof(struct encap_key),
     .size_value     = sizeof(struct service),
-    .max_elem       = MAX_SERVICE_ENTRIES,
+    .max_elem       = MAX_ENTRIES_FOR_DEBUG, /* MAX_SERVICE_ENTRIES */
     .pinning        = PIN_GLOBAL_NS,
 };
 BPF_ANNOTATE_KV_PAIR(map_encap, struct encap_key, struct service);
