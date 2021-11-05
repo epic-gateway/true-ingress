@@ -14,7 +14,7 @@ func Check() (bool, string) {
 	// see if we can run one of our executables
 	bytes, err := exec.Command("/opt/acnodal/bin/pfc_cli_go", "version").Output()
 	if err != nil {
-		return false, "PFC not compiled"
+		return false, "PFC not found"
 	}
 
 	return true, string(bytes)
