@@ -2,7 +2,7 @@
 # usage $0 [<project-name>]
 #       <project-name> - folder name, where to clone sources. If not specified, repository name will be used.
 
-PROJECT="packet-forwarding-component"
+PROJECT="epic/true-ingress"
 
 if [ "$1" ] ; then
     PROJECT_DIR=$1              # Project name

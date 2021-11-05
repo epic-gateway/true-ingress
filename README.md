@@ -48,13 +48,7 @@ You may want to setup ssh access first [ssh access](https://gitlab.com/help/ssh/
 
 > Hint: some steps are already automated in [ssh_init.sh](scripts/ssh_init.sh), but you need to generate key-pair first and register public key on gitlab manually first.
 
-If you have setup to gitlab:
-
-    git clone git@gitlab.com:acnodal/packet-forwarding-component.git
-
-otherwise:
-
-    git clone https://gitlab.com/acnodal/packet-forwarding-component.git
+    git clone git@gitlab.com:acnodal/epic/true-ingress.git
 
 > Hint: cloning with installing of some basic dependencies is already automated in [clone_pfc.sh](scripts/clone_pfc.sh).
 

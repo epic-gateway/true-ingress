@@ -32,7 +32,7 @@ You can optionally specify docker image name otherwise default name from _test/c
 
 ### Push to Registry
 
-    make push TAG=registry.gitlab.com/acnodal/packet-forwarding-component/pfc:demo202008031445
+    make push TAG=registry.gitlab.com/acnodal/epic/true-ingress/pfc:demo202008031445
 
 
 ## Additional scripts

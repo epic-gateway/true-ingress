@@ -1,3 +1,3 @@
-module gitlab.com/acnodal/packet-forwarding-component/src/go
+module gitlab.com/acnodal/epic/true-ingress/src/go
 
 go 1.15

@@ -7,7 +7,7 @@ import (
 	"os"
 	"strconv"
 
-	pfc "gitlab.com/acnodal/packet-forwarding-component/src/go/pfc"
+	pfc "gitlab.com/acnodal/epic/true-ingress/src/go/pfc"
 )
 
 var version string // initialized by gitlab CI via Makefile and ldflags
