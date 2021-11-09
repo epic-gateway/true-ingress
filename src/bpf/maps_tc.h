@@ -10,7 +10,7 @@
 #include "struct_tc.h"
 
 #define MAX_CONFIG_ENTRIES      1024
-#define MAX_TUNNEL_ENTRIES      1024    /* service records */
+#define MAX_TUNNEL_ENTRIES      256*1024
 #define MAX_SERVICE_ENTRIES     65535
 
 ////////////////////////////////
@@ -66,7 +66,7 @@ BPF_ANNOTATE_KV_PAIR(map_verify, struct identity, struct verify);
 // TABLE-TUNNEL tunnel-id (4B) -> GUE (18B)
 
 struct bpf_elf_map SEC(ELF_SECTION_MAPS) map_tunnel = {
-    .type           = BPF_MAP_TYPE_HASH,
+    .type           = BPF_MAP_TYPE_LRU_HASH,
     .size_key       = sizeof(__u32),
     .size_value     = sizeof(struct tunnel),
     .max_elem       = MAX_SERVICE_ENTRIES,
