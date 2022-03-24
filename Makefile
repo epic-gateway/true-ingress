@@ -1,6 +1,10 @@
-SOURCES = libbpf/src headers common src/cli src/bpf src/go
+SOURCES = libbpf/src headers common src/cli src/bpf
 CLEAN = $(addsuffix _clean,$(SOURCES))
 TARFILE = pkg/true-ingress.tar.bz2
+# These will be set if we're building in a gitlab CI environment and
+# we'll default it to "dev" in other cases
+CI_COMMIT_REF_NAME ?= dev
+CI_COMMIT_SHORT_SHA ?= dev
 
 .PHONY: clean $(SOURCES) $(CLEAN) clean-tar check test prod-img
 
@@ -8,7 +12,7 @@ all: tar
 
 clean: $(CLEAN) clean-tar
 
-build: $(SOURCES)
+build: $(SOURCES) go
 
 rebuild: clean build
 
@@ -40,7 +44,8 @@ check:
 	$(MAKE) -C src attach detach
 
 go:
-	$(MAKE) -C src/go go
+	go build -ldflags "-X main.version=${CI_COMMIT_REF_NAME} -X main.commit=${CI_COMMIT_SHORT_SHA}" -tags 'osusergo netgo' ./cmd/gue_ping_svc_auto
+	go build -ldflags "-X main.version=${CI_COMMIT_REF_NAME} -X main.commit=${CI_COMMIT_SHORT_SHA}" -tags 'osusergo netgo' ./cmd/pfc_cli_go
 
 tar: build
 	mkdir -p pkg/bin
@@ -52,7 +57,7 @@ tar: build
 	cp ./src/cli/cli_cfg ./src/cli/cli_service ./src/cli/cli_tunnel pkg/bin/
 
 	# for GUE Ping
-	cp ./src/go/gue_ping_svc_auto ./src/go/pfc_cli_go pkg/bin/
+	cp ./gue_ping_svc_auto ./pfc_cli_go pkg/bin/
 
 	chmod +x pkg/bin/*
 
@@ -65,6 +70,7 @@ clean-tar:
 	rm -rf pkg
 
 $(CLEAN):
+	rm -rf pfc_cli_go gue_ping_svc_auto
 	$(MAKE) -C $(subst _clean,,$@) clean
 
 help:

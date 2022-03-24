@@ -40,12 +40,12 @@ WORKDIR /opt/acnodal/bin
 ENV PATH="/opt/acnodal/bin:${PATH}"
 
 # Copy eBPF
-COPY --from=builder /usr/src/pfc/src/*.o ./
+COPY --from=builder /usr/src/pfc/src/bpf/*.o ./
 COPY --from=builder /usr/src/pfc/src/*.sh ./
 COPY --from=builder /usr/src/pfc/test/docker/*.sh ./
 
 # Copy CLI
-COPY --from=builder /usr/src/pfc/src/cli_cfg /usr/src/pfc/src/cli_service /usr/src/pfc/src/cli_tunnel /usr/src/pfc/src/cli_gc /usr/src/pfc/src/cli_nat ./
+COPY --from=builder /usr/src/pfc/src/cli/cli_cfg /usr/src/pfc/src/cli/cli_service /usr/src/pfc/src/cli/cli_tunnel /usr/src/pfc/src/cli/cli_gc /usr/src/pfc/src/cli/cli_nat ./
 COPY --from=builder /usr/src/pfc/test/port_*.sh ./
 COPY --from=builder /usr/src/pfc/test/pfc_*.sh ./
 
@@ -54,7 +54,7 @@ COPY --from=builder /usr/src/pfc/test/docker/server.py /usr/src/pfc/test/docker/
 
 # for GUE Ping
 #COPY --from=builder /usr/src/pfc/test/docker/gue_ping*.py ./
-COPY --from=builder /usr/src/pfc/test/docker/gue_ping_svc_auto /usr/src/pfc/src/go/pfc_cli_go ./
+COPY --from=builder /usr/src/pfc/gue_ping_svc_auto /usr/src/pfc/pfc_cli_go ./
 
 RUN chmod +x ./*
 
