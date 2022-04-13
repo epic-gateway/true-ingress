@@ -233,6 +233,8 @@ int pfc_decap(struct __sk_buff *skb)
 
                 return debug_action(TC_ACT_UNSPEC, debug);
             }
+        } else {
+            bpf_print("decap map lookup failed");
         }
     }
 
