@@ -316,20 +316,20 @@ int main(int argc, char **argv)
             return 1;
         }
 
-        struct tunnel tun;
-        struct endpoint ep;
-        __u32 id = atoi(argv[2]);
+        __u32 tunnel_id = atoi(argv[2]);
 
         // update decap entry
-        {
-            if (!map_tunnel_get(map_tunnel_fd, id, &tun)) {
-                map_decap_dec(map_decap_fd, make_endpoint(&ep, ntohl(tun.ip_local), ntohs(tun.port_local), get_proto_number("udp")));
-            }
+        struct tunnel tun;
+        if (!map_tunnel_get(map_tunnel_fd, tunnel_id, &tun)) {
+            struct endpoint tun_ep;
+            make_endpoint(&tun_ep, ntohl(tun.ip_remote), ntohs(tun.port_remote), get_proto_number("udp"));
+            map_decap_dec(map_decap_fd, &tun_ep);
         }
 
-        make_endpoint(&ep, local.s_addr, atoi(argv[4]), get_proto_number("udp"));
+        map_tunnel_set(map_tunnel_fd, tunnel_id, make_tunnel(&tun, local.s_addr, atoi(argv[4]), remote.s_addr, atoi(argv[6])));
 
-        map_tunnel_set(map_tunnel_fd, atoi(argv[2]), make_tunnel(&tun, local.s_addr, atoi(argv[4]), remote.s_addr, atoi(argv[6])));
+        struct endpoint ep;
+        make_endpoint(&ep, remote.s_addr, atoi(argv[6]), get_proto_number("udp"));
         map_decap_inc(map_decap_fd, &ep);
     } else if (!strncmp(argv[1], "get", 4)) {
         if (argc < 3) {
@@ -341,17 +341,17 @@ int main(int argc, char **argv)
             map_tunnel_getall(map_tunnel_fd);
             map_decap_getall(map_decap_fd);
         } else {
-            __u32 id = atoi(argv[2]);
+            __u32 tunnel_id = atoi(argv[2]);
             struct tunnel tun;
             int ret;
 
-            ret = map_tunnel_get(map_tunnel_fd, id, &tun);
+            ret = map_tunnel_get(map_tunnel_fd, tunnel_id, &tun);
             if (ret) {
                 return 1;
             }
 
             map_tunnel_print_header();
-            map_tunnel_print_record(id, &tun);
+            map_tunnel_print_record(tunnel_id, &tun);
             map_tunnel_print_footer();
 
             struct endpoint ep;
@@ -380,13 +380,15 @@ int main(int argc, char **argv)
             map_tunnel_delall(map_tunnel_fd);
             map_decap_delall(map_decap_fd);
         } else {
+            __u32 tunnel_id = atoi(argv[2]);
+
             struct tunnel value;
-            if (map_tunnel_get(map_tunnel_fd, atoi(argv[2]), &value)) {
+            if (map_tunnel_get(map_tunnel_fd, tunnel_id, &value)) {
                 return 1;
             }
             struct endpoint ep;
-            map_decap_dec(map_decap_fd, make_endpoint(&ep, ntohl(value.ip_local), ntohs(value.port_local), get_proto_number("udp")));
-            map_tunnel_del(map_tunnel_fd, atoi(argv[2]));
+            map_decap_dec(map_decap_fd, make_endpoint(&ep, ntohl(value.ip_remote), ntohs(value.port_remote), get_proto_number("udp")));
+            map_tunnel_del(map_tunnel_fd, tunnel_id);
         }
     } else {
         fprintf(stderr,"ERR: Unknown operation \'%s\'\n", argv[1]);

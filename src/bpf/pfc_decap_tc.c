@@ -79,15 +79,17 @@ int pfc_decap(struct __sk_buff *skb)
     }
 
     // start processing
-    struct endpoint ep = { 0 };
-    // get Destination EP
-    parse_dest_ep(&ep, &hdr);
 
     // check packet for DECAP
     if (cfg->flags & CFG_RX_GUE) {
         int ret = 0;
+        struct endpoint src_ep = { 0 };
+        // get source EP
+        parse_src_ep(&src_ep, &hdr);
         // is GUE endpoint?
-        if (bpf_map_lookup_elem(&map_decap, &ep)) {
+        if (!bpf_map_lookup_elem(&map_decap, &src_ep)) {
+            bpf_print("decap map lookup failed");
+        } else {
             void *data_end = (void *)(long)skb->data_end;
             // control or data
             bpf_print("            gueh: %u\n", hdr.gueh);
@@ -233,15 +235,14 @@ int pfc_decap(struct __sk_buff *skb)
 
                 return debug_action(TC_ACT_UNSPEC, debug);
             }
-        } else {
-            bpf_print("decap map lookup failed");
         }
     }
 
     // check packet for DNAT
     if (cfg->flags & CFG_RX_DNAT) {
+        struct endpoint nat_ep = { 0 };
         // is PROXY endpoint?
-        struct endpoint *dnat = bpf_map_lookup_elem(&map_nat, &ep);
+        struct endpoint *dnat = bpf_map_lookup_elem(&map_nat, &nat_ep);
         if (dnat) {
             bpf_print("DNAT to %x:%u\n", dnat->ip, bpf_ntohs(dnat->port));
 
