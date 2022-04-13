@@ -37,7 +37,6 @@ void usage(char *prog) {
 // TABLE-TUNNEL
 ////////////////////
 void map_tunnel_print_header() {
-//    printf("TABLE-TUNNEL:\n   \ttunnel-id\t\tlocal-ip:port -> \tremote-ip:port\t\tMAC\n");
     printf("TABLE-TUNNEL:\n   \ttunnel-id\t\tlocal-ip:port -> remote-ip:port\n");
     printf("--------------------------------------------------------------------------\n");
 }
@@ -61,12 +60,6 @@ void map_tunnel_print_record(__u32 id, struct tunnel *value) {
     printf("TUN\t%8u\t%16s:%u -> ", id,
             inet_ntoa(local), ntohs(value->port_local));
     printf("%s:%u", inet_ntoa(remote), ntohs(value->port_remote));
-//    printf("\t%02x:%02x:%02x:%02x:%02x:%02x",
-//           value->mac_remote.value[0], value->mac_remote.value[1], value->mac_remote.value[2],
-//           value->mac_remote.value[3], value->mac_remote.value[4], value->mac_remote.value[5]);
-//    printf("\t\t(%08x:%04x -> %08x:%04x)",
-//            value->ip_local, ntohs(value->port_local),
-//            value->ip_remote, ntohs(value->port_remote));
     printf("\n");
 }
 
@@ -107,8 +100,6 @@ bool map_tunnel_getall(int map_fd) {
     }
 
     map_tunnel_print_count(count);
-//    map_tunnel_print_footer();
-
     return true;
 }
 
@@ -143,7 +134,6 @@ bool map_tunnel_delall(int map_fd) {
 
     while(bpf_map_get_next_key(map_fd, &prev_key, &key) == 0) {
         map_tunnel_del(map_fd, key);
-        //prev_key=key;
     }
 
     return true;
@@ -172,7 +162,6 @@ void map_decap_print_record(struct endpoint *key, __u32 *value) {
     from.s_addr = ntohl(key->ip);
 
     printf("DECAP\t%8s    %s:%u\t\t%u", get_proto_name(ntohs(key->proto)), inet_ntoa(from), ntohs(key->port), *value);
-//    printf("\t\t(%04x  %08x:%04x)", key->proto, key->ip, key->port);
     printf("\n");
 }
 
@@ -217,8 +206,6 @@ bool map_decap_getall(int map_fd) {
         prev_key=key;
     }
     map_decap_print_count(count);
-//    map_decap_print_footer();
-
     return true;
 }
 
@@ -332,9 +319,7 @@ int main(int argc, char **argv)
         struct tunnel tun;
         struct endpoint ep;
         __u32 id = atoi(argv[2]);
-//        int ret;
 
-//        ret = map_tunnel_get(map_tunnel_fd, id, &tun);  // already exist?
         // update decap entry
         {
             if (!map_tunnel_get(map_tunnel_fd, id, &tun)) {

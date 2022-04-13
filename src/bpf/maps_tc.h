@@ -32,7 +32,6 @@ BPF_ANNOTATE_KV_PAIR(map_nat, struct endpoint, struct endpoint);
 struct bpf_elf_map SEC(ELF_SECTION_MAPS) map_decap = {
     .type           = BPF_MAP_TYPE_HASH,
     .size_key       = sizeof(struct endpoint),
-//    .size_value     = sizeof(struct empty),
     .size_value     = sizeof(__u32),
     .max_elem       = MAX_SERVICE_ENTRIES,
     .pinning        = PIN_GLOBAL_NS,
