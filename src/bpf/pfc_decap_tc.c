@@ -133,7 +133,7 @@ int pfc_decap(struct __sk_buff *skb)
                 }
 
                 // check service identity
-                ASSERT1(service_verify(gueext) == 0, debug_action(TC_ACT_SHOT, debug), );
+                ASSERT1(service_verify(gueext) == 0, debug_action(TC_ACT_SHOT, debug), bpf_print("service_verify failed"));
 
                 // get verify structure
                 struct verify *verify = bpf_map_lookup_elem(&map_verify, (struct identity *)&gueext->gidsid);
