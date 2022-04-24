@@ -17,31 +17,29 @@
 #include "dump_tc.h"
 #include "maps_tc.h"
 
-int tag_tx(struct __sk_buff *skb)
+int tag(struct __sk_buff *skb)
 {
-    if (skb->ifindex == skb->ingress_ifindex) {
-        bpf_print("PFC-Tag (iif %u RX) >>>> PKT len %u\n", skb->ifindex, skb->len);
+    __u32 key = skb->ifindex;
+
+    if (key == skb->ingress_ifindex) {
+        bpf_print("PFC-Tag (iif %u RX) >>>> PKT len %u\n", key, skb->len);
     } else {
-        bpf_print("PFC-Tag (iif %u TX) >>>> PKT len %u\n", skb->ifindex, skb->len);
+        bpf_print("PFC-Tag (iif %u TX) >>>> PKT len %u\n", key, skb->len);
     }
 
-    skb->mark = skb->ifindex;
+    // Mark the packet with the Envoy pod's ifindex
+    skb->mark = key;
     bpf_print("  Tagged %u\n", skb->mark);
 
-    __u32 key = skb->ifindex;
+    // Update TABLE-PROXY
     struct mac mac_remote = { 0 };
-    // Update destination MAC
     int ret = bpf_skb_load_bytes(skb, 6, mac_remote.value, 6);
     if (ret < 0) {
         bpf_print("bpf_skb_load_bytes: %d\n", ret);
         return dump_action(TC_ACT_UNSPEC);
     }
-
-    bpf_print("  Update proxy MAC: ifindex %u -> MAC %x\n", key, bpf_ntohl(*(__u32*)&(mac_remote.value[2])));
-
-    // update TABLE-PROXY
+    bpf_print("  Update proxy table: ifindex %u -> MAC %x\n", key, bpf_ntohl(*(__u32*)&(mac_remote.value[2])));
     bpf_map_update_elem(&map_proxy, &key, &mac_remote, BPF_ANY);
-
 
     return dump_action(TC_ACT_UNSPEC);
 }
