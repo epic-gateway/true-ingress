@@ -126,6 +126,7 @@ int pfc_encap(struct __sk_buff *skb)
         }
     } else {
         struct encap_key ekey = { dep, 0 };
+        bpf_print("querying encap table key: %x:%x:%x", ekey.ep.ip, ekey.ep.port, ekey.ep.proto);
         struct service *svc = bpf_map_lookup_elem(&map_encap, &ekey);
         if (!svc) {
             if (debug) {
@@ -133,7 +134,7 @@ int pfc_encap(struct __sk_buff *skb)
             }
         } else {
             // Regular mode
-            bpf_print("Regular: GUE Encap Service: group-id %u, service-id %u, tunnel-id %u\n",
+            bpf_print("Regular: GUE Encap Service: group-id %u, service-id %u, tunnel-id %u",
                       bpf_ntohs(svc->identity.service_id), bpf_ntohs(svc->identity.group_id), bpf_ntohl(svc->key.tunnel_id));
 
             __u32 key = bpf_ntohl(svc->key.tunnel_id);
