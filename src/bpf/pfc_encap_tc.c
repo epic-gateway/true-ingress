@@ -163,7 +163,9 @@ int pfc_encap(struct __sk_buff *skb)
                 if (ret == TC_ACT_OK) {
                     __builtin_memcpy(&via_ifindex, &fib_params.ifindex, sizeof(via_ifindex));
 
-                    bpf_print("Adjusting MACs\n");
+                    if (debug) {
+                        bpf_print("Adjusting MACs\n");
+                    }
                     // Update destination MAC
                     ret = bpf_skb_store_bytes(skb, 0, &fib_params.dmac, 6, BPF_F_INVALIDATE_HASH);
                     if (ret < 0) {

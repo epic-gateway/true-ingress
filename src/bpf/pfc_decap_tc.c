@@ -63,8 +63,8 @@ int pfc_decap(struct __sk_buff *skb)
             bpf_print("PFC-Decap (iif %u TX) >>>> PKT # %u, len %u\n", skb->ifindex, pktnum, skb->len);
         }
 
-        // log hello
-        bpf_print("ID %s Flags %u\n", cfg->name, cfg->flags);
+        // log identification info
+        bpf_print("ID: \'%s\'    Flags: %u\n", cfg->name, cfg->flags);
 
         dump_pkt(skb);
     }
@@ -88,16 +88,16 @@ int pfc_decap(struct __sk_buff *skb)
         parse_src_ep(&src_ep, &hdr);
         // is GUE endpoint?
         if (!bpf_map_lookup_elem(&map_decap, &src_ep)) {
-            bpf_print("decap map lookup failed");
+            if (debug) {
+                bpf_print("decap map lookup failed");
+            }
         } else {
             void *data_end = (void *)(long)skb->data_end;
             // control or data
-            bpf_print("            gueh: %u\n", hdr.gueh);
-            bpf_print("        &gueh[1]: %u\n", (void*)&hdr.gueh[1]);
-            // FIXME: remove the next three lines when we've found the pointer bug
-            struct gueexthdr *gueext2 = (struct gueexthdr *)&hdr.gueh[1];
-            bpf_print("          gueext: %u\n", gueext2);
-            bpf_print("      &gueext[1]: %u\n", (void*)&gueext2[1]);
+            if (debug) {
+                bpf_print("            gueh: %u\n", hdr.gueh);
+                bpf_print("        &gueh[1]: %u\n", (void*)&hdr.gueh[1]);
+            }
 
             // This check is redundant with the one in parse_headers()
             // but the verifier fails if I don't have it here, also.
@@ -123,7 +123,9 @@ int pfc_decap(struct __sk_buff *skb)
 
                 return debug_action(TC_ACT_SHOT, debug);
             } else {
-                bpf_print("GUE Data: Decap\n");
+                if (debug) {
+                    bpf_print("GUE Data: Decap\n");
+                }
 
                 ASSERT(hdr.gueh->hlen != 0, debug_action(TC_ACT_UNSPEC, debug), "Linux GUE (no ext fields)\n");              // FIXME: remove when linux infra not used anymore
                 ASSERT(hdr.gueh->hlen == 5, debug_action(TC_ACT_SHOT, debug), "Unexpected GUE data HLEN %u\n", hdr.gueh->hlen);
@@ -172,7 +174,7 @@ int pfc_decap(struct __sk_buff *skb)
                     if (cfg->flags & CFG_RX_FWD) {
                         __u32 ifindex = bpf_ntohl(verify->encap.ifindex);
 
-                        // update TABLE-PROXY
+                        // Lookup dest mac struct from TABLE-PROXY
                         struct mac *mac_remote = bpf_map_lookup_elem(&map_proxy, &ifindex);
                         ASSERT(mac_remote != 0, debug_action(TC_ACT_UNSPEC, debug), "ERROR: Proxy MAC for ifindex %u not found!\n", ifindex);
 
@@ -199,7 +201,9 @@ int pfc_decap(struct __sk_buff *skb)
                     ASSERT(parse_ep(skb, &skey.ep, &dep) != TC_ACT_SHOT, debug_action(TC_ACT_UNSPEC, debug), "ERROR: SRC EP parsing failed!\n");
 
                     // update TABLE-ENCAP
-                    bpf_print("updating encap table: %x:%x:%x\n", skey.ep.ip, skey.ep.port, skey.ep.proto);
+                    if (debug) {
+                        bpf_print("updating encap table: %x:%x:%x\n", skey.ep.ip, skey.ep.port, skey.ep.proto);
+                    }
                     ASSERT(bpf_map_update_elem(&map_encap, &skey, &svc, BPF_ANY) == 0, debug_action(TC_ACT_UNSPEC, debug), "ERROR: map_encap update failed\n");
 
                     if (cfg->flags & CFG_RX_FWD) {
