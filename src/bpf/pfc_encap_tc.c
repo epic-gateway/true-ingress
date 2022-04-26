@@ -124,24 +124,6 @@ int pfc_encap(struct __sk_buff *skb)
 
             return debug_action(TC_ACT_UNSPEC, debug);
         }
-
-        // check output mode
-        if (cfg->flags & CFG_TX_SNAT) {
-            // get Source EP
-            parse_src_ep(&sep, &hdr);
-
-            struct endpoint *snat = bpf_map_lookup_elem(&map_nat, &sep);
-            if (snat) {
-                bpf_print("SNAT to %x:%u\n", snat->ip, bpf_ntohs(snat->port));
-
-                snat4(skb, &hdr, bpf_htonl(snat->ip), snat->port);
-                if (debug) {
-                    dump_pkt(skb);
-                }
-
-                return debug_action(TC_ACT_OK, debug);
-            }
-        }
     } else {
         struct encap_key ekey = { dep, 0 };
         struct service *svc = bpf_map_lookup_elem(&map_encap, &ekey);
