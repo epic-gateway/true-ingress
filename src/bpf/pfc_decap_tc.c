@@ -25,7 +25,7 @@ int pfc_decap(struct __sk_buff *skb)
     // get config
     __u32 key = skb->ifindex;
     struct cfg_if *iface = bpf_map_lookup_elem(&map_config, &key);
-    ASSERT(iface != 0, dump_action(TC_ACT_UNSPEC), "ERROR: Config not found!\n", dump_pkt(skb));
+    ASSERT(iface != 0, dump_action(TC_ACT_UNSPEC), "Decap ERROR: Config %u not found!\n", key);
     struct config *cfg = &iface->queue[(skb->ifindex == skb->ingress_ifindex) ? CFG_IDX_RX : CFG_IDX_TX];
     int debug = cfg->flags & CFG_RX_DUMP;
 
