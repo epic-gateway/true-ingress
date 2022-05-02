@@ -93,7 +93,7 @@ struct bpf_elf_map SEC(ELF_SECTION_MAPS) map_config = {
     .size_key   = sizeof(__u32),
     .size_value = sizeof(struct cfg_if),
     .pinning    = PIN_GLOBAL_NS,
-    .max_elem   = CFG_IDX_MAX,
+    .max_elem   = MAX_CONFIG_ENTRIES,
 };
 BPF_ANNOTATE_KV_PAIR(map_config, __u32, struct cfg_if);
 
