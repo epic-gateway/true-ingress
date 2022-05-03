@@ -71,17 +71,17 @@ int pfc_encap(struct __sk_buff *skb)
         struct encap_key ekey = { dep, bpf_ntohl(skb->mark) };
         struct service *svc = bpf_map_lookup_elem(&map_encap, &ekey);
         if (svc) {
-            bpf_print("  tag %u\n", skb->mark);
-            bpf_print("GUE Encap Service: group-id %u, service-id %u, tunnel-id %u\n",
+            debug_print(debug, "  tag %u\n", skb->mark);
+            debug_print(debug, "GUE Encap Service: group-id %u, service-id %u, tunnel-id %u\n",
                       bpf_ntohs(svc->identity.service_id), bpf_ntohs(svc->identity.group_id), bpf_ntohl(svc->key.tunnel_id));
             __u32 key = bpf_ntohl(svc->key.tunnel_id);
             struct tunnel *tun = bpf_map_lookup_elem(&map_tunnel, &key);
             ASSERT(tun, debug_action(TC_ACT_UNSPEC, debug), "ERROR: tunnel-id %u not found\n", key);
             ASSERT(tun->ip_remote, debug_action(TC_ACT_UNSPEC, debug), "ERROR: tunnel-id %u remote endpoint not resolved\n", key);
 
-            bpf_print("GUE Encap Tunnel: id %u\n", key);
-            bpf_print("    FROM %x:%u\n", tun->ip_local, bpf_ntohs(tun->port_local));
-            bpf_print("    TO   %x:%u\n", tun->ip_remote, bpf_ntohs(tun->port_remote));
+            debug_print(debug, "GUE Encap Tunnel: id %u\n", key);
+            debug_print(debug, "    FROM %x:%u\n", tun->ip_local, bpf_ntohs(tun->port_local));
+            debug_print(debug, "    TO   %x:%u\n", tun->ip_remote, bpf_ntohs(tun->port_remote));
 
             __u32 via_ifindex = 0;
             ret = gue_encap_v4(skb, tun, svc);
@@ -96,7 +96,7 @@ int pfc_encap(struct __sk_buff *skb)
                 if (ret == TC_ACT_OK) {
                     __builtin_memcpy(&via_ifindex, &fib_params.ifindex, sizeof(via_ifindex));
 
-                    bpf_print("Adjusting MACs\n");
+                    debug_print(debug, "Adjusting MACs\n");
                     // Update destination MAC
                     ret = bpf_skb_store_bytes(skb, 0, &fib_params.dmac, 6, BPF_F_INVALIDATE_HASH);
                     if (ret < 0) {
@@ -118,7 +118,7 @@ int pfc_encap(struct __sk_buff *skb)
             }
 
             if (cfg->flags & CFG_TX_FWD && via_ifindex && via_ifindex != skb->ifindex) {
-                bpf_print("Redirecting to %u TX\n", via_ifindex);
+                debug_print(debug, "Redirecting to %u TX\n", via_ifindex);
                 return debug_action(bpf_redirect(via_ifindex, 0), debug);
             }
 
@@ -126,15 +126,13 @@ int pfc_encap(struct __sk_buff *skb)
         }
     } else {
         struct encap_key ekey = { dep, 0 };
-        bpf_print("querying encap table key: %x:%x:%x", ekey.ep.ip, ekey.ep.port, ekey.ep.proto);
+        debug_print(debug, "querying encap table key: %x:%x:%x", ekey.ep.ip, ekey.ep.port, ekey.ep.proto);
         struct service *svc = bpf_map_lookup_elem(&map_encap, &ekey);
         if (!svc) {
-            if (debug) {
-                bpf_print("Lookup failed: GUE Encap Service: %x:%x:%x\n", ekey.ep.ip, ekey.ep.port, ekey.ep.proto);
-            }
+            debug_print(debug, "Lookup failed: GUE Encap Service: %x:%x:%x\n", ekey.ep.ip, ekey.ep.port, ekey.ep.proto);
         } else {
             // Regular mode
-            bpf_print("Regular: GUE Encap Service: group-id %u, service-id %u, tunnel-id %u",
+            debug_print(debug, "Regular: GUE Encap Service: group-id %u, service-id %u, tunnel-id %u",
                       bpf_ntohs(svc->identity.service_id), bpf_ntohs(svc->identity.group_id), bpf_ntohl(svc->key.tunnel_id));
 
             __u32 key = bpf_ntohl(svc->key.tunnel_id);
@@ -142,9 +140,9 @@ int pfc_encap(struct __sk_buff *skb)
             ASSERT(tun, debug_action(TC_ACT_UNSPEC, debug), "ERROR: tunnel-id %u not found\n", key);
             ASSERT(tun->ip_remote, debug_action(TC_ACT_UNSPEC, debug), "ERROR: tunnel-id %u remote endpoint not resolved\n", key);
 
-            bpf_print("Regular: GUE Encap Tunnel: id %u\n", key);
-            bpf_print("    FROM %x:%u\n", tun->ip_local, bpf_ntohs(tun->port_local));
-            bpf_print("    TO   %x:%u\n", tun->ip_remote, bpf_ntohs(tun->port_remote));
+            debug_print(debug, "Regular: GUE Encap Tunnel: id %u\n", key);
+            debug_print(debug, "    FROM %x:%u\n", tun->ip_local, bpf_ntohs(tun->port_local));
+            debug_print(debug, "    TO   %x:%u\n", tun->ip_remote, bpf_ntohs(tun->port_remote));
 
             ret = gue_encap_v4(skb, tun, svc);
             ASSERT (ret != TC_ACT_SHOT, debug_action(TC_ACT_SHOT, debug), "GUE Encap Failed!\n");
@@ -159,20 +157,18 @@ int pfc_encap(struct __sk_buff *skb)
                 if (ret == TC_ACT_OK) {
                     __builtin_memcpy(&via_ifindex, &fib_params.ifindex, sizeof(via_ifindex));
 
-                    if (debug) {
-                        bpf_print("Adjusting MACs\n");
-                    }
+                    debug_print(debug, "Adjusting MACs\n");
                     // Update destination MAC
                     ret = bpf_skb_store_bytes(skb, 0, &fib_params.dmac, 6, BPF_F_INVALIDATE_HASH);
                     if (ret < 0) {
-                        bpf_print("bpf_skb_store_bytes(D-MAC): %d\n", ret);
+                        debug_print(debug, "bpf_skb_store_bytes(D-MAC): %d\n", ret);
                         return TC_ACT_SHOT;
                     }
 
                     // Update source MAC
                     ret = bpf_skb_store_bytes(skb, 6, &fib_params.smac, 6, BPF_F_INVALIDATE_HASH);
                     if (ret < 0) {
-                        bpf_print("bpf_skb_store_bytes(S-MAC): %d\n", ret);
+                        debug_print(debug, "bpf_skb_store_bytes(S-MAC): %d\n", ret);
                         return TC_ACT_SHOT;
                     }
                 }
@@ -183,7 +179,7 @@ int pfc_encap(struct __sk_buff *skb)
             }
 
             if ((cfg->flags & CFG_TX_FWD) && via_ifindex && via_ifindex != skb->ifindex) {
-                bpf_print("Redirecting to %u TX\n", via_ifindex);
+                debug_print(debug, "Redirecting to %u TX\n", via_ifindex);
                 return debug_action(bpf_redirect(via_ifindex, 0), debug);
             }
 

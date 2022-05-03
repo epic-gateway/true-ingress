@@ -163,13 +163,13 @@ int parse_headers(struct __sk_buff *skb, struct headers *hdr)
 }
 
 static inline
-int dump_headers(struct headers *headers) {
-    bpf_print("HEADERS: ==================\n");
-    bpf_print("    eth: %u\n", headers->eth);
-    bpf_print("     ip: %u\n", headers->iph);
-    bpf_print("   udph: %u\n", headers->udph);
-    bpf_print("udph[1]: %u\n", &headers->udph[1]);
-    bpf_print("HEADERS: ==================\n");
+int dump_headers(int debug, struct headers *headers) {
+    debug_print(debug, "HEADERS: ==================\n");
+    debug_print(debug, "    eth: %u\n", headers->eth);
+    debug_print(debug, "     ip: %u\n", headers->iph);
+    debug_print(debug, "   udph: %u\n", headers->udph);
+    debug_print(debug, "udph[1]: %u\n", &headers->udph[1]);
+    debug_print(debug, "HEADERS: ==================\n");
     return TC_ACT_OK;
 }
 
@@ -399,7 +399,6 @@ int service_verify(struct gueexthdr *gueext)
         return 1;
     }
 
-    bpf_print("Service (group-id %u, service-id %u) key verified\n", bpf_ntohs(id.service_id), bpf_ntohs(id.group_id));
     return 0;
 }
 
@@ -435,7 +434,6 @@ int fib_lookup(struct __sk_buff *skb, struct bpf_fib_lookup *fib_params, int ifi
     fib_params->ipv4_dst     = hdr.iph->daddr;
     fib_params->ifindex      = ifindex;
 
-
     int rc = bpf_fib_lookup(skb, fib_params, sizeof(*fib_params), flags);
     switch (rc) {
     case BPF_FIB_LKUP_RET_SUCCESS:
@@ -450,8 +448,6 @@ int fib_lookup(struct __sk_buff *skb, struct bpf_fib_lookup *fib_params, int ifi
         bpf_print("ERROR: FIB lookup failed: %d\n", rc);
         return TC_ACT_UNSPEC;
     }
-    bpf_print("FIB lookup output: S-MAC %x D-MAC %x via ifindex %u\n",
-              bpf_ntohl(*(__u32*)&(fib_params->smac[2])), bpf_ntohl(*(__u32*)&(fib_params->dmac[2])), fib_params->ifindex);
 
     return TC_ACT_OK;
 }

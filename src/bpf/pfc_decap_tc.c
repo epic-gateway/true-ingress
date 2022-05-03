@@ -74,9 +74,7 @@ int pfc_decap(struct __sk_buff *skb)
     if (parse_headers(skb, &hdr) == TC_ACT_SHOT) {
         return debug_action(TC_ACT_UNSPEC, debug);
     }
-    if (debug) {
-        dump_headers(&hdr);
-    }
+    dump_headers(debug, &hdr);
 
     // start processing
 
@@ -94,29 +92,23 @@ int pfc_decap(struct __sk_buff *skb)
         // a GUE packet. In both cases we verify the packet to make
         // sure that it's legit.
         if (!bpf_map_lookup_elem(&map_decap, &src_ep)) {
-            if (debug) {
-                bpf_print("decap map lookup failed\n");
-            }
+            debug_print(debug, "decap map lookup failed\n");
             struct endpoint dest_ep = { 0 };
             parse_dest_ep(&dest_ep, &hdr);
 
             // We already failed the decap map lookup so if the port
             // check fails, too, then it's definitely not a GUE packet
             // and we don't want to try to decap it.
-            ASSERT(bpf_ntohs(dest_ep.port) == 6080, debug_action(TC_ACT_UNSPEC, debug), "Decap map lookup failed and dest port not 6080: %u\n", bpf_ntohs(dest_ep.port));
-            if (debug) {
-                bpf_print("Packet probably GUE based on dest port\n");
-            }
+            ASSERT1(bpf_ntohs(dest_ep.port) == 6080, debug_action(TC_ACT_UNSPEC, debug), debug_print(debug, "Decap map lookup failed and dest port not 6080: %u\n", bpf_ntohs(dest_ep.port)));
+            debug_print(debug, "Packet probably GUE based on dest port\n");
         }
 
         // The packet is probably GUE but we need to verify.
 
         void *data_end = (void *)(long)skb->data_end;
         // control or data
-        if (debug) {
-            bpf_print("            gueh: %u\n", hdr.gueh);
-            bpf_print("        &gueh[1]: %u\n", (void*)&hdr.gueh[1]);
-        }
+        debug_print(debug, "            gueh: %u\n", hdr.gueh);
+        debug_print(debug, "        &gueh[1]: %u\n", (void*)&hdr.gueh[1]);
 
         // This check is redundant with the one in parse_headers()
         // but the verifier fails if I don't have it here, also.
@@ -129,7 +121,7 @@ int pfc_decap(struct __sk_buff *skb)
 
         if (hdr.gueh->control) {
             if (hdr.gueh->hlen == 6) {
-                bpf_print("GUE Control: IDs + KEY\n");
+                debug_print(debug, "GUE Control: IDs + KEY\n");
                 struct guepinghdr *gueext = (struct guepinghdr *)&hdr.gueh[1];
                 ASSERT1((void*)&gueext[1] <= data_end, debug_action(TC_ACT_SHOT, debug), bpf_print("ERROR: (GUEext) Invalid packet size\n"));
 
@@ -142,9 +134,7 @@ int pfc_decap(struct __sk_buff *skb)
 
             return debug_action(TC_ACT_SHOT, debug);
         } else {
-            if (debug) {
-                bpf_print("GUE Data: Decap\n");
-            }
+            debug_print(debug, "GUE Data: Decap\n");
 
             ASSERT(hdr.gueh->hlen != 0, debug_action(TC_ACT_UNSPEC, debug), "Linux GUE (no ext fields)\n");              // FIXME: remove when linux infra not used anymore
             ASSERT(hdr.gueh->hlen == 5, debug_action(TC_ACT_SHOT, debug), "Unexpected GUE data HLEN %u\n", hdr.gueh->hlen);
@@ -198,7 +188,7 @@ int pfc_decap(struct __sk_buff *skb)
                     struct mac *mac_remote = bpf_map_lookup_elem(&map_proxy, &ifindex);
                     ASSERT(mac_remote != 0, debug_action(TC_ACT_UNSPEC, debug), "ERROR: Proxy MAC for ifindex %u not found!\n", ifindex);
 
-                    bpf_print("Set D-MAC: ifindex %u -> MAC %x\n", ifindex, bpf_ntohl(*(__u32*)&(mac_remote->value[2])));
+                    debug_print(debug, "Set D-MAC: ifindex %u -> MAC %x\n", ifindex, bpf_ntohl(*(__u32*)&(mac_remote->value[2])));
                     ret = bpf_skb_store_bytes(skb, 0, mac_remote->value, 6, BPF_F_INVALIDATE_HASH);
                     if (ret < 0) {
                         bpf_print("bpf_skb_store_bytes: %d\n", ret);
@@ -206,9 +196,9 @@ int pfc_decap(struct __sk_buff *skb)
 
                     if (debug) {
                         dump_pkt(skb);
+                        bpf_print("Redirecting to container ifindex %u TX\n", ifindex);
                     }
 
-                    bpf_print("Redirecting to container ifindex %u TX\n", ifindex);
                     return debug_action(bpf_redirect(ifindex, 0), debug);
                 }
 
@@ -221,8 +211,8 @@ int pfc_decap(struct __sk_buff *skb)
                 ASSERT(parse_ep(skb, &skey.ep, &dep) != TC_ACT_SHOT, debug_action(TC_ACT_UNSPEC, debug), "ERROR: SRC EP parsing failed!\n");
 
                 // update TABLE-ENCAP
-                bpf_print("updating encap table key: %x:%x:%x", skey.ep.ip, skey.ep.port, skey.ep.proto);
-                bpf_print("updating encap table val: %u:%u:%u", bpf_ntohs(svc.identity.service_id), bpf_ntohs(svc.identity.group_id), bpf_ntohl(svc.key.tunnel_id));
+                debug_print(debug, "updating encap table key: %x:%x:%x", skey.ep.ip, skey.ep.port, skey.ep.proto);
+                debug_print(debug, "updating encap table val: %u:%u:%u", bpf_ntohs(svc.identity.service_id), bpf_ntohs(svc.identity.group_id), bpf_ntohl(svc.key.tunnel_id));
                 ASSERT(bpf_map_update_elem(&map_encap, &skey, &svc, BPF_ANY) == 0, debug_action(TC_ACT_UNSPEC, debug), "ERROR: map_encap update failed\n");
 
                 if (cfg->flags & CFG_RX_FWD) {
@@ -244,9 +234,9 @@ int pfc_decap(struct __sk_buff *skb)
 
                         if (debug) {
                             dump_pkt(skb);
+                            bpf_print("Redirecting to interface ifindex %u TX\n", fib_params.ifindex);
                         }
 
-                        bpf_print("Redirecting to interface ifindex %u TX\n", fib_params.ifindex);
                         return debug_action(bpf_redirect(fib_params.ifindex, 0), debug);
                     }
                 }
@@ -266,7 +256,7 @@ int pfc_decap(struct __sk_buff *skb)
         // is PROXY endpoint?
         struct endpoint *dnat = bpf_map_lookup_elem(&map_nat, &nat_ep);
         if (dnat) {
-            bpf_print("DNAT to %x:%u\n", dnat->ip, bpf_ntohs(dnat->port));
+            debug_print(debug, "DNAT to %x:%u\n", dnat->ip, bpf_ntohs(dnat->port));
 
             dnat4(skb, &hdr, bpf_htonl(dnat->ip), dnat->port);
             if (debug) {

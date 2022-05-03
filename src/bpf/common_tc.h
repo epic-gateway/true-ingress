@@ -12,6 +12,13 @@
         bpf_trace_printk(____fmt, sizeof(____fmt), ##__VA_ARGS__);  \
 })
 
+#define debug_print(debug, fmt, ...)        \
+({                                          \
+    if (debug) {                            \
+        bpf_print(fmt, ##__VA_ARGS__);      \
+    }                                       \
+})
+
 #define ASSERT(_expr, _retval, _fmt, ...)   \
 ({                                          \
     if (!(_expr)) {                         \
