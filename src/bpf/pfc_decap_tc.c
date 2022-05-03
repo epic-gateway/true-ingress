@@ -206,9 +206,9 @@ int pfc_decap(struct __sk_buff *skb)
 
                     if (debug) {
                         dump_pkt(skb);
+                        bpf_print("Redirecting to container ifindex %u TX\n", ifindex);
                     }
 
-                    bpf_print("Redirecting to container ifindex %u TX\n", ifindex);
                     return debug_action(bpf_redirect(ifindex, 0), debug);
                 }
 
@@ -221,8 +221,10 @@ int pfc_decap(struct __sk_buff *skb)
                 ASSERT(parse_ep(skb, &skey.ep, &dep) != TC_ACT_SHOT, debug_action(TC_ACT_UNSPEC, debug), "ERROR: SRC EP parsing failed!\n");
 
                 // update TABLE-ENCAP
-                bpf_print("updating encap table key: %x:%x:%x", skey.ep.ip, skey.ep.port, skey.ep.proto);
-                bpf_print("updating encap table val: %u:%u:%u", bpf_ntohs(svc.identity.service_id), bpf_ntohs(svc.identity.group_id), bpf_ntohl(svc.key.tunnel_id));
+                if (debug) {
+                    bpf_print("updating encap table key: %x:%x:%x", skey.ep.ip, skey.ep.port, skey.ep.proto);
+                    bpf_print("updating encap table val: %u:%u:%u", bpf_ntohs(svc.identity.service_id), bpf_ntohs(svc.identity.group_id), bpf_ntohl(svc.key.tunnel_id));
+                }
                 ASSERT(bpf_map_update_elem(&map_encap, &skey, &svc, BPF_ANY) == 0, debug_action(TC_ACT_UNSPEC, debug), "ERROR: map_encap update failed\n");
 
                 if (cfg->flags & CFG_RX_FWD) {
@@ -244,9 +246,9 @@ int pfc_decap(struct __sk_buff *skb)
 
                         if (debug) {
                             dump_pkt(skb);
+                            bpf_print("Redirecting to interface ifindex %u TX\n", fib_params.ifindex);
                         }
 
-                        bpf_print("Redirecting to interface ifindex %u TX\n", fib_params.ifindex);
                         return debug_action(bpf_redirect(fib_params.ifindex, 0), debug);
                     }
                 }
