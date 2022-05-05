@@ -70,8 +70,9 @@ int pfc_encap(struct __sk_buff *skb)
         // is Service endpoint?
         struct encap_key ekey = { dep, bpf_ntohl(skb->mark) };
         struct service *svc = bpf_map_lookup_elem(&map_encap, &ekey);
-        if (svc) {
-            debug_print(debug, "  tag %u\n", skb->mark);
+        if (!svc) {
+            debug_print(debug, "Encap map lookup failed\n");
+        } else {
             debug_print(debug, "GUE Encap Service: group-id %u, service-id %u, tunnel-id %u\n",
                       bpf_ntohs(svc->identity.service_id), bpf_ntohs(svc->identity.group_id), bpf_ntohl(svc->key.tunnel_id));
             __u32 key = bpf_ntohl(svc->key.tunnel_id);
