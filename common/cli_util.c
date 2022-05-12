@@ -49,8 +49,6 @@ bool map_encap_del(int map_fd, struct encap_key *key) {
                 get_proto_name(ntohs(key->ep.proto)), inet_ntoa(from), ntohs(key->ep.port), ntohl(key->ifindex), errno, strerror(errno));
 
         return false;
-    } else {
-        printf("ENCAP.DEL (%s %s:%u) %u\t\tOK\n", get_proto_name(ntohs(key->ep.proto)), inet_ntoa(from), ntohs(key->ep.port), ntohl(key->ifindex));
     }
 
     return true;
