@@ -211,6 +211,7 @@ int pfc_decap(struct __sk_buff *skb)
                 ASSERT(parse_ep(skb, &skey.ep, &dep) != TC_ACT_SHOT, debug_action(TC_ACT_UNSPEC, debug), "ERROR: SRC EP parsing failed!\n");
 
                 // update TABLE-ENCAP
+                skey.ep.port = 0;
                 debug_print(debug, "updating encap table key: %x:%x:%x", skey.ep.ip, skey.ep.port, skey.ep.proto);
                 debug_print(debug, "updating encap table val: %u:%u:%u", bpf_ntohs(svc.identity.service_id), bpf_ntohs(svc.identity.group_id), bpf_ntohl(svc.key.tunnel_id));
                 ASSERT(bpf_map_update_elem(&map_encap, &skey, &svc, BPF_ANY) == 0, debug_action(TC_ACT_UNSPEC, debug), "ERROR: map_encap update failed\n");
