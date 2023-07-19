@@ -7,7 +7,7 @@ Check kernel trace */sys/kernel/debug/tracing/trace* for output.
 
 ## PFC Go tests
 
-Simple tests using Go API (`src/go/pfc_cli_go`) to setup forwarding instead of bash sript (`pfc_add.sh`).
+Simple tests using Go API (`cmd/pfc_cli_go`) to setup forwarding instead of bash sript (`pfc_add.sh`).
 
 ### test_go_01.sh
 

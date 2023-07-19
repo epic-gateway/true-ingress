@@ -1,3 +1,3 @@
-module gitlab.com/acnodal/epic/true-ingress/src/go
+module gitlab.com/acnodal/epic/true-ingress
 
 go 1.15
