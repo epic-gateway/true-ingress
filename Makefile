@@ -44,8 +44,8 @@ check:
 	$(MAKE) -C src attach detach
 
 go:
-	go build -ldflags "-X main.version=${CI_COMMIT_REF_NAME} -X main.commit=${CI_COMMIT_SHORT_SHA}" -tags 'osusergo netgo' ./cmd/gue_ping_svc_auto
-	go build -ldflags "-X main.version=${CI_COMMIT_REF_NAME} -X main.commit=${CI_COMMIT_SHORT_SHA}" -tags 'osusergo netgo' ./cmd/pfc_cli_go
+	CGO_ENABLED=0 go build -ldflags "-X main.version=${CI_COMMIT_REF_NAME} -X main.commit=${CI_COMMIT_SHORT_SHA}" -tags 'osusergo netgo' ./cmd/gue_ping_svc_auto
+	CGO_ENABLED=0 go build -ldflags "-X main.version=${CI_COMMIT_REF_NAME} -X main.commit=${CI_COMMIT_SHORT_SHA}" -tags 'osusergo netgo' ./cmd/pfc_cli_go
 
 tar: build
 	mkdir -p pkg/bin
