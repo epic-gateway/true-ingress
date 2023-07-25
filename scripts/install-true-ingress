@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+
+# TrueIngress adhoc Linux installation script.
+
+# We need to download files from private Gitlab repos so we need an
+# access token.
+TOKEN=${1:-}
+
+if [ "X$TOKEN" = "X" ] ; then
+    echo "A Gitlab access token must be provided"
+    exit 1
+fi
+
+# Create directories
+mkdir -p /etc/kubernetes /opt/acnodal/bin
+
+# Add our tools to the PATH, and tell kubectl where to find its config
+cat > /etc/profile.d/acnodal.sh <<HERE
+export PATH="\$PATH:/opt/acnodal/bin"
+export KUBECONFIG=/etc/kubernetes/admin.conf
+HERE
+
+# Download epicctl
+wget --no-verbose --header="PRIVATE-TOKEN: $TOKEN" --output-document=/opt/acnodal/bin/epicctl https://gitlab.com/api/v4/projects/acnodal%2Fepic%2Fepicctl/packages/generic/epicctl/v0.9.0/epicctl
+
+# Download true ingress
+wget --no-verbose --header="PRIVATE-TOKEN: $TOKEN" --output-document=- https://gitlab.com/api/v4/projects/acnodal%2Fepic%2Ftrue-ingress/packages/generic/true-ingress/v0.17.0/true-ingress.tar.bz2 | tar xjvf - -C /opt/acnodal
+
+# Download the manager
+wget --no-verbose --header="PRIVATE-TOKEN: $TOKEN" --output-document=/opt/acnodal/bin/manager https://gitlab.com/api/v4/projects/acnodal%2Fepic%2Fresource-model/packages/generic/manifest-package/v0.51.0/manager
+
+# Make executable binaries executable
+chmod +x /opt/acnodal/bin/epicctl /opt/acnodal/bin/manager
+
+# The user needs to do this:
+echo
+echo \*\*\* Installation almost complete
+echo \*\*\* You need to upload a kubectl config file to /etc/kubernetes/admin.conf
+echo \*\*\* Then run "source /etc/profile.d/acnodal.sh" to set up your environment
