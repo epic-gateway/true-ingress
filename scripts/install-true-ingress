@@ -25,8 +25,13 @@ HERE
 # Download epicctl
 wget --no-verbose --header="PRIVATE-TOKEN: $TOKEN" --output-document=/opt/acnodal/bin/epicctl https://gitlab.com/api/v4/projects/acnodal%2Fepic%2Fepicctl/packages/generic/epicctl/v0.9.0/epicctl
 
-# Download true ingress
-wget --no-verbose --header="PRIVATE-TOKEN: $TOKEN" --output-document=- https://gitlab.com/api/v4/projects/acnodal%2Fepic%2Ftrue-ingress/packages/generic/true-ingress/v0.17.0/true-ingress.tar.bz2 | tar xjvf - -C /opt/acnodal
+# Download true ingress binaries
+wget --no-verbose --header="PRIVATE-TOKEN: $TOKEN" --output-document=- https://gitlab.com/api/v4/projects/acnodal%2Fepic%2Ftrue-ingress/packages/generic/true-ingress/v0.18.1/true-ingress.tar.bz2 | tar xjvf - -C /opt/acnodal
+
+# Install and start systemd service file for the GUE ping program
+wget --no-verbose --header="PRIVATE-TOKEN: $TOKEN" --output-document=/usr/lib/systemd/system/gue_ping_svc_auto.service https://gitlab.com/api/v4/projects/acnodal%2Fepic%2Ftrue-ingress/packages/generic/true-ingress/v0.18.1/gue_ping_svc_auto.service
+systemctl enable gue_ping_svc_auto
+systemctl start gue_ping_svc_auto
 
 # Download the manager
 wget --no-verbose --header="PRIVATE-TOKEN: $TOKEN" --output-document=/opt/acnodal/bin/manager https://gitlab.com/api/v4/projects/acnodal%2Fepic%2Fresource-model/packages/generic/manifest-package/v0.51.0/manager

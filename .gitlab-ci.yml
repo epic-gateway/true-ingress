@@ -12,6 +12,7 @@ make:
   - |
     if [ -n "${CI_COMMIT_TAG}" ] ; then
       curl --silent --show-error --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file pkg/true-ingress.tar.bz2 "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/true-ingress/${CI_COMMIT_TAG}/true-ingress.tar.bz2"
+      curl --silent --show-error --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file scripts/gue_ping_svc_auto.service "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/true-ingress/${CI_COMMIT_TAG}/gue_ping_svc_auto.service"
     fi
 
   artifacts:
