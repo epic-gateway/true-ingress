@@ -24,6 +24,7 @@ HERE
 
 # Download epicctl
 wget --no-verbose --header="PRIVATE-TOKEN: $TOKEN" --output-document=/opt/acnodal/bin/epicctl https://gitlab.com/api/v4/projects/acnodal%2Fepic%2Fepicctl/packages/generic/epicctl/v0.9.0/epicctl
+chmod +x /opt/acnodal/bin/epicctl
 
 # Download true ingress binaries
 wget --no-verbose --header="PRIVATE-TOKEN: $TOKEN" --output-document=- https://gitlab.com/api/v4/projects/acnodal%2Fepic%2Ftrue-ingress/packages/generic/true-ingress/v0.18.1/true-ingress.tar.bz2 | tar xjvf - -C /opt/acnodal
@@ -34,7 +35,13 @@ systemctl enable gue_ping_svc_auto
 systemctl start gue_ping_svc_auto
 
 # Download the manager
-wget --no-verbose --header="PRIVATE-TOKEN: $TOKEN" --output-document=/opt/acnodal/bin/manager https://gitlab.com/api/v4/projects/acnodal%2Fepic%2Fresource-model/packages/generic/manifest-package/v0.51.0/manager
+wget --no-verbose --header="PRIVATE-TOKEN: $TOKEN" --output-document=/opt/acnodal/bin/manager https://gitlab.com/api/v4/projects/acnodal%2Fepic%2Fresource-model/packages/generic/manifest-package/v0.52.0/manager
+chmod +x /opt/acnodal/bin/manager
+
+# Install and start systemd service file for the manager
+wget --no-verbose --header="PRIVATE-TOKEN: $TOKEN" --output-document=/usr/lib/systemd/system/manager.service https://gitlab.com/api/v4/projects/acnodal%2Fepic%2Fresource-model/packages/generic/manifest-package/v0.52.0/manager.service
+systemctl enable manager
+systemctl start manager
 
 # Make executable binaries executable
 chmod +x /opt/acnodal/bin/epicctl /opt/acnodal/bin/manager
@@ -42,5 +49,9 @@ chmod +x /opt/acnodal/bin/epicctl /opt/acnodal/bin/manager
 # The user needs to do this:
 echo
 echo \*\*\* Installation almost complete
+echo
 echo \*\*\* You need to upload a kubectl config file to /etc/kubernetes/admin.conf
 echo \*\*\* Then run "source /etc/profile.d/acnodal.sh" to set up your environment
+echo
+echo \*\*\* You also need to edit /usr/lib/systemd/system/manager.service
+echo \*\*\* to ensure that the command line matches your setup
