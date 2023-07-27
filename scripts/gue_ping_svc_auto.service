@@ -1,0 +1,14 @@
+# Systemd unit file for EPIC TrueIngress ping program
+
+[Unit]
+Description=Acnodal EPIC TrueIngress Ping
+After=syslog.target network-online.target
+
+[Service]
+Type=exec
+ExecStart=/opt/acnodal/bin/gue_ping_svc_auto 25
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
