@@ -10,13 +10,27 @@ MGR_VER=v0.54.1
 CTL_VER=v0.9.0
 TI_VER=v0.18.1
 
-# We need to download files from private Gitlab repos so we need an
-# access token.
+# We need to download files from private Gitlab repos so we need a
+# deploy token.
 TOKEN=${1:-}
 if [ "X$TOKEN" = "X" ] ; then
-    echo "A Gitlab access token must be provided"
+    echo "A Gitlab deploy token name must be provided"
     exit 1
 fi
+
+# We need to have an account name so we can set up the configuration.
+ACCOUNT=${2:-}
+if [ "X$ACCOUNT" = "X" ] ; then
+    echo "An EPIC account name must be provided"
+    exit 1
+fi
+
+# Prompt for password (which is paired with the deploy token)
+echo -n "Password: "
+read -s PASSWORD
+echo
+
+GET="wget --no-verbose --user=${TOKEN} --password=${PASSWORD}"
 
 # Create directories
 mkdir -p /etc/kubernetes $OPT/bin $OPT/etc
@@ -28,26 +42,26 @@ export KUBECONFIG=/etc/kubernetes/admin.conf
 HERE
 
 # Download epicctl
-wget --no-verbose --header="PRIVATE-TOKEN: ${TOKEN}" --output-document=$OPT/bin/epicctl ${EPIC_GITLAB}epicctl/packages/generic/epicctl/${CTL_VER}/epicctl
+eval $GET --output-document=$OPT/bin/epicctl ${EPIC_GITLAB}epicctl/packages/generic/epicctl/${CTL_VER}/epicctl
 chmod +x $OPT/bin/epicctl
 
 # Download true ingress binaries
-wget --no-verbose --header="PRIVATE-TOKEN: ${TOKEN}" --output-document=- ${EPIC_GITLAB}true-ingress/packages/generic/true-ingress/${TI_VER}/true-ingress.tar.bz2 | tar xjf - -C $OPT
+eval $GET --output-document=- ${EPIC_GITLAB}true-ingress/packages/generic/true-ingress/${TI_VER}/true-ingress.tar.bz2 | tar xjf - -C $OPT
 
 # Download and start systemd service file for the GUE ping program
-wget --no-verbose --header="PRIVATE-TOKEN: ${TOKEN}" --output-document=/usr/lib/systemd/system/gue_ping_svc_auto.service ${EPIC_GITLAB}true-ingress/packages/generic/true-ingress/${TI_VER}/gue_ping_svc_auto.service
+eval $GET --output-document=/usr/lib/systemd/system/gue_ping_svc_auto.service ${EPIC_GITLAB}true-ingress/packages/generic/true-ingress/${TI_VER}/gue_ping_svc_auto.service
 systemctl enable --now gue_ping_svc_auto
 
 # Download the manager
-wget --no-verbose --header="PRIVATE-TOKEN: ${TOKEN}" --output-document=$OPT/bin/manager ${EPIC_GITLAB}resource-model/packages/generic/manifest-package/${MGR_VER}/manager
+eval $GET --output-document=$OPT/bin/manager ${EPIC_GITLAB}resource-model/packages/generic/manifest-package/${MGR_VER}/manager
 chmod +x $OPT/bin/manager
 cat > $OPT/etc/manager.yaml <<HERE
-account-name: REPLACE_THIS_WITH_YOUR_ACCOUNT_NAME
+account-name: ${ACCOUNT}
 HERE
 
 # Download and start systemd service and path files for the manager
 for UNIT in manager.service manager-restart.service manager-restart.path ; do
-    wget --no-verbose --header="PRIVATE-TOKEN: ${TOKEN}" --output-document=/usr/lib/systemd/system/${UNIT} ${EPIC_GITLAB}resource-model/packages/generic/manifest-package/${MGR_VER}/${UNIT}
+    eval $GET --output-document=/usr/lib/systemd/system/${UNIT} ${EPIC_GITLAB}resource-model/packages/generic/manifest-package/${MGR_VER}/${UNIT}
     systemctl enable --now $UNIT
 done
 
@@ -55,7 +69,4 @@ done
 echo
 echo \*\*\* Installation almost complete
 echo
-echo \*\*\* Please edit /opt/acnodal/etc/manager.yaml to ensure that it matches your setup
-echo
-echo \*\*\* Please upload a kubectl config file to /etc/kubernetes/admin.conf,
-echo \*\*\* then run "source /etc/profile.d/acnodal.sh" to set up your environment
+echo \*\*\* Please upload a kubectl config file to /etc/kubernetes/admin.conf
