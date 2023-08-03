@@ -7,7 +7,7 @@ IFS=$'\n\t'
 OPT=/opt/acnodal
 EPIC_GITLAB=https://gitlab.com/api/v4/projects/acnodal%2Fepic%2F
 MGR_VER=v0.54.1
-CTL_VER=v0.9.0
+CTL_VER=v0.10.0
 TI_VER=v0.18.1
 
 # We need to download files from private Gitlab repos so we need a
