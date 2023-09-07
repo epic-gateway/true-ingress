@@ -1,0 +1,24 @@
+name: Build
+
+on: [push, pull_request]
+
+jobs:
+  tar:
+    runs-on: ubuntu-20.04
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+
+    - name: Install dependencies
+      run: sudo scripts/dependencies.sh
+
+    - name: Build package
+      run: make tar
+
+    - name: Upload tarball
+      uses: actions/upload-artifact@v3
+      with:
+        name: true-ingress.tar.bz2
+        path: pkg/true-ingress.tar.bz2
