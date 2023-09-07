@@ -31,3 +31,7 @@ jobs:
           pkg/true-ingress.tar.bz2
           scripts/gue_ping_svc_auto.service
           scripts/install-true-ingress
+
+    - name: Set Go module checksum
+      run: "GOPROXY=proxy.golang.org go list -m epic-gateway.org/true-ingress@${{ github.ref_name }}"
+      if: startsWith(github.ref, 'refs/tags/')
