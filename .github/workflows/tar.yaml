@@ -22,3 +22,12 @@ jobs:
       with:
         name: true-ingress.tar.bz2
         path: pkg/true-ingress.tar.bz2
+
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: |
+          pkg/true-ingress.tar.bz2
+          scripts/gue_ping_svc_auto.service
+          scripts/install-true-ingress
