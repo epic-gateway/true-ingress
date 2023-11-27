@@ -42,8 +42,6 @@ CFLAGS ?= -g
 CFLAGS += -I$(HEADER_DIR) -I $(COMMON_DIR)
 LDFLAGS ?= -L$(LIBBPF_DIR)
 
-BPF_CFLAGS ?= -I$(LIBBPF_DIR)../include/uapi -I$(HEADER_DIR)
-
 LIBS = -l:libbpf.a -lelf $(USER_LIBS)
 
 all: llvm-check $(USER_TARGETS) $(BPF_OBJ)
@@ -84,7 +82,8 @@ $(BPF_OBJ): %.o: %.c $(OBJECT_LIBBPF) Makefile $(COMMON_MK) $(KERN_USER_H) $(EXT
 	$(CLANG) -S \
 	    -target bpf \
 	    -D __BPF_TRACING__ \
-	    $(BPF_CFLAGS) \
+	    -g \
+	    -I$(LIBBPF_DIR)../include/uapi -I$(HEADER_DIR) \
 	    -Wall \
 	    -Wno-unused-value \
 	    -Wno-pointer-sign \
