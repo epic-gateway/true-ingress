@@ -5,32 +5,18 @@ IFS=$'\n\t'
 # TrueIngress adhoc Linux installation script.
 
 OPT=/opt/acnodal
-EPIC_GITLAB=https://gitlab.com/api/v4/projects/acnodal%2Fepic%2F
-MGR_VER=v0.54.1
-CTL_VER=v0.10.0
-TI_VER=v0.18.1
-
-# We need to download files from private Gitlab repos so we need a
-# deploy token.
-TOKEN=${1:-}
-if [ "X$TOKEN" = "X" ] ; then
-    echo "A Gitlab deploy token name must be provided"
-    exit 1
-fi
+EPIC_REPO=https://github.com/epic-gateway
+MGR_VER=v0.56.0
+CTL_VER=v0.11.1
+TI_VER=v0.22.4
+GET="wget --no-verbose"
 
 # We need to have an account name so we can set up the configuration.
-ACCOUNT=${2:-}
+ACCOUNT=${1:-}
 if [ "X$ACCOUNT" = "X" ] ; then
     echo "An EPIC account name must be provided"
     exit 1
 fi
-
-# Prompt for password (which is paired with the deploy token)
-echo -n "Password: "
-read -s PASSWORD
-echo
-
-GET="wget --no-verbose --user=${TOKEN} --password=${PASSWORD}"
 
 # Create directories
 mkdir -p /etc/kubernetes $OPT/bin $OPT/etc
@@ -42,18 +28,18 @@ export KUBECONFIG=/etc/kubernetes/admin.conf
 HERE
 
 # Download epicctl
-eval $GET --output-document=$OPT/bin/epicctl ${EPIC_GITLAB}epicctl/packages/generic/epicctl/${CTL_VER}/epicctl
+eval $GET --output-document=$OPT/bin/epicctl ${EPIC_REPO}/epicctl/releases/download/${CTL_VER}/epicctl
 chmod +x $OPT/bin/epicctl
 
 # Download true ingress binaries
-eval $GET --output-document=- ${EPIC_GITLAB}true-ingress/packages/generic/true-ingress/${TI_VER}/true-ingress.tar.bz2 | tar xjf - -C $OPT
+eval $GET --output-document=- ${EPIC_REPO}/true-ingress/releases/download/${TI_VER}/true-ingress.tar.bz2 | tar xjf - -C $OPT
 
 # Download and start systemd service file for the GUE ping program
-eval $GET --output-document=/usr/lib/systemd/system/gue_ping_svc_auto.service ${EPIC_GITLAB}true-ingress/packages/generic/true-ingress/${TI_VER}/gue_ping_svc_auto.service
+eval $GET --output-document=/usr/lib/systemd/system/gue_ping_svc_auto.service ${EPIC_REPO}/true-ingress/releases/download/${TI_VER}/gue_ping_svc_auto.service
 systemctl enable --now gue_ping_svc_auto
 
 # Download the manager
-eval $GET --output-document=$OPT/bin/manager ${EPIC_GITLAB}resource-model/packages/generic/manifest-package/${MGR_VER}/manager
+eval $GET --output-document=$OPT/bin/manager ${EPIC_REPO}/resource-model/releases/download/${MGR_VER}/manager
 chmod +x $OPT/bin/manager
 cat > $OPT/etc/manager.yaml <<HERE
 account-name: ${ACCOUNT}
@@ -61,7 +47,7 @@ HERE
 
 # Download and start systemd service and path files for the manager
 for UNIT in manager.service manager-restart.service manager-restart.path ; do
-    eval $GET --output-document=/usr/lib/systemd/system/${UNIT} ${EPIC_GITLAB}resource-model/packages/generic/manifest-package/${MGR_VER}/${UNIT}
+    eval $GET --output-document=/usr/lib/systemd/system/${UNIT} ${EPIC_REPO}/resource-model/releases/download/${MGR_VER}/${UNIT}
     systemctl enable --now $UNIT
 done
 
