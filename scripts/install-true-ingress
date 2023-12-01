@@ -7,7 +7,7 @@ IFS=$'\n\t'
 OPT=/opt/acnodal
 EPIC_REPO=https://github.com/epic-gateway
 MGR_VER=v0.56.0
-CTL_VER=v0.11.1
+CTL_VER=v0.12.0
 TI_VER=v0.22.4
 GET="wget --no-verbose"
 
