@@ -250,23 +250,6 @@ int pfc_decap(struct __sk_buff *skb)
         }
     }
 
-    // check packet for DNAT
-    if (cfg->flags & CFG_RX_DNAT) {
-        struct endpoint nat_ep = { 0 };
-        // is PROXY endpoint?
-        struct endpoint *dnat = bpf_map_lookup_elem(&map_nat, &nat_ep);
-        if (dnat) {
-            debug_print(debug, "DNAT to %x:%u\n", dnat->ip, bpf_ntohs(dnat->port));
-
-            dnat4(skb, &hdr, bpf_htonl(dnat->ip), dnat->port);
-            if (debug) {
-                dump_pkt(skb);
-            }
-
-            return debug_action(TC_ACT_OK, debug);
-        }
-    }
-
     return debug_action(TC_ACT_UNSPEC, debug);
 }
 

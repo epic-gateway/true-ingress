@@ -18,7 +18,7 @@
 - Have one RX and one TX TC applicable on both EGW and NODE (behavior tweaked by configuration)
 - Share lookup maps if possible (no conflicts)
 - Keep it modular in case of future reorganization
-- Actions cannot chain (one TC instance can perform single operation ... There may be list of actions, but first match wins). There is no hard limitation, why action should not chain, but it would complicate things. Outcome of this rule is that DNAT of forward traffic will be always performed on EGW and SNAT of returning traffic will be performed either on NODE in case of DSO or on EGW otherwise.
+- Actions cannot chain (one TC instance can perform single operation ... There may be list of actions, but first match wins). There is no hard limitation, why action should not chain, but it would complicate things.
 - Adding `tunnel-id` in GUE ping header + in `TABLE-TUNNEL` and `TABLE-SERVICE`. It allows to use multiple `services` in one `GUE tunnel` or one `service` per `GUE tunnel`. In case NAT settings change over time, this allows that all affected `GUE tunnels` will remain updated.
 
 ### PFC
@@ -36,7 +36,6 @@ Returning traffic in **NODE** is encapsulated and sent back to **EGW**.
 ROLE		ACTION
 -----------------------------
 CLIENT		SEND-REQUEST
-EGW:RX		ACTION-DNAT
 EGW		ROUTE
 EGW:TX		ACTION-ENCAP
 NODE:RX		ACTION-DECAP
@@ -44,22 +43,18 @@ KUBERNETES	PROCESS
 NODE:TX		ACTION-ENCAP
 EGW:RX		ACTION-DECAP
 EGW		ROUTE
-EGW:TX		ACTION-SNAT
 CLIENT		RECEIVE-REPLY
 ```
 ##### DSO Mode
 Returning traffic on **NODE** is not encapsulated, but sent directly to **CLIENT** instead.
-SNAT need to be performed in `NODE:TX` instance.
 ```
 ROLE		ACTION
 -----------------------------
 CLIENT		SEND-REQUEST
-EGW:RX		ACTION-DNAT
 EGW		ROUTE
 EGW:TX		ACTION-ENCAP
 NODE:RX		ACTION-DECAP
 KUBERNETES	PROCESS
-NODE:TX		ACTION-SNAT
 CLIENT		RECEIVE-REPLY
 ```
 ##### GUE Ping
@@ -78,7 +73,6 @@ Will perform one of following actions on incoming packet:
 ```
 ACTION		TABLES
 -----------------------------
-ACTION-DNAT     (TABLE-NAT)
 ACTION-DECAP    (TABLE-DECAP, TABLE-VERIFY)
 ACTION-UPDATE   (TABLE-TUNNEL)
 ```
@@ -87,7 +81,6 @@ Will perform one of following actions on departing packet:
 ```
 ACTION		TABLES
 -----------------------------
-ACTION-SNAT     (TABLE-NAT)
 ACTION-ENCAP    (TABLE-ENCAP, TABLE-TUNNEL)
 ```
 
@@ -99,7 +92,6 @@ ACTION-ENCAP    (TABLE-ENCAP, TABLE-TUNNEL)
 ```
 NAME		KEY -> VALUE
 -----------------------------
-TABLE-NAT	EP -> EP
 TABLE-DECAP	EP -> <EMPTY>
 TABLE-ENCAP	EP -> SERVICE
 TABLE-VERIFY	SID -> key
@@ -116,20 +108,6 @@ SERVICE	{tunnel-id, SID, key}				// GUE Header information
 
 > Note: If table with same name is used by both Ingress and Egress, then it means table is shared (there should be no collisions).
 > Note: Only `TABLE-TUNNEL` can be updated internally (by `GUE Ping` source ip and port), rest of the tables will be programmed by control plane.
-
-#### Done
-
-- Read their configuration
-- Dump incomming/outgoing packets.
-- Do simple filtering based on configuration (but doesn't perform any action yet).
-- Process GUE Control packet and update tunnel `remote ip:port`
-
-#### Todo
-
-- DNAT
-- SNAT
-- GUE Encapsulation
-- GUE Decapsulation
 
 ### Attach/Detach scripts
 
@@ -320,23 +298,14 @@ Example for reading Ingress and Egress configuration:
 ###### Ingress flags
 ```
 #define CFG_RX_GUE      1       /* check TABLE_DECAP to match and decapsulate decapsulate GUE */
-#define CFG_RX_DNAT     2       /* check TABLE-NAT to match and perform DNAT */
 #define CFG_RX_DUMP     8       /* DUMP intercepted packet */
 ```
 ###### Egress flags
 ```
 #define CFG_TX_PROXY    1       /* set in case of EGW (do not set for NODE) */
-#define CFG_TX_SNAT     2       /* check TABLE-NAT to match and perform DNAT */
 #define CFG_TX_DUMP     8       /* DUMP intercepted packet */
+#define CFG_TX_FIB     16       /* FIB lookup after encap */
 ```
-Example for setting Ingress to ID 10 name 'EGW' and active flags (CFG_RX_GUE + CFG_RX_DNAT + CFG_RX_DUMP):
-
-    ./cli_cfg set 0 10 11 'EGW'
-
-Example for setting Egress to ID 10 name 'Node1' and active flags (CFG_TX_SNAT + CFG_TX_DUMP):
-
-    ./cli_cfg set 1 20 10 'Node1'
-
 #### Tunnel CLI
 
 ##### GET

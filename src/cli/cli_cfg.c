@@ -60,7 +60,6 @@ void print_decap(__u8 direction, unsigned int key, struct config *value) {
             if_indextoname(key, ifname), key,
             (direction == CFG_IDX_RX) ? "Ingress" : "Egress ", value->name,
             (value->flags & CFG_RX_GUE) ? " GUE-DECAP(1)" : "",
-            (value->flags & CFG_RX_DNAT) ? " DNAT(2)" : "",
             (value->flags & CFG_RX_FWD) ? " FWD(4)" : "",
             (value->flags & CFG_RX_DUMP) ? " DUMP(8)" : "");
 }
@@ -72,7 +71,6 @@ void print_encap(__u8 direction, unsigned int key, struct config *value) {
             if_indextoname(key, ifname), key,
             (direction == CFG_IDX_RX) ? "Ingress" : "Egress ", value->name,
             (value->flags & CFG_TX_PROXY) ? " PROXY(1)" : "",
-            (value->flags & CFG_TX_SNAT) ? " DSR(2)" : "",
             (value->flags & CFG_TX_FWD) ? " FWD(4)" : "",
             (value->flags & CFG_TX_DUMP) ? " DUMP(8)" : "",
             (value->flags & CFG_TX_FIB) ? " FIB(16)" : "");

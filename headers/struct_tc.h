@@ -137,24 +137,19 @@ make_service(struct service  *ref,
     ref->hash       = 0;
     return ref;
 }
-////////////////////////////////
-// "Empty"
-//struct empty {
-//    __u32    foo;
-//};
 
 ////////////////////////////////
 // Configuration
 
 #define CFG_RX_GUE      1       /* check TABLE_DECAP to match and decapsulate decapsulate GUE */
-#define CFG_RX_DNAT     2       /* check TABLE-NAT to match and perform DNAT */
+#define CFG_RX_DNAT     2       /* unimplemented */
 #define CFG_RX_FWD      4       /* Forward packet after FIB lookup */
-#define CFG_RX_DUMP     8       /* DUMP intercepted packet */
+#define CFG_RX_DUMP     8       /* Dump intercepted packet */
 
 #define CFG_TX_PROXY    1       /* set in case of EGW (do not set for NODE) */
-#define CFG_TX_SNAT     2       /* check TABLE-NAT to match and perform DNAT */
+#define CFG_TX_SNAT     2       /* unimplemented */
 #define CFG_TX_FWD      4       /* Forward packet after FIB lookup */
-#define CFG_TX_DUMP     8       /* DUMP intercepted packet */
+#define CFG_TX_DUMP     8       /* Dump intercepted packet */
 #define CFG_TX_FIB     16       /* FIB lookup after encap */
 
 #define CFG_NAME_SIZE   16
