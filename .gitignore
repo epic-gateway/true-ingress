@@ -63,7 +63,6 @@ dkms.conf
 cli_cfg
 cli_tunnel
 cli_service
-cli_gc
 gue_ping_svc_auto
 pfc_cli_go
 

@@ -134,8 +134,6 @@ do
     sleep 1
 done
 
-docker exec -it ${NODE} bash -c "cli_gc get all | grep 'ENCAP ('"
-
 if [ ! "$(docker exec -it ${PROXY} bash -c "cli_tunnel get ${TUNNEL_ID}" | grep "TUN" | grep ${TUNNEL_ID} | grep -v "0.0.0.0:0")" ] ; then
     echo -e "\nGUE Ping for '${SERVICE_NAME}' \e[31mFAILED\e[0m\n"
     RETURN=1
@@ -153,13 +151,6 @@ else
     fi
 fi
 
-docker exec -it ${NODE} bash -c "cli_gc get all | grep 'ENCAP ('"
-
-echo -e "\nWaiting 3s"
-sleep 3
-
-docker exec -it ${NODE} bash -c "cli_gc get all | grep 'ENCAP ('"
-
 echo -e "\nRefreshing session #1"
 TMP=$(./${SERVICE_TYPE}_check.sh ${CLIENT} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_ID} 5555)
 if [ "${VERBOSE}" ]; then
@@ -171,13 +162,6 @@ else
     echo -e "Service '${SERVICE_NAME}' : \e[31mFAILED\e[0m\n"
     RETURN=1
 fi
-
-for (( i=1; i<10; i++ ))
-do
-    echo "[$i/10] Sessions:"
-    docker exec -it ${NODE} bash -c "cli_gc get all | grep 'ENCAP ('"
-    sleep 1
-done
 
 # INFRA & PFC: cleanup topology
 if [ "${VERBOSE}" ]; then

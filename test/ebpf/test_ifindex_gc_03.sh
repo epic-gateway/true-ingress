@@ -204,8 +204,6 @@ do
     sleep 1
 done
 
-docker exec -it ${NODE} bash -c "cli_gc get all" | grep 'ENCAP (' | wc -l
-
 if [ ! "$(docker exec -it ${PROXY} bash -c "cli_tunnel get ${TUNNEL_ID}" | grep "TUN" | grep ${TUNNEL_ID} | grep -v "0.0.0.0:0")" ] ; then
     echo -e "\nGUE Ping for '${SERVICE_NAME}' \e[31mFAILED\e[0m\n"
     RETURN=1
@@ -215,15 +213,6 @@ else
         echo -e "[$i/6000] Sessions:\r"
         ./${SERVICE_TYPE}_check.sh ${CLIENT} ${PROXY_IP} ${PROXY_PORT} ${SERVICE_ID} > /dev/null
     done
-
-    echo -e "\nWaiting ~20s for final cleanup..."
-    for (( i=1; i<9; i++ ))
-    do
-        echo "[$i/8] Sessions:"
-        docker exec -it ${NODE} bash -c "cli_gc get all" | grep 'ENCAP (' | wc -l
-        sleep 3
-    done
-    docker exec -it ${NODE} bash -c "cli_gc get all"
 fi
 # <<<<
 

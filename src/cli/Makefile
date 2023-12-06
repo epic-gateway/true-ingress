@@ -1,8 +1,7 @@
 USER_TARGETS := \
     cli_cfg \
     cli_tunnel \
-    cli_service \
-    cli_gc
+    cli_service
 
 USER_LIBS := -lz -lssl -lcrypto
 
