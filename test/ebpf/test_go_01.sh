@@ -1,6 +1,6 @@
 #!/bin/bash
 # Setup HTTP service on NODE on same network as EPIC, expose it on EPIC and send request from CLIENT.
-# Attach and configure PFC on NODE and EPIC.
+# Attach and configure NODE and EPIC.
 # Configure tunnel with empty *remote ip:port* and wait for GUE Ping to fill *remote ip:port*.
 # Setup HTTP service and forwarding.
 # Send HTTP request from client to *proxy ip:port*.

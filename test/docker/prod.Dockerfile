@@ -11,7 +11,7 @@ RUN apt-get update \
 RUN pip3 install scapy
 
 #
-# Compile the PFC
+# Build
 #
 FROM system as builder
 

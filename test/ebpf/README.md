@@ -5,7 +5,7 @@ Check kernel trace */sys/kernel/debug/tracing/trace* for output.
 
 ## Dev tests
 
-## PFC Go tests
+## Go tests
 
 Simple tests using Go API (`cmd/pfc_cli_go`) to setup forwarding instead of bash sript (`pfc_add.sh`).
 
@@ -38,7 +38,7 @@ Run:
 Expected: PASS
 Status: PASS
 
-## PFC GUE ping tests
+## GUE ping tests
 
 Tests for GUE ping resolution.
 
@@ -46,7 +46,7 @@ Tests for GUE ping resolution.
 
 TC attached and configured on both **EPIC** and **Node1**.
 
-- load PFC
+- load TrueIngress
 - Start GUE ping daemon on **Node1**
 - Configure tunnel with empty *remote ip:port*.
 - Check whether tunnel remote endpoint on **EPIC** was resolved properly
@@ -67,7 +67,7 @@ Status: PASS
 
 TC attached and configured on both **EPIC** and **Node2**.
 
-- load PFC
+- load TrueIngress
 - Start GUE ping daemon on **Node2**
 - Configure tunnel with empty *remote ip:port*.
 - Check whether tunnel remote endpoint on **EPIC** was resolved properly
@@ -84,15 +84,15 @@ Run:
 Expected: PASS
 Status: PASS
 
-## PFC MTU tests
+## MTU tests
 
 Encapsulation tests where packated can reach MTU size.
 
 ### test_mtu_tcp_2gw_01.sh
 
-Check whether PFC can encapsulate when server **Node1** replies with big packets.
+Check whether TrueIngress can encapsulate when server **Node1** replies with big packets.
 
-- load PFC
+- load TrueIngress
 - Configure HTTP service and forwarding.
 - Download big file and check the result.
 
@@ -108,9 +108,9 @@ Status: PASS
 
 ### test_mtu_tcp_2gw_02.sh
 
-Check whether PFC can encapsulate when server **Node2** replies with big packets.
+Check whether TrueIngress can encapsulate when server **Node2** replies with big packets.
 
-- load PFC
+- load TrueIngress
 - Configure HTTP service and forwarding.
 - Download big file and check the result.
 
@@ -126,9 +126,9 @@ Status: PASS
 
 ### test_mtu_tcp_2gw_03.sh
 
-Check whether PFC can encapsulate when client send big packets towards **Node1**.
+Check whether TrueIngress can encapsulate when client send big packets towards **Node1**.
 
-- load PFC
+- load TrueIngress
 - Configure HTTP service and forwarding.
 - Send MTU sized request and check the response.
 
@@ -144,9 +144,9 @@ Status: PASS
 
 ### test_mtu_tcp_2gw_04.sh
 
-Check whether PFC can encapsulate when client send big packets towards **Node1**.
+Check whether TrueIngress can encapsulate when client send big packets towards **Node1**.
 
-- load PFC
+- load TrueIngress
 - Configure HTTP service and forwarding.
 - Send MTU sized request and check the response.
 
@@ -162,9 +162,9 @@ Status: PASS
 
 ### test_mtu_udp_2gw_01.sh
 
-Check whether PFC can encapsulate when server **Node1** replies with big packets.
+Check whether TrueIngress can encapsulate when server **Node1** replies with big packets.
 
-- load PFC
+- load TrueIngress
 - Configure UDP service and forwarding.
 - Download big file and check the result.
 
@@ -180,9 +180,9 @@ Status: FAIL (UDP server does not accomodate packet size when received ICMP "Fra
 
 ### test_mtu_udp_2gw_02.sh
 
-Check whether PFC can encapsulate when server **Node2** replies with big packets.
+Check whether TrueIngress can encapsulate when server **Node2** replies with big packets.
 
-- load PFC
+- load TrueIngress
 - Configure UDP service and forwarding.
 - Download big file and check the result.
 
@@ -198,9 +198,9 @@ Status: FAIL (UDP server does not accomodate packet size when received ICMP "Fra
 
 ### test_mtu_udp_2gw_03.sh
 
-Check whether PFC can encapsulate when client send big packets towards **Node1**.
+Check whether TrueIngress can encapsulate when client send big packets towards **Node1**.
 
-- load PFC
+- load TrueIngress
 - Configure UDP service and forwarding.
 - Send MTU sized request and check the response.
 
@@ -216,9 +216,9 @@ Status: PASS
 
 ### test_mtu_udp_2gw_04.sh
 
-Check whether PFC can encapsulate when client send big packets towards **Node1**.
+Check whether TrueIngress can encapsulate when client send big packets towards **Node1**.
 
-- load PFC
+- load TrueIngress
 - Configure UDP service and forwarding.
 - Send MTU sized request and check the response.
 
@@ -232,9 +232,9 @@ Run:
 Expected: PASS
 Status: PASS
 
-## PFC GUE encap/decap tests (manual port assignment)
+## GUE encap/decap tests (manual port assignment)
 
-GUE encap decap performed by PFC, NAT is performed by external tools e.g. IPTABLES.
+GUE encap decap performed by TrueIngress, NAT is performed by external tools e.g. IPTABLES.
 Check different GUE tunnel source/destination port combinations.
 
 ### test_simple_2gw_01.sh
@@ -424,7 +424,7 @@ Run:
 Expected: PASS
 Status: PASS
 
-## PFC session expiration tests
+## Session expiration tests
 
 Check whether dynamic session are correctly removed after expiration.
 
@@ -478,7 +478,7 @@ Run:
 Expected: PASS
 Status: PASS
 
-## PFC session tracking tests
+## Session tracking tests
 
 Check whether dynamic sessions steer response toward proper EPIC.
 

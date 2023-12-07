@@ -1,7 +1,7 @@
-# PFC docker image
+# Docker image
 
-PFC testing docker image is required for setup testing topology.
-It is based on Ubuntu and contains:
+This docker image is required for setup testing topology.  It is based
+on Ubuntu and contains:
 
 - Tools for crafting/sending packets and collecting statistics.
 - HTTP server for testing service.

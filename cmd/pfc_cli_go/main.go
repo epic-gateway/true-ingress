@@ -32,7 +32,7 @@ func main() {
 	case "check":
 		check, err := pfc.Check()
 		if check {
-			fmt.Printf("PFC ready: %s\n", err)
+			fmt.Printf("Ready: %s\n", err)
 		} else {
 			fmt.Println(err)
 		}
@@ -42,7 +42,7 @@ func main() {
 		if err != nil {
 			fmt.Println(err.Error())
 		} else {
-			fmt.Println("PFC Initialized")
+			fmt.Println("Initialized")
 		}
 
 	case "add":

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Show content of PFC lookup tables
+# Show content of lookup tables
 # syntax: $0
 
 set -Eeo pipefail

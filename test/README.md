@@ -1,15 +1,13 @@
-# Packet Forwarding Component
-
-
+# True Ingress
 ## Demo topology
 
-Simple topology used to validate PFC capabilities.
+Simple topology used to validate True Ingress.
 
 ### Description
 
 Simple IPv4 setup looks like this:
 
-![context](docs/imgs/test_topology.png "Setup with Client, EGW, and Nodes for service proxying using PFC")
+![context](docs/imgs/test_topology.png "Setup with Client, Epic, and Nodes for service proxying")
 
 Green boxes are docker containers.
 Blue "service" is publicly available.
@@ -27,7 +25,7 @@ Only exception is NAT which translate IP addresses from local network (eth2) to 
 Send requests to proxy IP and PORT.
 Simple linux box with few tools to send/craft packets and collecting metrics.
 
-#### EGW
+#### Epic
 
 Exposes local **Services** running on **Nodes** to public network.
 Create GUE tunnel (per Service/per Node) to **NodeX** and forward all requests for **ServiceX** into that tunnel.
@@ -35,7 +33,7 @@ Create GUE tunnel (per Service/per Node) to **NodeX** and forward all requests f
 #### Node1
 
 Running **Services** which are not directly accessible to **Clients**.
-Connected to same network as **EGW**.
+Connected to same network as **Epic**.
 
 #### Node2
 
@@ -56,24 +54,24 @@ Simple IPv4 NAT/Firewall box realized using iptables.
 In order to successfully perform some tests you need to go through following steps:
 
 1) Build docker image
-2) Bring up topology consistg of at least one of each: **Client**, **EGW**, **Node**. **EGW** is running public ip address accessible from all other nodes.
+2) Bring up topology consistg of at least one of each: **Client**, **Epic**, **Node**. **Epic** is running public ip address accessible from all other nodes.
 3) Create a service on a **Node**. Service is not accessible from network.
 4) Setup forwarding, this create GUE tunnel, forwarding rules and neccessary IP address translation
-5) Now client can access service throug **EGW's** pulic IP address and PORT
+5) Now client can access service throug **Epic's** pulic IP address and PORT
 
-#### 1. Docker image
+#### Docker image
 
 Docker related files are located in *docker* subfolder.
 Check inside about details.
 
-#### 2. Topology
+#### Topology
 
 First step is to mimic final solution using existing linux infrastructure like _ip route_, _iptables_ and generic GUE tunnel.
 This solution requires few workarounds:
 
 1) Linux GUE tunnel doesn't support GUE header fields.
-2) Address translation is done on **EGW** instead of **NODE**.
-3) There is one more address translation layer, when packet enter GUE tunnel on **EGW** side. This could be avoided by source based routing on **NODE**.
+2) Address translation is done on **Epic** instead of **NODE**.
+3) There is one more address translation layer, when packet enter GUE tunnel on **Epic** side. This could be avoided by source based routing on **NODE**.
 4) Linux GUE implementation doesn't allow to fill and parse GUE header.
 5) GUE control packets are not supported, so GUE ping is replaced by **NODE** address recognition and then this address is supplied to service setup.
 6) There can be only one service active at a time with one GUE tunnel using 6080 as source and destination port. Servive namespace need to be separated, to allow them to run in parallel. GUE source and destination ports are configurable, but for lack of time it was not testied with different values yes.
@@ -114,7 +112,7 @@ Array of docker network names:
 
 > Note: Order of items in NETWORK_NAME and NETWORK_SUBNET must match, because they are used together.
 
-Public IP address of EGW, reachable by all nodes:
+Public IP address of Epic, reachable by all nodes:
 
     PROXY_IP="5.5.5.5"
 
@@ -188,7 +186,7 @@ For the sake of completeness there is a script that enlists all topology related
     ./topo_check.sh basic.cfg
 
 
-#### 3. Service
+#### Service
 
 For purpose of this demo topology by service we mean HTTP server. Different kind of services can be added later.
 
@@ -220,22 +218,22 @@ It will:
 
     TBD: How to stop and cleanup
 
-#### 4. Forwarding
+#### Forwarding
 
-Service is running locally. To make it publicly available, create proxy setting on **EGW**. **EGW** will forward incomming requests to the backend.
+Service is running locally. To make it publicly available, create proxy setting on **Epic**. **Epic** will forward incomming requests to the backend.
 
-Once service and PFC is running and configured, you can configure service forwarding by using `pfc_add.sh` script described below.
+Once service and TrueIngress is running and configured, you can configure service forwarding by using `pfc_add.sh` script described below.
 
-> Note there is also Go binary (using Go PFC API) with similar functionality `cmd/pfc_cli_go`.
+> Note there is also Go binary (using Go API) with similar functionality `cmd/pfc_cli_go`.
 
 
 ##### Teardown
 
     TBD: How to stop and cleanup
 
-#### 5. Testing
+#### Testing
 
-Now you are able to run HTTP requests against **EGW** and it will forward it to the backend.
+Now you are able to run HTTP requests against **Epic** and it will forward it to the backend.
 To see what operation can be done, proceed to followig section.
 
 
@@ -254,10 +252,10 @@ Set of tests for running multiple service instances on same node.
 
 ### ebpf
 
-Set of tests for attaching and detaching TC programs to **EGW** and **NODE**.
+Set of tests for attaching and detaching TC programs to **Epic** and **NODE**.
 
 
-## PFC interface scripts
+## Interface scripts
 
 Located on docker image under /opt/acnodal/bin/
 
@@ -266,15 +264,15 @@ Located on docker image under /opt/acnodal/bin/
 Start and configure PCF.
 
 - start GUE ping daemon
-- attach PFC (eBPF) binaries to interface
-- configure PFC
+- attach eBPF binaries to interface
+- configure
 - initialize port pool
 
     ./pfc_start.sh <nic> <name> <conf-rx> <conf-tx> <port-min> <port-max> [<delay>]
-       <nic>       - Interface to bind PFC to
+       <nic>       - Interface to bind to
        <name>      - Instance name
-       <conf-rx>   - PFC Inress configuration flags
-       <conf-tx>   - PFC Egress configuration flags
+       <conf-rx>   - Ingress configuration flags
+       <conf-tx>   - Egress configuration flags
        <port-min>  - Gue tunnel port range lower bound
        <port-max>  - Gue tunnel port range upper bound
        <delay>     - (Optional) Interval of sending GUE pings in seconds
@@ -283,24 +281,24 @@ Example:
 
     ./pfc_start.sh eth1 node1 9 9 5000 6000 10
     
-which will attache PFC to eth1. Instance will ideantify itself in log as "node1". Ingress operation mode is 9, egress operation mode is 9 (for details check TABLE-CONFIG). GUE ports will be assigned from range <5000, 6000> and GUE ping daemon will be started with period of 10s.
+which will attach TrueIngress to eth1. Instance will identify itself in log as "node1". Ingress operation mode is 9, egress operation mode is 9 (for details check TABLE-CONFIG). GUE ports will be assigned from range <5000, 6000> and GUE ping daemon will be started with period of 10s.
 
 ### pfc_stop.sh
 
-Stop PCF and cleanup.
+Stop and clean up.
 
 - stop GUE ping daemon
-- detach PFC (eBPF) binaries from interface
+- detach eBPF binaries from interface
 - cleanup port pool
 
     ./pfc_stop.sh <nic>
-       <nic>       - Interface which PFC is bound to
+       <nic>       - Interface to bind to
 
 Example:
 
     ./pfc_stop.sh eth1
 
-which will remove PFC instance attached to eth1.
+which will remove eBPF attached to eth1.
 
 ### pfc_add.sh
 
@@ -396,7 +394,7 @@ Example:
 
     ./egw_setup.sh egw 100 tcp 1.1.1.1 4000 172.1.0.5 6080 5.5.5.5 3100 10.1.1.100
 
-> Note: The _< foo-ip >_ address is a routing workaround. It is IP address assigned to _tun_ interface on **EGW** side. **EGW** is doing SNAT to this ip address, and **Node** uses it ad destination for routing packets into the tunnel. 
+> Note: The _< foo-ip >_ address is a routing workaround. It is IP address assigned to _tun_ interface on **Epic** side. **Epic** is doing SNAT to this ip address, and **Node** uses it ad destination for routing packets into the tunnel. 
 
 ### pfc_setup.sh
 
@@ -408,7 +406,7 @@ Example:
 
     ./pfc_setup.sh node1 100 tcp 1.1.1.1 4000 172.1.0.4 6080 10.1.1.100
 
-> Note: The _< foo-ip >_ address is a routing workaround. It is IP address assigned to _tun_ interface on **EGW** side. **EGW** is doing SNAT to this ip address, and **Node** uses it ad destination for routing packets into the tunnel.    
+> Note: The _< foo-ip >_ address is a routing workaround. It is IP address assigned to _tun_ interface on **Epic** side. **Epic** is doing SNAT to this ip address, and **Node** uses it ad destination for routing packets into the tunnel.    
 
 ### cli.sh
 

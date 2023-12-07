@@ -1,9 +1,9 @@
 #!/bin/bash
 # syntax: $0 <nic> <name> <conf-rx> <conf-tx> <port-min> <port-max> [<gue-delay>]
-#       <nic>             - Interface to bind PFC to
+#       <nic>             - Interface to bind to
 #       <name>            - Instance name
-#       <conf-rx>         - PFC Inress configuration flags
-#       <conf-tx>         - PFC Egress configuration flags
+#       <conf-rx>         - Inress configuration flags
+#       <conf-tx>         - Egress configuration flags
 #       <port-min>        - Gue tunnel port range lower bound
 #       <port-max>        - Gue tunnel port range upper bound
 #       <gue-delay>       - (Optional) Interval of sending GUE pings (in seconds)

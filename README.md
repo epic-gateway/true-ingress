@@ -1,11 +1,8 @@
-# Packet Forwarding Component
-
-The Packet Forwarding Component (PFC) is the eBPF program and associated infrastructure used to create Service based GUE tunnels between the customer k8s cluster running EGO and the EGW.  The PFC runs on both.
+TrueIngress is the eBPF program and associated infrastructure used to create tunnels between Epic and the customer k8s cluster running PureGW.
 
 ## Description
 
-PFC consists of 2 binaries, one that encapsulates packets, and one that decapsulates.
-Both can be configured to perform certain tasks.
+TrueIngress consists of 2 binaries: one that encapsulates packets, and one that decapsulates.
 They use shared maps to allow configuration from control plane.
 
 ### Limitations
@@ -30,7 +27,7 @@ They use shared maps to allow configuration from control plane.
 
 ### Prerequisites
 
-PFC was developed and tested on Ubuntu 18.04 LTS (requires kernel version bump to at least 5.2) and 20.04 LTS (which uses kernel 5.4).
+TrueIngress was developed and tested on Ubuntu 18.04 LTS (requires kernel version bump to at least 5.2) and 20.04 LTS (which uses kernel 5.4).
 
 If you are running on fresh system (like VM), you may want to update it first.
 
@@ -106,7 +103,7 @@ For detailed information about testing topology and additional test cases procee
 
 ### Install
 
-On order to run PFC on your local setup create true-ingress.tar.bz2:
+On order to run on your local setup create true-ingress.tar.bz2:
 
     make tar
 
@@ -120,17 +117,17 @@ Don't forget to add new location to your PATH:
 
 #### Attach to eth0
 
-Now the PFC is installed, you can attach it to interface eth0:
+Now that TrueIngress is installed, you can attach it to interface eth0:
 
-    sudo pfc_start.sh eth0 "PFC-TEST" 9 9 5000 6000 10 2 3
+    sudo pfc_start.sh eth0 TEST 9 9 5000 6000 10 2 3
 
 Where:
 
     syntax: $0 <nic> <name> <conf-rx> <conf-tx> <port-min> <port-max>
-        <nic>             - Interface to bind PFC to
+        <nic>             - Interface to bind TrueIngress to
         <name>            - Instance name
-        <conf-rx>         - PFC Inress configuration flags
-        <conf-tx>         - PFC Egress configuration flags
+        <conf-rx>         - Inress configuration flags
+        <conf-tx>         - Egress configuration flags
         <port-min>        - Gue tunnel port range lower bound
         <port-max>        - Gue tunnel port range upper bound
         <gue-delay>       - (Optional) Interval of sending GUE pings (in seconds)
@@ -139,7 +136,7 @@ Where:
 
 If root doesn't share your PATH update yet, use:
 
-    sudo env "PATH=$PATH" pfc_start.sh eth0 "PFC-TEST" 9 9 5000 6000 10 2 3
+    sudo env "PATH=$PATH" pfc_start.sh eth0 TEST 9 9 5000 6000 10 2 3
 
 #### Detach from eth0
 
@@ -151,9 +148,9 @@ or
 
 
 
-# PFC Go API
+# Go API
 
-Provides Go bindings to setup/delete/list service forwarding in PFC.
+Provides Go bindings to setup/delete/list service forwarding.
 
 ### pfc/pfc.go
 
@@ -161,13 +158,13 @@ API itself. Provides set of functions to add, delete, get list of services.
 
 #### func Version() string
 
-Return PFC version infomation (string).
+Return version infomation (string).
 
 > Note: There is no official versioning yet.
 
 #### func Check() (bool, string)
 
-Return whether PFC is ready to be used (bool) and reason (string) in case it is not.
+Return whether TrueIngress is ready to be used (bool) and reason (string) in case it is not.
 
 #### func ForwardingAdd(nic string, group_id int, service_id int, passwd string, proto string, proxy_ip net.IP, proxy_port int, service_ip net.IP, service_port int, gue_remote_ip net.IP, gue_remote_port int) (net.IP, int, error)
 
@@ -213,7 +210,7 @@ There are `test/ebpf/test_go_0x.sh` tests which exactly do that.
 
 #### pfc_cli_go version
 
-Report PFC version.
+Report version.
 
 > Note: There is no official versioning yet.
 
@@ -221,7 +218,7 @@ Report PFC version.
 
 #### pfc_cli_go check
 
-Check whether PFC is present and running on the system.
+Check whether TrueIngress is present and running on the system.
 
     pfc_cli_go check
 
@@ -251,7 +248,4 @@ Show help.
 
 ### gue_ping_svc_auto.go
 
-Go version of PFC daemon which:
-- periodically sends GUE ping for all configured tunnels
-- periodically check dynamic client sessions and remove expired
-
+Go daemon which periodically sends GUE ping for all configured tunnels.

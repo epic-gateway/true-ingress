@@ -21,9 +21,9 @@ void usage(char *prog) {
     fprintf(stderr,"    %s get <interface|all>\n", prog);
     fprintf(stderr,"    %s set <interface> <direction> <flags> <name>\n", prog);
     fprintf(stderr,"    %s del <interface|all>\n\n", prog);
-    fprintf(stderr,"    <interface>     - Interface where PFC is attached\n");
+    fprintf(stderr,"    <interface>     - Interface where TrueIngress is attached\n");
     fprintf(stderr,"    <direction>     - 0 for ingress, 1 for egress\n");
-    fprintf(stderr,"    <flags>         - PFC operational mode:\n");
+    fprintf(stderr,"    <flags>         - Operational mode:\n");
     fprintf(stderr,"                       Ingress : 1 GUE-DECAP, 4 FWD, 8 DUMP\n");
     fprintf(stderr,"                       Egress  : 1 IS-PROXY, 2 DSR, 4 FWD, 8 DUMP, 16 FIB\n");
     fprintf(stderr,"    <name>          - Instance identifier (string)\n");
@@ -56,7 +56,7 @@ void print_none(__u8 direction, unsigned int key, struct config *value) {
 void print_decap(__u8 direction, unsigned int key, struct config *value) {
     char ifname[32];
 
-    printf("CFG  %-16s   %-5u    %s    PFC-Decap     %-16s    %s%s%s%s\n",
+    printf("CFG  %-16s   %-5u    %s    Decap     %-16s    %s%s%s%s\n",
             if_indextoname(key, ifname), key,
             (direction == CFG_IDX_RX) ? "Ingress" : "Egress ", value->name,
             (value->flags & CFG_RX_GUE) ? " GUE-DECAP(1)" : "",
@@ -67,7 +67,7 @@ void print_decap(__u8 direction, unsigned int key, struct config *value) {
 void print_encap(__u8 direction, unsigned int key, struct config *value) {
     char ifname[32];
 
-    printf("CFG  %-16s   %-5u    %s    PFC-Encap     %-16s    %s%s%s%s%s\n",
+    printf("CFG  %-16s   %-5u    %s    Encap     %-16s    %s%s%s%s%s\n",
             if_indextoname(key, ifname), key,
             (direction == CFG_IDX_RX) ? "Ingress" : "Egress ", value->name,
             (value->flags & CFG_TX_PROXY) ? " PROXY(1)" : "",
@@ -79,7 +79,7 @@ void print_encap(__u8 direction, unsigned int key, struct config *value) {
 void print_tag(__u8 direction, unsigned int key, struct config *value) {
     char ifname[32];
 
-    printf("CFG  %-16s   %-5u    %s    PFC-Tag       %-16s     %u\n",
+    printf("CFG  %-16s   %-5u    %s    Tag       %-16s     %u\n",
             if_indextoname(key, ifname), key,
             (direction == CFG_IDX_RX) ? "Ingress" : "Egress ", 
             value->name, value->flags);

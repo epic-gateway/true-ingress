@@ -22,9 +22,9 @@ int tag(struct __sk_buff *skb)
     __u32 key = skb->ifindex;
 
     if (key == skb->ingress_ifindex) {
-        bpf_print("PFC-Tag (iif %u RX) >>>> PKT len %u\n", key, skb->len);
+        bpf_print("Tag (iif %u RX) >>>> PKT len %u\n", key, skb->len);
     } else {
-        bpf_print("PFC-Tag (iif %u TX) >>>> PKT len %u\n", key, skb->len);
+        bpf_print("Tag (iif %u TX) >>>> PKT len %u\n", key, skb->len);
     }
 
     // Mark the packet with the Envoy pod's ifindex

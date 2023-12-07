@@ -15,34 +15,34 @@
 ## Description
 
 ### Assumptions and Restrictions
-- Have one RX and one TX TC applicable on both EGW and NODE (behavior tweaked by configuration)
+- Have one RX and one TX TC applicable on both Epic and client node (behavior tweaked by configuration)
 - Share lookup maps if possible (no conflicts)
 - Keep it modular in case of future reorganization
 - Actions cannot chain (one TC instance can perform single operation ... There may be list of actions, but first match wins). There is no hard limitation, why action should not chain, but it would complicate things.
 - Adding `tunnel-id` in GUE ping header + in `TABLE-TUNNEL` and `TABLE-SERVICE`. It allows to use multiple `services` in one `GUE tunnel` or one `service` per `GUE tunnel`. In case NAT settings change over time, this allows that all affected `GUE tunnels` will remain updated.
 
-### PFC
+### TrueIngress
 
-Set of two kernelspace eBPF programs for Traffic Control (TC). One attached to ingress and other to egress queue of netwotk interface.
+Set of two eBPF programs for Traffic Control (TC). One attached to ingress and other to egress queue of network interface.
 
 #### Packet Flows (single action)
 
-- EGW, NODE, CLIENT, EGO - Role
+- Epic, NODE, CLIENT, PureGW - Role
 - RX, TX - ingress or egress TC
 
 ##### Standard Mode:
-Returning traffic in **NODE** is encapsulated and sent back to **EGW**.
+Returning traffic in **NODE** is encapsulated and sent back to **Epic**.
 ```
 ROLE		ACTION
 -----------------------------
 CLIENT		SEND-REQUEST
-EGW		ROUTE
-EGW:TX		ACTION-ENCAP
+Epic		ROUTE
+Epic:TX		ACTION-ENCAP
 NODE:RX		ACTION-DECAP
 KUBERNETES	PROCESS
 NODE:TX		ACTION-ENCAP
-EGW:RX		ACTION-DECAP
-EGW		ROUTE
+Epic:RX		ACTION-DECAP
+Epic		ROUTE
 CLIENT		RECEIVE-REPLY
 ```
 ##### DSO Mode
@@ -51,8 +51,8 @@ Returning traffic on **NODE** is not encapsulated, but sent directly to **CLIENT
 ROLE		ACTION
 -----------------------------
 CLIENT		SEND-REQUEST
-EGW		ROUTE
-EGW:TX		ACTION-ENCAP
+Epic		ROUTE
+Epic:TX		ACTION-ENCAP
 NODE:RX		ACTION-DECAP
 KUBERNETES	PROCESS
 CLIENT		RECEIVE-REPLY
@@ -62,13 +62,13 @@ Parse GUE traffic and in case of Control packet update tunnel remote endoint.
 ```
 ROLE		ACTION
 -----------------------------
-EGO		SEND-GUE-PING
-EGW:RX		ACTION-UPDATE
+PureGW		SEND-GUE-PING
+Epic:RX		ACTION-UPDATE
 ```
 
 #### TC Actions (and required Tables)
 
-##### Ingress PFC
+##### Ingress
 Will perform one of following actions on incoming packet:
 ```
 ACTION		TABLES
@@ -76,7 +76,7 @@ ACTION		TABLES
 ACTION-DECAP    (TABLE-DECAP, TABLE-VERIFY)
 ACTION-UPDATE   (TABLE-TUNNEL)
 ```
-##### Egress PFC
+##### Egress
 Will perform one of following actions on departing packet:
 ```
 ACTION		TABLES
@@ -84,7 +84,7 @@ ACTION		TABLES
 ACTION-ENCAP    (TABLE-ENCAP, TABLE-TUNNEL)
 ```
 
-> Note: Both Ingress and Egress PFC use `TABLE-CONFIG`
+> Note: Both Ingress and Egress use `TABLE-CONFIG`
 
 #### Table structure
 
@@ -121,7 +121,7 @@ Uses iproute2 suite to attach/detach eBPF in TC mode.
 ### CLIs
 
 Set of userspace programs allowing control plain to program lookup tables.
- 
+
 #### Config CLI
 
 Set instance identity, log level, behavior.
@@ -152,7 +152,7 @@ TABLE-VERIFY
 #### Done
 
 - PoC quality
-- Read from /write into shared maps to configure PFC.
+- Read from /write into shared maps to configure TrueIngress.
 
 #### Todo
 
@@ -183,7 +183,7 @@ It will build also dependencies (e.g. libbpf)
 
     make prod-img
 
-#### Quick check for PFC consistency
+#### Quick consistency check
 
     make check
 
@@ -203,11 +203,11 @@ Example:
 
     ./attach_tc.sh eth0
 
-To attach pfc program to both ingress and egress of eth0 or:
+To attach bpf programs to both ingress and egress of eth0 or:
 
     ./attach_tc.sh eth0 ingress
 
-To attach pfc program to ingress of eth0.
+To attach bpf program to ingress of eth0.
 
 Attached eBPF programm uses kernel trace to log information.
 Logged messages can be found:
@@ -258,14 +258,14 @@ Example:
 
     ./reattach_tc.sh eth0
 
-To remove current and attach pfc program to both ingress and egress of eth0 or:
+To remove current and re-attach program to both ingress and egress of eth0 or:
 
     ./reattach_tc.sh eth0 ingress
 
-To remove current and attach pfc program to ingress of eth0.
+To remove current and attach program to ingress of eth0.
 
 ### Configuration
- 
+
 #### Config CLI
 
 ##### GET
@@ -281,7 +281,7 @@ Example for reading Ingress configuration:
 Example for reading Egress configuration:
 
     ./cli_cfg get 1
-    
+
 Example for reading Ingress and Egress configuration:
 
     ./cli_cfg get all
@@ -373,4 +373,3 @@ Example to delete all services:
 Example to delete service with service-id 1 and group-id 2:
 
     ./cli_service del 1 2
-

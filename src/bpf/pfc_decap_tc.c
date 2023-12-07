@@ -58,9 +58,9 @@ int pfc_decap(struct __sk_buff *skb)
     // dump packet
     if (debug) {
         if (skb->ifindex == skb->ingress_ifindex) {
-            bpf_print("PFC-Decap (iif %u RX) >>>> PKT # %u, len %u\n", skb->ifindex, pktnum, skb->len);
+            bpf_print("Decap (iif %u RX) >>>> PKT # %u, len %u\n", skb->ifindex, pktnum, skb->len);
         } else {
-            bpf_print("PFC-Decap (iif %u TX) >>>> PKT # %u, len %u\n", skb->ifindex, pktnum, skb->len);
+            bpf_print("Decap (iif %u TX) >>>> PKT # %u, len %u\n", skb->ifindex, pktnum, skb->len);
         }
 
         // log identification info

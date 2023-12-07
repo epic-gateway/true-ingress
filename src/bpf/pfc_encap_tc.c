@@ -38,9 +38,9 @@ int pfc_encap(struct __sk_buff *skb)
     // dump packet
     if (debug) {
         if (skb->ifindex == skb->ingress_ifindex) {
-            bpf_print("PFC-Encap (iif %u RX) >>>> PKT # %u, len %u\n", skb->ifindex, stats_update(skb->ifindex, STAT_IDX_TX, skb), skb->len);
+            bpf_print("Encap (iif %u RX) >>>> PKT # %u, len %u\n", skb->ifindex, stats_update(skb->ifindex, STAT_IDX_TX, skb), skb->len);
         } else {
-            bpf_print("PFC-Encap (iif %u TX) >>>> PKT # %u, len %u\n", skb->ifindex, stats_update(skb->ifindex, STAT_IDX_TX, skb), skb->len);
+            bpf_print("Encap (iif %u TX) >>>> PKT # %u, len %u\n", skb->ifindex, stats_update(skb->ifindex, STAT_IDX_TX, skb), skb->len);
         }
 
         // log identification info

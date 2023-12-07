@@ -27,7 +27,7 @@ if [ ! "${NIC}" ] ; then
     NIC=$(ip route | grep default | awk '{print $5}')
 fi
 
-echo "Loading PFC(TC) to ${NIC}..."
+echo "Loading TC to ${NIC}..."
 CHECK=`tc qdisc show dev ${NIC} | grep clsact`
 if [ "${CHECK}" ]; then
     echo "### Using existing clsact qdisc ###"
