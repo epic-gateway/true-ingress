@@ -56,10 +56,9 @@ void print_none(__u8 direction, unsigned int key, struct config *value) {
 void print_decap(__u8 direction, unsigned int key, struct config *value) {
     char ifname[32];
 
-    printf("CFG  %-16s   %-5u    %s    Decap     %-16s    %s%s%s%s\n",
+    printf("CFG  %-16s   %-5u    %s    Decap     %-16s    %s%s\n",
             if_indextoname(key, ifname), key,
             (direction == CFG_IDX_RX) ? "Ingress" : "Egress ", value->name,
-            (value->flags & CFG_RX_GUE) ? " GUE-DECAP(1)" : "",
             (value->flags & CFG_RX_FWD) ? " FWD(4)" : "",
             (value->flags & CFG_RX_DUMP) ? " DUMP(8)" : "");
 }
