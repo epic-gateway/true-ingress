@@ -297,7 +297,6 @@ Example for reading Ingress and Egress configuration:
 
 ###### Ingress flags
 ```
-#define CFG_RX_GUE      1       /* check TABLE_DECAP to match and decapsulate decapsulate GUE */
 #define CFG_RX_DUMP     8       /* DUMP intercepted packet */
 ```
 ###### Egress flags

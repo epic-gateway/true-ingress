@@ -24,9 +24,9 @@ void usage(char *prog) {
     fprintf(stderr,"    <interface>     - Interface where TrueIngress is attached\n");
     fprintf(stderr,"    <direction>     - 0 for ingress, 1 for egress\n");
     fprintf(stderr,"    <flags>         - Operational mode:\n");
-    fprintf(stderr,"                       Ingress : 1 GUE-DECAP, 4 FWD, 8 DUMP\n");
-    fprintf(stderr,"                       Egress  : 1 IS-PROXY, 2 DSR, 4 FWD, 8 DUMP, 16 FIB\n");
     fprintf(stderr,"    <name>          - Instance identifier (string)\n");
+    fprintf(stderr,"                       Ingress : 4 FWD, 8 DUMP\n");
+    fprintf(stderr,"                       Egress  : 1 IS-PROXY, 4 FWD, 8 DUMP, 16 FIB\n");
 }
 
 void map_cfg_print_header() {
@@ -56,10 +56,9 @@ void print_none(__u8 direction, unsigned int key, struct config *value) {
 void print_decap(__u8 direction, unsigned int key, struct config *value) {
     char ifname[32];
 
-    printf("CFG  %-16s   %-5u    %s    Decap     %-16s    %s%s%s%s\n",
+    printf("CFG  %-16s   %-5u    %s    Decap     %-16s    %s%s\n",
             if_indextoname(key, ifname), key,
             (direction == CFG_IDX_RX) ? "Ingress" : "Egress ", value->name,
-            (value->flags & CFG_RX_GUE) ? " GUE-DECAP(1)" : "",
             (value->flags & CFG_RX_FWD) ? " FWD(4)" : "",
             (value->flags & CFG_RX_DUMP) ? " DUMP(8)" : "");
 }
@@ -67,7 +66,7 @@ void print_decap(__u8 direction, unsigned int key, struct config *value) {
 void print_encap(__u8 direction, unsigned int key, struct config *value) {
     char ifname[32];
 
-    printf("CFG  %-16s   %-5u    %s    Encap     %-16s    %s%s%s%s%s\n",
+    printf("CFG  %-16s   %-5u    %s    Encap     %-16s    %s%s%s%s\n",
             if_indextoname(key, ifname), key,
             (direction == CFG_IDX_RX) ? "Ingress" : "Egress ", value->name,
             (value->flags & CFG_TX_PROXY) ? " PROXY(1)" : "",
