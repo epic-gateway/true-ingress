@@ -152,8 +152,6 @@ make_service(struct service  *ref,
 #define CFG_TX_DUMP     8       /* Dump intercepted packet */
 #define CFG_TX_FIB     16       /* FIB lookup after encap */
 
-#define CFG_NAME_SIZE   16
-
 #define CFG_IDX_RX      0
 #define CFG_IDX_TX      1
 #define CFG_IDX_MAX     2
@@ -167,7 +165,6 @@ make_service(struct service  *ref,
 struct config {
     __u8    prog;
     __u32   flags;
-    char    name[CFG_NAME_SIZE];
 };
 
 struct cfg_if {
