@@ -29,33 +29,19 @@ void usage(char *prog) {
 }
 
 void map_cfg_print_header() {
-    printf("TABLE-CFG:\n     Interface          Ifindex  Direction  Binary        Flags\n");
-    printf("----------------------------------------------------------------------------------------\n");
-}
-
-void map_cfg_print_footer() {
-    printf("----------------------------------------------------------------------------------------\n");
-    printf("\n");
+    printf("     Interface          Ifindex  Direction   Flags\n");
+    printf("--------------------------------------------------------------------------\n");
 }
 
 void map_cfg_print_count(__u32 count) {
-    printf("----------------------------------------------------------------------------------------\n");
+    printf("--------------------------------------------------------------------------\n");
     printf("Entries:  %u\n\n", count);
-}
-
-void print_none(__u8 direction, unsigned int key, struct config *value) {
-    char ifname[32];
-
-    printf("CFG  %-16s   %-5u    %s    None          %u\n",
-            if_indextoname(key, ifname), key,
-            (direction == CFG_IDX_RX) ? "Ingress" : "Egress ",
-            value->flags);
 }
 
 void print_decap(__u8 direction, unsigned int key, struct config *value) {
     char ifname[32];
 
-    printf("CFG  %-16s   %-5u    %s    Decap     %s%s\n",
+    printf("CFG  %-16s   %-5u    %s    %s%s\n",
             if_indextoname(key, ifname), key,
             (direction == CFG_IDX_RX) ? "Ingress" : "Egress ",
             (value->flags & CFG_RX_FWD) ? " FWD(4)" : "",
@@ -65,7 +51,7 @@ void print_decap(__u8 direction, unsigned int key, struct config *value) {
 void print_encap(__u8 direction, unsigned int key, struct config *value) {
     char ifname[32];
 
-    printf("CFG  %-16s   %-5u    %s    Encap     %s%s%s%s\n",
+    printf("CFG  %-16s   %-5u    %s    %s%s%s%s\n",
             if_indextoname(key, ifname), key,
             (direction == CFG_IDX_RX) ? "Ingress" : "Egress ",
             (value->flags & CFG_TX_PROXY) ? " PROXY(1)" : "",
@@ -74,19 +60,10 @@ void print_encap(__u8 direction, unsigned int key, struct config *value) {
             (value->flags & CFG_TX_FIB) ? " FIB(16)" : "");
 }
 
-void print_tag(__u8 direction, unsigned int key, struct config *value) {
-    char ifname[32];
-
-    printf("CFG  %-16s   %-5u    %s    Tag       %u\n",
-            if_indextoname(key, ifname), key,
-            (direction == CFG_IDX_RX) ? "Ingress" : "Egress ", 
-            value->flags);
-}
-
 void print_unknown(__u8 direction, unsigned int key, struct config *value) {
     char ifname[32];
 
-    printf("CFG  %-16s   %-5u    %s    Unknown       %u\n",
+    printf("CFG  %-16s   %-5u    %s    %u\n",
             if_indextoname(key, ifname), key,
             (direction == CFG_IDX_RX) ? "Ingress" : "Egress ",
             value->flags);
@@ -95,7 +72,7 @@ void print_unknown(__u8 direction, unsigned int key, struct config *value) {
 void map_cfg_print_record(unsigned int key, struct cfg_if *value) {
     switch (value->queue[CFG_IDX_RX].prog) {
         case CFG_PROG_NONE:
-            print_none(CFG_IDX_RX, key, &value->queue[CFG_IDX_RX]);
+            print_unknown(CFG_IDX_RX, key, &value->queue[CFG_IDX_RX]);
             break;
         case CFG_PROG_DECAP:
             print_decap(CFG_IDX_RX, key, &value->queue[CFG_IDX_RX]);
@@ -103,25 +80,19 @@ void map_cfg_print_record(unsigned int key, struct cfg_if *value) {
         case CFG_PROG_ENCAP:
             print_encap(CFG_IDX_RX, key, &value->queue[CFG_IDX_RX]);
             break;
-        case CFG_PROG_TAG:
-            print_tag(CFG_IDX_RX, key, &value->queue[CFG_IDX_RX]);
-            break;
         default:
             print_unknown(CFG_IDX_RX, key, &value->queue[CFG_IDX_RX]);
     }
 
     switch (value->queue[CFG_IDX_TX].prog) {
         case CFG_PROG_NONE:
-            print_none(CFG_IDX_TX, key, &value->queue[CFG_IDX_TX]);
+            print_unknown(CFG_IDX_TX, key, &value->queue[CFG_IDX_TX]);
             break;
         case CFG_PROG_DECAP:
             print_decap(CFG_IDX_TX, key, &value->queue[CFG_IDX_TX]);
             break;
         case CFG_PROG_ENCAP:
             print_encap(CFG_IDX_TX, key, &value->queue[CFG_IDX_TX]);
-            break;
-        case CFG_PROG_TAG:
-            print_tag(CFG_IDX_TX, key, &value->queue[CFG_IDX_TX]);
             break;
         default:
             print_unknown(CFG_IDX_TX, key, &value->queue[CFG_IDX_TX]);
