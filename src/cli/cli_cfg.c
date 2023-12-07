@@ -16,7 +16,7 @@
 #include "cli_util.h"
 
 void usage(char *prog) {
-    fprintf(stderr,"ERR: Too little arguments\n");
+    fprintf(stderr,"Too few arguments\n");
     fprintf(stderr,"Usage:\n");
     fprintf(stderr,"    %s get <interface|all>\n", prog);
     fprintf(stderr,"    %s set <interface> <direction> <flags> <name>\n", prog);
@@ -24,41 +24,40 @@ void usage(char *prog) {
     fprintf(stderr,"    <interface>     - Interface where TrueIngress is attached\n");
     fprintf(stderr,"    <direction>     - 0 for ingress, 1 for egress\n");
     fprintf(stderr,"    <flags>         - Operational mode:\n");
-    fprintf(stderr,"    <name>          - Instance identifier (string)\n");
     fprintf(stderr,"                       Ingress : 4 FWD, 8 DUMP\n");
     fprintf(stderr,"                       Egress  : 1 IS-PROXY, 4 FWD, 8 DUMP, 16 FIB\n");
 }
 
 void map_cfg_print_header() {
-    printf("TABLE-CFG:\n     Interface          Ifindex  Direction  Binary        Name                 Flags\n");
-    printf("-------------------------------------------------------------------------------------------------------------\n");
+    printf("TABLE-CFG:\n     Interface          Ifindex  Direction  Binary        Flags\n");
+    printf("----------------------------------------------------------------------------------------\n");
 }
 
 void map_cfg_print_footer() {
-    printf("-------------------------------------------------------------------------------------------------------------\n");
+    printf("----------------------------------------------------------------------------------------\n");
     printf("\n");
 }
 
 void map_cfg_print_count(__u32 count) {
-    printf("-------------------------------------------------------------------------------------------------------------\n");
+    printf("----------------------------------------------------------------------------------------\n");
     printf("Entries:  %u\n\n", count);
 }
 
 void print_none(__u8 direction, unsigned int key, struct config *value) {
     char ifname[32];
 
-    printf("CFG  %-16s   %-5u    %s    None          %-16s     %u\n",
+    printf("CFG  %-16s   %-5u    %s    None          %u\n",
             if_indextoname(key, ifname), key,
             (direction == CFG_IDX_RX) ? "Ingress" : "Egress ",
-            value->name, value->flags);
+            value->flags);
 }
 
 void print_decap(__u8 direction, unsigned int key, struct config *value) {
     char ifname[32];
 
-    printf("CFG  %-16s   %-5u    %s    Decap     %-16s    %s%s\n",
+    printf("CFG  %-16s   %-5u    %s    Decap     %s%s\n",
             if_indextoname(key, ifname), key,
-            (direction == CFG_IDX_RX) ? "Ingress" : "Egress ", value->name,
+            (direction == CFG_IDX_RX) ? "Ingress" : "Egress ",
             (value->flags & CFG_RX_FWD) ? " FWD(4)" : "",
             (value->flags & CFG_RX_DUMP) ? " DUMP(8)" : "");
 }
@@ -66,9 +65,9 @@ void print_decap(__u8 direction, unsigned int key, struct config *value) {
 void print_encap(__u8 direction, unsigned int key, struct config *value) {
     char ifname[32];
 
-    printf("CFG  %-16s   %-5u    %s    Encap     %-16s    %s%s%s%s\n",
+    printf("CFG  %-16s   %-5u    %s    Encap     %s%s%s%s\n",
             if_indextoname(key, ifname), key,
-            (direction == CFG_IDX_RX) ? "Ingress" : "Egress ", value->name,
+            (direction == CFG_IDX_RX) ? "Ingress" : "Egress ",
             (value->flags & CFG_TX_PROXY) ? " PROXY(1)" : "",
             (value->flags & CFG_TX_FWD) ? " FWD(4)" : "",
             (value->flags & CFG_TX_DUMP) ? " DUMP(8)" : "",
@@ -78,19 +77,19 @@ void print_encap(__u8 direction, unsigned int key, struct config *value) {
 void print_tag(__u8 direction, unsigned int key, struct config *value) {
     char ifname[32];
 
-    printf("CFG  %-16s   %-5u    %s    Tag       %-16s     %u\n",
+    printf("CFG  %-16s   %-5u    %s    Tag       %u\n",
             if_indextoname(key, ifname), key,
             (direction == CFG_IDX_RX) ? "Ingress" : "Egress ", 
-            value->name, value->flags);
+            value->flags);
 }
 
 void print_unknown(__u8 direction, unsigned int key, struct config *value) {
     char ifname[32];
 
-    printf("CFG  %-16s   %-5u    %s    Unknown       %-16s     %u\n",
+    printf("CFG  %-16s   %-5u    %s    Unknown       %u\n",
             if_indextoname(key, ifname), key,
             (direction == CFG_IDX_RX) ? "Ingress" : "Egress ",
-            value->name, value->flags);
+            value->flags);
 }
 
 void map_cfg_print_record(unsigned int key, struct cfg_if *value) {
@@ -168,7 +167,7 @@ bool map_cfg_getall(int map_fd) {
     return true;
 }
 
-bool map_cfg_set(int map_fd, unsigned int ifindex, unsigned int qid, uint flags, char *name) {
+bool map_cfg_set(int map_fd, unsigned int ifindex, unsigned int qid, uint flags) {
     struct cfg_if value = { 0 };
     char ifname[32];
 
@@ -178,7 +177,6 @@ bool map_cfg_set(int map_fd, unsigned int ifindex, unsigned int qid, uint flags,
     // update the struct
     struct config *cfg = &value.queue[qid];
     cfg->flags = flags;
-    strncpy(cfg->name, name, 16);
 
     // write it back
     if (bpf_map_update_elem(map_fd, &ifindex, &value, 0)) {
@@ -236,7 +234,7 @@ int main(int argc, char **argv)
 
     // process operation
     if (!strncmp(argv[1], "set", 4)) {
-        if (argc < 6) {
+        if (argc < 5) {
             usage(argv[0]);
             return 1;
         }
@@ -254,7 +252,7 @@ int main(int argc, char **argv)
             return 1;
         }
 
-        map_cfg_set(map_fd, ifindex, qid, atoi(argv[4]), argv[5]);
+        map_cfg_set(map_fd, ifindex, qid, atoi(argv[4]));
     } else if (!strncmp(argv[1], "get", 4)) {
         if (!strncmp(argv[2], "all", 4)) {
             map_cfg_getall(map_fd);

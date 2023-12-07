@@ -64,7 +64,7 @@ int pfc_decap(struct __sk_buff *skb)
         }
 
         // log identification info
-        bpf_print("ID: \'%s\'    Flags: %u\n", cfg->name, cfg->flags);
+        bpf_print("    Flags: %u\n", cfg->flags);
 
         dump_pkt(skb);
     }
