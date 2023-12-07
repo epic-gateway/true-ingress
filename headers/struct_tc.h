@@ -141,7 +141,7 @@ make_service(struct service  *ref,
 ////////////////////////////////
 // Configuration
 
-#define CFG_RX_GUE      1       /* check TABLE_DECAP to match and decapsulate decapsulate GUE */
+#define CFG_RX_GUE      1       /* unimplemented */
 #define CFG_RX_DNAT     2       /* unimplemented */
 #define CFG_RX_FWD      4       /* Forward packet after FIB lookup */
 #define CFG_RX_DUMP     8       /* Dump intercepted packet */
