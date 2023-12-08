@@ -28,13 +28,6 @@ int pfc_encap(struct __sk_buff *skb)
     struct config *cfg = &iface->queue[(skb->ifindex == skb->ingress_ifindex) ? CFG_IDX_RX : CFG_IDX_TX];
     int debug = cfg->flags & CFG_TX_DUMP;
 
-    if (cfg->prog == CFG_PROG_NONE) {
-        bpf_print("cfg[%u]->prog = CFG_PROG_ENCAP\n", (skb->ifindex == skb->ingress_ifindex) ? CFG_IDX_RX : CFG_IDX_TX);
-        cfg->prog = CFG_PROG_ENCAP;
-        bpf_map_update_elem(&map_config, &key, iface, BPF_ANY);
-    }
-
-    // dump packet
     if (debug) {
         if (skb->ifindex == skb->ingress_ifindex) {
             bpf_print("Encap (iif %u RX) >>>> len %u\n", skb->ifindex, skb->len);
@@ -45,10 +38,8 @@ int pfc_encap(struct __sk_buff *skb)
         // log identification info
         bpf_print("    Flags: %u\n", cfg->flags);
 
-        // dump packet
-        if (debug) {
-            dump_pkt(skb);
-        }
+        // dump the packet
+        dump_pkt(skb);
     }
 
     // parse packet
