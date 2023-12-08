@@ -76,30 +76,12 @@ int pfc_decap(struct __sk_buff *skb)
     }
     dump_headers(debug, &hdr);
 
-    // start processing
-
-    int ret = 0;
-    struct endpoint src_ep = { 0 };
-    // get source EP
-    parse_src_ep(&src_ep, &hdr);
-    // Is this a GUE packet? There are two ways that we can
-    // tell. First, if there's an entry in map_decap for the
-    // source IP and port then it's probably a GUE packet. If that
-    // lookup fails then we check the dest port, i.e., is the
-    // packet being sent to port 6080? If it is then it's probably
-    // a GUE packet. In both cases we verify the packet to make
-    // sure that it's legit.
-    if (!bpf_map_lookup_elem(&map_decap, &src_ep)) {
-        debug_print(debug, "decap map lookup failed\n");
-        struct endpoint dest_ep = { 0 };
-        parse_dest_ep(&dest_ep, &hdr);
-
-        // We already failed the decap map lookup so if the port
-        // check fails, too, then it's definitely not a GUE packet
-        // and we don't want to try to decap it.
-        ASSERT1(bpf_ntohs(dest_ep.port) == 6080, debug_action(TC_ACT_UNSPEC, debug), debug_print(debug, "Decap map lookup failed and dest port not 6080: %u\n", bpf_ntohs(dest_ep.port)));
-        debug_print(debug, "Packet probably GUE based on dest port\n");
-    }
+    // If it's not on port 6080 then it's definitely not a GUE packet
+    // and we don't want to try to decap it.
+    struct endpoint dest_ep = { 0 };
+    parse_dest_ep(&dest_ep, &hdr);
+    ASSERT1(bpf_ntohs(dest_ep.port) == 6080, debug_action(TC_ACT_UNSPEC, debug), debug_print(debug, "Decap map lookup failed and dest port not 6080: %u\n", bpf_ntohs(dest_ep.port)));
+    debug_print(debug, "Packet probably GUE based on dest port\n");
 
     // The packet is probably GUE but we need to verify.
 
@@ -115,6 +97,7 @@ int pfc_decap(struct __sk_buff *skb)
         return debug_action(TC_ACT_SHOT, debug);
     }
 
+    // Check the GUE version.
     ASSERT1(hdr.gueh->version == 0, debug_action(TC_ACT_SHOT, debug), bpf_print("ERROR: Unsupported GUE version %u\n", hdr.gueh->version));
 
     if (hdr.gueh->control) {
@@ -187,7 +170,7 @@ int pfc_decap(struct __sk_buff *skb)
                 ASSERT(mac_remote != 0, debug_action(TC_ACT_UNSPEC, debug), "ERROR: Proxy MAC for ifindex %u not found!\n", ifindex);
 
                 debug_print(debug, "Set D-MAC: ifindex %u -> MAC %x\n", ifindex, bpf_ntohl(*(__u32*)&(mac_remote->value[2])));
-                ret = bpf_skb_store_bytes(skb, 0, mac_remote->value, 6, BPF_F_INVALIDATE_HASH);
+                int ret = bpf_skb_store_bytes(skb, 0, mac_remote->value, 6, BPF_F_INVALIDATE_HASH);
                 if (ret < 0) {
                     bpf_print("bpf_skb_store_bytes: %d\n", ret);
                 }
@@ -216,7 +199,7 @@ int pfc_decap(struct __sk_buff *skb)
             if (cfg->flags & CFG_RX_FWD) {
                 // flags: 0, BPF_FIB_LOOKUP_DIRECT 1, BPF_FIB_LOOKUP_OUTPUT 2
                 struct bpf_fib_lookup fib_params = { 0 };
-                ret = fib_lookup(skb, &fib_params, skb->ifindex, 0);
+                int ret = fib_lookup(skb, &fib_params, skb->ifindex, 0);
                 if (ret == TC_ACT_OK) {
                     // Update destination MAC
                     ret = bpf_skb_store_bytes(skb, 0, &fib_params.dmac, 6, BPF_F_INVALIDATE_HASH);
