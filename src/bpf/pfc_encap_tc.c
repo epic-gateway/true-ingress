@@ -15,7 +15,6 @@
 #include <linux/if_arp.h>
 
 #include "dump_tc.h"
-#include "stat_tc.h"
 #include "maps_tc.h"
 
 #include "pfc_tc.h"
@@ -38,9 +37,9 @@ int pfc_encap(struct __sk_buff *skb)
     // dump packet
     if (debug) {
         if (skb->ifindex == skb->ingress_ifindex) {
-            bpf_print("Encap (iif %u RX) >>>> PKT # %u, len %u\n", skb->ifindex, stats_update(skb->ifindex, STAT_IDX_TX, skb), skb->len);
+            bpf_print("Encap (iif %u RX) >>>> len %u\n", skb->ifindex, skb->len);
         } else {
-            bpf_print("Encap (iif %u TX) >>>> PKT # %u, len %u\n", skb->ifindex, stats_update(skb->ifindex, STAT_IDX_TX, skb), skb->len);
+            bpf_print("Encap (iif %u TX) >>>> len %u\n", skb->ifindex, skb->len);
         }
 
         // log identification info

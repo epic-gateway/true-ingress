@@ -15,7 +15,6 @@
 #include <linux/if_arp.h>
 
 #include "dump_tc.h"
-#include "stat_tc.h"
 #include "maps_tc.h"
 
 #include "pfc_tc.h"
@@ -34,8 +33,6 @@ int pfc_decap(struct __sk_buff *skb)
         cfg->prog = CFG_PROG_DECAP;
         bpf_map_update_elem(&map_config, &key, iface, BPF_ANY);
     }
-
-    __u32 pktnum = stats_update(skb->ifindex, STAT_IDX_RX, skb);
 
     // Pull (i.e. "linearize") the packet if needed.
     // https://github.com/torvalds/linux/blob/master/include/uapi/linux/bpf.h#L2301
@@ -58,9 +55,9 @@ int pfc_decap(struct __sk_buff *skb)
     // dump packet
     if (debug) {
         if (skb->ifindex == skb->ingress_ifindex) {
-            bpf_print("Decap (iif %u RX) >>>> PKT # %u, len %u\n", skb->ifindex, pktnum, skb->len);
+            bpf_print("Decap (iif %u RX) >>>> len %u\n", skb->ifindex, skb->len);
         } else {
-            bpf_print("Decap (iif %u TX) >>>> PKT # %u, len %u\n", skb->ifindex, pktnum, skb->len);
+            bpf_print("Decap (iif %u TX) >>>> len %u\n", skb->ifindex, skb->len);
         }
 
         // log identification info
@@ -133,10 +130,9 @@ int pfc_decap(struct __sk_buff *skb)
         struct verify *verify = bpf_map_lookup_elem(&map_verify, (struct identity *)&gueext->gidsid);
         ASSERT(verify != 0, debug_action(TC_ACT_UNSPEC, debug), "ERROR: Service id %u not found!\n", bpf_ntohl(gueext->gidsid));
 
-        struct service svc = {{ 0 }, {{ 0 }, 0, {{ 0 }, 0 }}, 0 };
+        struct service svc = {{ 0 }, {{ 0 }, 0, {{ 0 }, 0 }}};
         __builtin_memcpy(&svc.key, verify, sizeof(*verify));
         svc.identity = *(struct identity *)&gueext->gidsid;
-        svc.hash = pktnum;
 
         // Decap the packet
         ASSERT(TC_ACT_OK == gue_decap_v4(skb), debug_action(TC_ACT_SHOT, debug), "GUE Decap Failed!\n");
