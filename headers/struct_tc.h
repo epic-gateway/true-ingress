@@ -124,7 +124,6 @@ make_verify(struct verify   *ref,
 struct service {
     struct identity identity;
     struct verify   key;
-    __u32           hash;
 };
 
 static inline struct service *
@@ -134,7 +133,6 @@ make_service(struct service  *ref,
 {
     ref->identity   = *identity;
     ref->key        = *key;
-    ref->hash       = 0;
     return ref;
 }
 

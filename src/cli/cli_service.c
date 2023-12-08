@@ -153,7 +153,7 @@ bool map_verify_delall(int map_fd) {
 //};
 ////////////////////
 void map_encap_print_header() {
-    printf("TABLE-ENCAP:\n\tdestination\tifindex -> tunnel-id\tgid+sid\t\tkey\t\t\thash\n");
+    printf("TABLE-ENCAP:\n\tdestination\tifindex -> tunnel-id\tgid+sid\t\tkey\n");
     printf("--------------------------------------------------------------------------\n");
 }
 
@@ -176,7 +176,7 @@ void map_encap_print(struct encap_key *key, struct service *value) {
     char *base64_encoded = base64encode(value->key.value, SECURITY_KEY_SIZE);
 
     printf("ENCAP (%s %s:%u)  %u -> ", get_proto_name(ntohs(key->ep.proto)), inet_ntoa(from), ntohs(key->ep.port), ntohl(key->ifindex));
-    printf("%u\t\t(%u, %u)\t\'%s\'\t%u", ntohl(value->key.tunnel_id), ntohs(value->identity.service_id), ntohs(value->identity.group_id), base64_encoded, value->hash);
+    printf("%u\t\t(%u, %u)\t\'%s\'", ntohl(value->key.tunnel_id), ntohs(value->identity.service_id), ntohs(value->identity.group_id), base64_encoded);
     printf("\n");
 
     free(base64_encoded);
