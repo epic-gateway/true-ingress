@@ -28,12 +28,6 @@ int pfc_decap(struct __sk_buff *skb)
     struct config *cfg = &iface->queue[(skb->ifindex == skb->ingress_ifindex) ? CFG_IDX_RX : CFG_IDX_TX];
     int debug = cfg->flags & CFG_RX_DUMP;
 
-    if (cfg->prog == CFG_PROG_NONE) {
-        bpf_print("cfg[%u]->prog = CFG_PROG_DECAP\n", (skb->ifindex == skb->ingress_ifindex) ? CFG_IDX_RX : CFG_IDX_TX);
-        cfg->prog = CFG_PROG_DECAP;
-        bpf_map_update_elem(&map_config, &key, iface, BPF_ANY);
-    }
-
     // Pull (i.e. "linearize") the packet if needed.
     // https://github.com/torvalds/linux/blob/master/include/uapi/linux/bpf.h#L2301
     // If len is greater than the distance between data and data_end.

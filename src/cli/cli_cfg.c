@@ -38,17 +38,7 @@ void map_cfg_print_count(__u32 count) {
     printf("Entries:  %u\n\n", count);
 }
 
-void print_decap(__u8 direction, unsigned int key, struct config *value) {
-    char ifname[32];
-
-    printf("CFG  %-16s   %-5u    %s    %s%s\n",
-            if_indextoname(key, ifname), key,
-            (direction == CFG_IDX_RX) ? "Ingress" : "Egress ",
-            (value->flags & CFG_RX_FWD) ? " FWD(4)" : "",
-            (value->flags & CFG_RX_DUMP) ? " DUMP(8)" : "");
-}
-
-void print_encap(__u8 direction, unsigned int key, struct config *value) {
+void print_entry(__u8 direction, unsigned int key, struct config *value) {
     char ifname[32];
 
     printf("CFG  %-16s   %-5u    %s    %s%s%s%s\n",
@@ -60,43 +50,9 @@ void print_encap(__u8 direction, unsigned int key, struct config *value) {
             (value->flags & CFG_TX_FIB) ? " FIB(16)" : "");
 }
 
-void print_unknown(__u8 direction, unsigned int key, struct config *value) {
-    char ifname[32];
-
-    printf("CFG  %-16s   %-5u    %s    %u\n",
-            if_indextoname(key, ifname), key,
-            (direction == CFG_IDX_RX) ? "Ingress" : "Egress ",
-            value->flags);
-}
-
 void map_cfg_print_record(unsigned int key, struct cfg_if *value) {
-    switch (value->queue[CFG_IDX_RX].prog) {
-        case CFG_PROG_NONE:
-            print_unknown(CFG_IDX_RX, key, &value->queue[CFG_IDX_RX]);
-            break;
-        case CFG_PROG_DECAP:
-            print_decap(CFG_IDX_RX, key, &value->queue[CFG_IDX_RX]);
-            break;
-        case CFG_PROG_ENCAP:
-            print_encap(CFG_IDX_RX, key, &value->queue[CFG_IDX_RX]);
-            break;
-        default:
-            print_unknown(CFG_IDX_RX, key, &value->queue[CFG_IDX_RX]);
-    }
-
-    switch (value->queue[CFG_IDX_TX].prog) {
-        case CFG_PROG_NONE:
-            print_unknown(CFG_IDX_TX, key, &value->queue[CFG_IDX_TX]);
-            break;
-        case CFG_PROG_DECAP:
-            print_decap(CFG_IDX_TX, key, &value->queue[CFG_IDX_TX]);
-            break;
-        case CFG_PROG_ENCAP:
-            print_encap(CFG_IDX_TX, key, &value->queue[CFG_IDX_TX]);
-            break;
-        default:
-            print_unknown(CFG_IDX_TX, key, &value->queue[CFG_IDX_TX]);
-    }
+    print_entry(CFG_IDX_RX, key, &value->queue[CFG_IDX_RX]);
+    print_entry(CFG_IDX_TX, key, &value->queue[CFG_IDX_TX]);
 }
 
 void map_cfg_print_err(unsigned int key, const char *name, int err) {
