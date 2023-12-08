@@ -171,16 +171,4 @@ struct cfg_if {
     struct config queue[CFG_IDX_MAX];
 };
 
-////////////////////////////////
-// Statistics
-
-#define STAT_IDX_RX      0
-#define STAT_IDX_TX      1
-#define STAT_IDX_MAX     2
-
-struct statistics {
-    __u64   packets[STAT_IDX_MAX];
-    __u64   bytes[STAT_IDX_MAX];
-};
-
 #endif /* STRUCT_TC_H_ */
