@@ -15,35 +15,29 @@
 
 ////////////////////////////////
 // TABLE-CONFIG veth-ifindex -> CFG
-struct bpf_elf_map SEC(ELF_SECTION_MAPS) map_config = {
-    .type       = BPF_MAP_TYPE_HASH,
-    .size_key   = sizeof(__u32),
-    .size_value = sizeof(struct cfg_if),
-    .pinning    = PIN_GLOBAL_NS,
-    .max_elem   = MAX_CONFIG_ENTRIES,
-};
-BPF_ANNOTATE_KV_PAIR(map_config, __u32, struct cfg_if);
+struct {
+    __uint(type, BPF_MAP_TYPE_HASH);
+    __uint(max_entries, MAX_CONFIG_ENTRIES);
+    __type(key, __u32);
+    __type(value, struct cfg_if);
+} map_config SEC(".maps");
 
 ////////////////////////////////
-// TABLE-ENCAP      EP (12B) -> SERVICE (16B)
-struct bpf_elf_map SEC(ELF_SECTION_MAPS) map_encap = {
-    .type           = BPF_MAP_TYPE_LRU_HASH,
-    .size_key       = sizeof(struct encap_key),
-    .size_value     = sizeof(struct service),
-    .max_elem       = MAX_ENCAP_ENTRIES,
-    .pinning        = PIN_GLOBAL_NS,
-};
-BPF_ANNOTATE_KV_PAIR(map_encap, struct encap_key, struct service);
+// TABLE-ENCAP      EP (12B) -> SERVICE (40B)
+struct {
+    __uint(type, BPF_MAP_TYPE_LRU_HASH);
+    __uint(max_entries, MAX_ENCAP_ENTRIES);
+    __type(key, struct encap_key);
+    __type(value, struct service);
+} map_encap SEC(".maps");
 
 ////////////////////////////////
-// TABLE-TUNNEL tunnel-id (4B) -> GUE (28B)
-struct bpf_elf_map SEC(ELF_SECTION_MAPS) map_tunnel = {
-    .type           = BPF_MAP_TYPE_LRU_HASH,
-    .size_key       = sizeof(__u32),
-    .size_value     = sizeof(struct tunnel),
-    .max_elem       = MAX_SERVICE_ENTRIES,
-    .pinning        = PIN_GLOBAL_NS,
-};
-BPF_ANNOTATE_KV_PAIR(map_tunnel, __u32, struct tunnel);
+// TABLE-TUNNEL tunnel-id (4B) -> GUE (18B)
+struct {
+    __uint(type, BPF_MAP_TYPE_LRU_HASH);
+    __uint(max_entries, MAX_SERVICE_ENTRIES);
+    __type(key, __u32);
+    __type(value, struct tunnel);
+} map_tunnel SEC(".maps");
 
 #endif /* MAPS_TC_H_ */
