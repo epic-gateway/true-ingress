@@ -147,7 +147,7 @@ int pfc_decap(struct __sk_buff *skb)
             struct endpoint dep = { 0 };
             ASSERT(parse_ep(skb, &skey.ep, &dep) != TC_ACT_SHOT, debug_action(TC_ACT_UNSPEC, debug), "ERROR: SRC EP parsing failed!\n");
 
-            struct service svc = {{ 0 }, {{ 0 }, 0, {{ 0 }, 0 }}};
+            struct service svc = {{ 0, 0 }, { 0, { { 0, 0, 0 }, 0 } }};
             __builtin_memcpy(&svc.key, verify, sizeof(*verify));
             svc.identity = *(struct identity *)&gueext->gidsid;
 

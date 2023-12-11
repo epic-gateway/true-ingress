@@ -27,7 +27,6 @@ void usage(char *prog) {
     fprintf(stderr,"    %s del all|<group-id> <service-id>\n\n", prog);
     fprintf(stderr,"    <group-id>      - GUE header group id\n");
     fprintf(stderr,"    <service-id>    - GUE header service id\n");
-    fprintf(stderr,"    <key>           - GUE header 128b key\n");
     fprintf(stderr,"    <tunnel-id>     - Transport GUE tunnel identifier\n");
     fprintf(stderr,"    <proto>         - Flow identifier: Ip.proto (supported tcp|udp)\n");
     fprintf(stderr,"    <ip-ep>         - Flow identifier: Backend ipv4 address\n");
@@ -35,19 +34,8 @@ void usage(char *prog) {
     fprintf(stderr,"    <ifindex>       - Flow identifier: Ifindex of proxy container veth\n");
 }
 
-////////////////////
-// TABLE-VERIFY
-// struct identity -> struct verify
-//struct identity {
-//    GID_SID_TYPE  service_id;              /* GUE service ID */
-//    GID_SID_TYPE  group_id;                /* GUE group ID */
-//};
-//struct verify {
-//    __u8   value[SECURITY_KEY_SIZE];        /* GUE security KEY */
-//};
-////////////////////
 void map_verify_print_header() {
-    printf("TABLE-VERIFY:\n\tgid+sid ->\tsecurity key\t\ttunnel-id\tendpoint\t\tifindex\n");
+    printf("TABLE-VERIFY:\n\tgid+sid ->\t\ttunnel-id\tendpoint\t\tifindex\n");
     printf("--------------------------------------------------------------------------\n");
 }
 
@@ -66,9 +54,6 @@ void map_verify_print_record(struct identity *key, struct verify *value) {
     from.s_addr = ntohl(value->encap.ep.ip);
 
     printf("VERIFY (%u, %u) ->\t", ntohs(key->service_id), ntohs(key->group_id));
-    char *base64_encoded = base64encode(value->value, SECURITY_KEY_SIZE);
-    printf("\'%s\'", base64_encoded);
-    free(base64_encoded);
     printf("\t%u", ntohl(value->tunnel_id));
     printf("\t\t(%s %s:%u)\t%u", get_proto_name(ntohs(value->encap.ep.proto)), inet_ntoa(from), ntohs(value->encap.ep.port), ntohl(value->encap.ifindex));
     printf("\n");
@@ -153,7 +138,7 @@ bool map_verify_delall(int map_fd) {
 //};
 ////////////////////
 void map_encap_print_header() {
-    printf("TABLE-ENCAP:\n\tdestination\tifindex -> tunnel-id\tgid+sid\t\tkey\n");
+    printf("TABLE-ENCAP:\n\tdestination\tifindex -> tunnel-id\tgid+sid\t\n");
     printf("--------------------------------------------------------------------------\n");
 }
 
@@ -173,13 +158,10 @@ void map_encap_print_count(__u32 count) {
 void map_encap_print(struct encap_key *key, struct service *value) {
     struct in_addr from;
     from.s_addr = ntohl(key->ep.ip);
-    char *base64_encoded = base64encode(value->key.value, SECURITY_KEY_SIZE);
 
     printf("ENCAP (%s %s:%u)  %u -> ", get_proto_name(ntohs(key->ep.proto)), inet_ntoa(from), ntohs(key->ep.port), ntohl(key->ifindex));
-    printf("%u\t\t(%u, %u)\t\'%s\'", ntohl(value->key.tunnel_id), ntohs(value->identity.service_id), ntohs(value->identity.group_id), base64_encoded);
+    printf("%u\t\t(%u, %u)", ntohl(value->key.tunnel_id), ntohs(value->identity.service_id), ntohs(value->identity.group_id));
     printf("\n");
-
-    free(base64_encoded);
 }
 
 bool map_encap_get(int map_fd, struct encap_key *key, struct service *value) {
@@ -328,20 +310,20 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    if (!strncmp(argv[1], "set-gw", 7)) { // set-gw <group-id>2 <service-id>3 <key>4 <tunnel-id>5 <proto>6 <ip-ep>7 <port-ep>8 <ifindex>9
-        if (argc < 9) {
+    if (!strncmp(argv[1], "set-gw", 7)) { // set-gw <group-id>2 <service-id>3 <tunnel-id>4 <proto>5 <ip-ep>6 <port-ep>7 <ifindex>8
+        if (argc < 8) {
             usage(argv[0]);
             return 1;
         }
 
-        proto = get_proto_number(argv[6]);
+        proto = get_proto_number(argv[5]);
         if( proto == 0) {
-            fprintf(stderr, "Unsupported IP proto \'%s\'\n", argv[6]);
+            fprintf(stderr, "Unsupported IP proto \'%s\'\n", argv[5]);
             return 1;
         }
 
-        if (inet_aton(argv[7], &to) == 0) {
-            fprintf(stderr, "Invalid address %s\n", argv[7]);
+        if (inet_aton(argv[6], &to) == 0) {
+            fprintf(stderr, "Invalid address %s\n", argv[6]);
             return 1;
         }
 
@@ -353,38 +335,33 @@ int main(int argc, char **argv)
         struct encap_key ekey = { 0 };
         __u32 tid = atoi(argv[5]);
 
-        // Decode password
-        char *base64_decoded = base64decode(argv[4], strlen(argv[4]));
-        memcpy(pwd.value, base64_decoded, SECURITY_KEY_SIZE);
-        free(base64_decoded);
-
-        make_endpoint(&ep_to, to.s_addr, atoi(argv[8]), proto);
-        make_encap_key(&ekey, to.s_addr, atoi(argv[8]), proto, atoi(argv[9]));
+        make_endpoint(&ep_to, to.s_addr, atoi(argv[7]), proto);
+        make_encap_key(&ekey, to.s_addr, atoi(argv[7]), proto, atoi(argv[8]));
         make_identity(&id, atoi(argv[2]), atoi(argv[3]));
         make_verify(&pwd, tid, &ekey);
         make_service(&svc, &id, &pwd);
         map_encap_set(map_encap_fd, &ekey, &svc);
         map_verify_set(map_verify_fd, &id, &pwd);
-    } else if (!strncmp(argv[1], "del-gw", 7)) { // del-gw <group-id>2 <service-id>3 <key>4 <tunnel-id>5 <proto>6 <ip-ep>7 <port-ep>8 <ifindex>9
-        if (argc < 9) {
+    } else if (!strncmp(argv[1], "del-gw", 7)) { // del-gw <group-id>2 <service-id>3 <tunnel-id>4 <proto>5 <ip-ep>6 <port-ep>7 <ifindex>8
+        if (argc < 8) {
             usage(argv[0]);
             return 1;
         }
 
         // Parse arguments
-        proto = get_proto_number(argv[6]);
+        proto = get_proto_number(argv[5]);
         if( proto == 0) {
-            fprintf(stderr, "Unsupported IP proto \'%s\'\n", argv[6]);
+            fprintf(stderr, "Unsupported IP proto \'%s\'\n", argv[5]);
             return 1;
         }
 
-        if (inet_aton(argv[7], &to) == 0) {
-            fprintf(stderr, "Invalid address %s\n", argv[7]);
+        if (inet_aton(argv[6], &to) == 0) {
+            fprintf(stderr, "Invalid address %s\n", argv[6]);
             return 1;
         }
 
-        __u16 port = atoi(argv[8]);
-        __u32 ifindex = atoi(argv[9]);
+        __u16 port = atoi(argv[7]);
+        __u32 ifindex = atoi(argv[8]);
 
         struct identity id = { 0 };
         make_identity(&id, atoi(argv[2]), atoi(argv[3]));
@@ -392,35 +369,30 @@ int main(int argc, char **argv)
         // Delete the service (i.e., delete encap and maybe verify)
         return map_encap_del_service(map_encap_fd, map_verify_fd, &id, bpf_htons(proto), bpf_htonl(to.s_addr), bpf_htons(port), bpf_htonl(ifindex));
 
-    } else if (!strncmp(argv[1], "set-node", 9)) {  // set-node <group-id>2 <service-id>3 <key>4 <tunnel-id>5
-        if (argc < 5) {
+    } else if (!strncmp(argv[1], "set-node", 9)) {  // set-node <group-id>2 <service-id>3 <tunnel-id>4
+        if (argc < 4) {
             usage(argv[0]);
             return 1;
         }
 
         struct identity id = { 0 };
         struct verify pwd = { 0 };
-        __u32 tid = atoi(argv[5]);
+        __u32 tid = atoi(argv[4]);
         struct encap_key ekey = { 0 };
 
         if (argc == 9) {
-            proto = get_proto_number(argv[6]);
+            proto = get_proto_number(argv[5]);
             if( proto == 0) {
-                fprintf(stderr, "Unsupported IP proto \'%s\'\n", argv[6]);
+                fprintf(stderr, "Unsupported IP proto \'%s\'\n", argv[5]);
                 return 1;
             }
 
-            if (inet_aton(argv[7], &to) == 0) {
-                fprintf(stderr, "Invalid address %s\n", argv[7]);
+            if (inet_aton(argv[6], &to) == 0) {
+                fprintf(stderr, "Invalid address %s\n", argv[6]);
                 return 1;
             }
-            make_encap_key(&ekey, to.s_addr, atoi(argv[8]), proto, 0);
+            make_encap_key(&ekey, to.s_addr, atoi(argv[7]), proto, 0);
         }
-
-        // Decode password
-        char *base64_decoded = base64decode(argv[4], strlen(argv[4]));
-        memcpy(pwd.value, base64_decoded, SECURITY_KEY_SIZE);
-        free(base64_decoded);
 
         make_identity(&id, atoi(argv[2]), atoi(argv[3]));
         make_verify(&pwd, tid, &ekey);
