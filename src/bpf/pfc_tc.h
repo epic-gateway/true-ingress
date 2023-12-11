@@ -52,7 +52,6 @@ struct tunhdr {
     struct udphdr       udp;
     __u32               gue;
     __u32               gue_id;
-    __u64               gue_key[2];
 } __attribute__((packed));
 
 // In order to safely parse a GUE packet we need to ensure that there
@@ -389,10 +388,9 @@ static __always_inline
 int gue_encap_v4(struct __sk_buff *skb, struct tunnel *tun, struct service *svc)
 {
     struct iphdr iph_inner = { 0 };
-    struct tunhdr h_outer = {{0}, {0}, 0, 0, {0, 0}};
+    struct tunhdr h_outer = {{0}, {0}, 0, 0};
     int olen = sizeof(h_outer);
     __u64 flags = 0;
-    __u64 *from = (__u64 *)svc->key.value;
     int ret;
 
     if (bpf_skb_load_bytes(skb, ETH_HLEN, &iph_inner, sizeof(iph_inner)) < 0)
@@ -499,8 +497,6 @@ int gue_encap_v4(struct __sk_buff *skb, struct tunnel *tun, struct service *svc)
     // fill GUE
     h_outer.gue = 0xa00405;   //GUE data header: 0x0504a000
     h_outer.gue_id = svc->identity.service_id + (svc->identity.group_id << 16);
-    h_outer.gue_key[0] = from[0];
-    h_outer.gue_key[1] = from[1];
 
     // fill IP
     h_outer.ip = iph_inner;
