@@ -151,32 +151,7 @@ int pfc_decap(struct __sk_buff *skb)
             }
         }
 
-        if (verify->encap.ifindex) {  // EPIC
-            if (cfg->flags & CFG_RX_FWD) {
-                __u32 ifindex = bpf_ntohl(verify->encap.ifindex);
-
-                // Lookup dest mac struct from TABLE-PROXY
-                struct mac *mac_remote = bpf_map_lookup_elem(&map_proxy, &ifindex);
-                ASSERT(mac_remote != 0, debug_action(TC_ACT_UNSPEC, debug), "ERROR: Proxy MAC for ifindex %u not found!\n", ifindex);
-
-                debug_print(debug, "Set D-MAC: ifindex %u -> MAC %x\n", ifindex, bpf_ntohl(*(__u32*)&(mac_remote->value[2])));
-                int ret = bpf_skb_store_bytes(skb, 0, mac_remote->value, 6, BPF_F_INVALIDATE_HASH);
-                if (ret < 0) {
-                    bpf_print("bpf_skb_store_bytes: %d\n", ret);
-                }
-
-                if (debug) {
-                    dump_pkt(skb);
-                    bpf_print("Redirecting to container ifindex %u TX\n", ifindex);
-                }
-
-                return debug_action(bpf_redirect(ifindex, 0), debug);
-            }
-
-            if (debug) {
-                dump_pkt(skb);
-            }
-        } else {                      // PureLB
+        if (verify->encap.ifindex == 0) {                      // PureLB
             struct encap_key skey = { { 0 } , 0 };
             struct endpoint dep = { 0 };
             ASSERT(parse_ep(skb, &skey.ep, &dep) != TC_ACT_SHOT, debug_action(TC_ACT_UNSPEC, debug), "ERROR: SRC EP parsing failed!\n");
@@ -211,10 +186,10 @@ int pfc_decap(struct __sk_buff *skb)
                     return debug_action(bpf_redirect(fib_params.ifindex, 0), debug);
                 }
             }
+        }
 
-            if (debug) {
-                dump_pkt(skb);
-            }
+        if (debug) {
+            dump_pkt(skb);
         }
 
         return debug_action(TC_ACT_UNSPEC, debug);
