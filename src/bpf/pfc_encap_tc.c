@@ -117,13 +117,13 @@ int pfc_encap(struct __sk_buff *skb)
         }
     } else {
         struct encap_key ekey = { dep, 0 };
-        debug_print(debug, "querying encap table key: %x:%x:%x", ekey.ep.ip, ekey.ep.port, ekey.ep.proto);
+        debug_print(debug, "querying encap table key: %x:%x:%x\n", ekey.ep.ip, ekey.ep.port, ekey.ep.proto);
         struct service *svc = bpf_map_lookup_elem(&map_encap, &ekey);
         if (!svc) {
             debug_print(debug, "Lookup failed: GUE Encap Service: %x:%x:%x\n", ekey.ep.ip, ekey.ep.port, ekey.ep.proto);
         } else {
             // Regular mode
-            debug_print(debug, "Regular: GUE Encap Service: group-id %u, service-id %u, tunnel-id %u",
+            debug_print(debug, "Regular: GUE Encap Service: group-id %u, service-id %u, tunnel-id %u\n",
                       bpf_ntohs(svc->identity.service_id), bpf_ntohs(svc->identity.group_id), bpf_ntohl(svc->key.tunnel_id));
 
             __u32 key = bpf_ntohl(svc->key.tunnel_id);
