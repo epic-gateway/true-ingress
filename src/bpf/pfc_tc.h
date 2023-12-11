@@ -335,26 +335,6 @@ int update_tunnel_from_guec(__u32 tunnel_id, struct headers *hdr)
     return TC_ACT_SHOT;
 }
 
-static inline
-int service_verify(struct gueexthdr *gueext)
-{
-    struct identity id = *(struct identity *)&gueext->gidsid;
-    struct verify *vrf = bpf_map_lookup_elem(&map_verify, (struct identity *)&gueext->gidsid);
-    ASSERT(vrf != 0, dump_action(TC_ACT_UNSPEC), "ERROR: Service (group-id %u, service-id %u) not found!\n", bpf_ntohs(id.service_id), bpf_ntohs(id.group_id));
-
-    __u64 *ref_key = (__u64 *)vrf->value;
-    __u64 *pkt_key = (__u64 *)gueext->key;
-
-    if ((pkt_key[0] != ref_key[0]) || (pkt_key[1] != ref_key[1])) {
-        bpf_print("ERROR: Service (group-id %u, service-id %u) key mismatch!\n", bpf_ntohs(id.service_id), bpf_ntohs(id.group_id));
-        bpf_print("    Expected : %lx%lx\n", bpf_ntohll(ref_key[0]), bpf_ntohll(ref_key[1]));
-        bpf_print("    Received : %lx%lx\n", bpf_ntohll(pkt_key[0]), bpf_ntohll(pkt_key[1]));
-        return 1;
-    }
-
-    return 0;
-}
-
 static __always_inline
 void set_ipv4_csum(struct iphdr *iph)
 {

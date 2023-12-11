@@ -97,8 +97,6 @@ int pfc_decap(struct __sk_buff *skb)
             struct guepinghdr *gueext = (struct guepinghdr *)&hdr.gueh[1];
             ASSERT1((void*)&gueext[1] <= data_end, debug_action(TC_ACT_SHOT, debug), bpf_print("ERROR: (GUEext) Invalid packet size\n"));
 
-            ASSERT1(service_verify(&gueext->ext) == 0, debug_action(TC_ACT_SHOT, debug), bpf_print("ERROR: (GUEext) Service verify failure\n"));
-
             return debug_action(update_tunnel_from_guec(bpf_ntohl(gueext->tunnelid), &hdr), debug);
         } else {
             ASSERT(0, debug_action(TC_ACT_SHOT, debug), "ERROR: Unexpected GUE control HLEN %u\n", hdr.gueh->hlen);
@@ -117,16 +115,9 @@ int pfc_decap(struct __sk_buff *skb)
             return debug_action(TC_ACT_SHOT, debug);
         }
 
-        // check service identity
-        ASSERT1(service_verify(gueext) == 0, debug_action(TC_ACT_SHOT, debug), bpf_print("service_verify failed"));
-
         // get verify structure
         struct verify *verify = bpf_map_lookup_elem(&map_verify, (struct identity *)&gueext->gidsid);
         ASSERT(verify != 0, debug_action(TC_ACT_UNSPEC, debug), "ERROR: Service id %u not found!\n", bpf_ntohl(gueext->gidsid));
-
-        struct service svc = {{ 0 }, {{ 0 }, 0, {{ 0 }, 0 }}};
-        __builtin_memcpy(&svc.key, verify, sizeof(*verify));
-        svc.identity = *(struct identity *)&gueext->gidsid;
 
         // Decap the packet
         ASSERT(TC_ACT_OK == gue_decap_v4(skb), debug_action(TC_ACT_SHOT, debug), "GUE Decap Failed!\n");
@@ -155,6 +146,10 @@ int pfc_decap(struct __sk_buff *skb)
             struct encap_key skey = { { 0 } , 0 };
             struct endpoint dep = { 0 };
             ASSERT(parse_ep(skb, &skey.ep, &dep) != TC_ACT_SHOT, debug_action(TC_ACT_UNSPEC, debug), "ERROR: SRC EP parsing failed!\n");
+
+            struct service svc = {{ 0 }, {{ 0 }, 0, {{ 0 }, 0 }}};
+            __builtin_memcpy(&svc.key, verify, sizeof(*verify));
+            svc.identity = *(struct identity *)&gueext->gidsid;
 
             // update TABLE-ENCAP
             debug_print(debug, "updating encap table key: %x:%x:%x\n", skey.ep.ip, skey.ep.port, skey.ep.proto);
