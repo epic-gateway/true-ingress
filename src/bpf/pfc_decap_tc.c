@@ -119,6 +119,9 @@ int pfc_decap(struct __sk_buff *skb)
         struct verify *verify = bpf_map_lookup_elem(&map_verify, (struct identity *)&gueext->gidsid);
         ASSERT(verify != 0, debug_action(TC_ACT_UNSPEC, debug), "ERROR: Service id %u not found!\n", bpf_ntohl(gueext->gidsid));
 
+        // Cache the gid/sid since decapping the packet invalidates gueext
+        __u32 gidsid = gueext->gidsid;
+
         // Decap the packet
         ASSERT(TC_ACT_OK == gue_decap_v4(skb), debug_action(TC_ACT_SHOT, debug), "GUE Decap Failed!\n");
 
@@ -147,9 +150,8 @@ int pfc_decap(struct __sk_buff *skb)
             struct endpoint dep = { 0 };
             ASSERT(parse_ep(skb, &skey.ep, &dep) != TC_ACT_SHOT, debug_action(TC_ACT_UNSPEC, debug), "ERROR: SRC EP parsing failed!\n");
 
-            struct service svc = {{ 0 }, {{ 0 }, 0, {{ 0 }, 0 }}};
+            struct service svc = {{ gidsid }, { 0, {{ 0 }, 0 }}};
             __builtin_memcpy(&svc.key, verify, sizeof(*verify));
-            svc.identity = *(struct identity *)&gueext->gidsid;
 
             // update TABLE-ENCAP
             debug_print(debug, "updating encap table key: %x:%x:%x\n", skey.ep.ip, skey.ep.port, skey.ep.proto);
