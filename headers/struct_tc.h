@@ -99,12 +99,9 @@ make_identity(struct identity *ref,
     return ref;
 }
 ////////////////////////////////
-// Security key
-
-#define SECURITY_KEY_SIZE   16      /* bytes */
+// Verify
 
 struct verify {
-    __u8   value[SECURITY_KEY_SIZE];        /* GUE security KEY */
     __u32  tunnel_id;
     struct encap_key encap;
 };
