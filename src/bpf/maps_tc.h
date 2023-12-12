@@ -15,8 +15,7 @@
 #define MAX_ENCAP_ENTRIES       1024*1024
 
 ////////////////////////////////
-// TABLE-ENCAP      EP (12B) -> SERVICE (40B)
-
+// TABLE-ENCAP      EP (12B) -> SERVICE (16B)
 struct bpf_elf_map SEC(ELF_SECTION_MAPS) map_encap = {
     .type           = BPF_MAP_TYPE_LRU_HASH,
     .size_key       = sizeof(struct encap_key),
@@ -27,20 +26,18 @@ struct bpf_elf_map SEC(ELF_SECTION_MAPS) map_encap = {
 BPF_ANNOTATE_KV_PAIR(map_encap, struct encap_key, struct service);
 
 ////////////////////////////////
-// TABLE-VERIFY     tunnel-id (4B) -> verify (32B)
-
+// TABLE-VERIFY     tunnel-id (4B) -> verify (12B)
 struct bpf_elf_map SEC(ELF_SECTION_MAPS) map_verify = {
     .type           = BPF_MAP_TYPE_HASH,
-    .size_key       = sizeof(struct identity),
+    .size_key       = sizeof(__u32),
     .size_value     = sizeof(struct verify),
     .max_elem       = MAX_SERVICE_ENTRIES,
     .pinning        = PIN_GLOBAL_NS,
 };
-BPF_ANNOTATE_KV_PAIR(map_verify, struct identity, struct verify);
+BPF_ANNOTATE_KV_PAIR(map_verify, __u32, struct verify);
 
 ////////////////////////////////
-// TABLE-TUNNEL tunnel-id (4B) -> GUE (18B)
-
+// TABLE-TUNNEL tunnel-id (4B) -> GUE (28B)
 struct bpf_elf_map SEC(ELF_SECTION_MAPS) map_tunnel = {
     .type           = BPF_MAP_TYPE_LRU_HASH,
     .size_key       = sizeof(__u32),
@@ -52,7 +49,6 @@ BPF_ANNOTATE_KV_PAIR(map_tunnel, __u32, struct tunnel);
 
 ////////////////////////////////
 // TABLE-PROXY veth-ifindex -> MAC (6B)
-
 struct bpf_elf_map SEC(ELF_SECTION_MAPS) map_proxy = {
     .type           = BPF_MAP_TYPE_HASH,
     .size_key       = sizeof(__u32),

@@ -63,9 +63,8 @@ int pfc_encap(struct __sk_buff *skb)
         if (!svc) {
             debug_print(debug, "Encap map lookup failed\n");
         } else {
-            debug_print(debug, "GUE Encap Service: group-id %u, service-id %u, tunnel-id %u\n",
-                      bpf_ntohs(svc->identity.service_id), bpf_ntohs(svc->identity.group_id), bpf_ntohl(svc->key.tunnel_id));
-            __u32 key = bpf_ntohl(svc->key.tunnel_id);
+            debug_print(debug, "GUE Encap Service: tunnel-id %u\n", bpf_ntohl(svc->tunnel_id));
+            __u32 key = bpf_ntohl(svc->tunnel_id);
             struct tunnel *tun = bpf_map_lookup_elem(&map_tunnel, &key);
             ASSERT(tun, debug_action(TC_ACT_UNSPEC, debug), "ERROR: tunnel-id %u not found\n", key);
             ASSERT(tun->ip_remote, debug_action(TC_ACT_UNSPEC, debug), "ERROR: tunnel-id %u remote endpoint not resolved\n", key);
@@ -123,10 +122,9 @@ int pfc_encap(struct __sk_buff *skb)
             debug_print(debug, "Lookup failed: GUE Encap Service: %x:%x:%x\n", ekey.ep.ip, ekey.ep.port, ekey.ep.proto);
         } else {
             // Regular mode
-            debug_print(debug, "Regular: GUE Encap Service: group-id %u, service-id %u, tunnel-id %u\n",
-                      bpf_ntohs(svc->identity.service_id), bpf_ntohs(svc->identity.group_id), bpf_ntohl(svc->key.tunnel_id));
+            debug_print(debug, "Regular: GUE Encap Service: tunnel-id %u\n", bpf_ntohl(svc->tunnel_id));
 
-            __u32 key = bpf_ntohl(svc->key.tunnel_id);
+            __u32 key = bpf_ntohl(svc->tunnel_id);
             struct tunnel *tun = bpf_map_lookup_elem(&map_tunnel, &key);
             ASSERT(tun, debug_action(TC_ACT_UNSPEC, debug), "ERROR: tunnel-id %u not found\n", key);
             ASSERT(tun->ip_remote, debug_action(TC_ACT_UNSPEC, debug), "ERROR: tunnel-id %u remote endpoint not resolved\n", key);
