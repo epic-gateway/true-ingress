@@ -31,12 +31,12 @@ BPF_ANNOTATE_KV_PAIR(map_encap, struct encap_key, struct service);
 
 struct bpf_elf_map SEC(ELF_SECTION_MAPS) map_verify = {
     .type           = BPF_MAP_TYPE_HASH,
-    .size_key       = sizeof(struct identity),
+    .size_key       = sizeof(__u32),
     .size_value     = sizeof(struct verify),
     .max_elem       = MAX_SERVICE_ENTRIES,
     .pinning        = PIN_GLOBAL_NS,
 };
-BPF_ANNOTATE_KV_PAIR(map_verify, struct identity, struct verify);
+BPF_ANNOTATE_KV_PAIR(map_verify, __u32, struct verify);
 
 ////////////////////////////////
 // TABLE-TUNNEL tunnel-id (4B) -> GUE (18B)

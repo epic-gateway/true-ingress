@@ -79,39 +79,18 @@ make_tunnel(struct tunnel *ref,
     __builtin_memset(&ref->mac_local, 0, sizeof(struct mac));
     return ref;
 }
-////////////////////////////////
-// Service identity
 
-#define GID_SID_TYPE        __u16
-
-struct identity {
-    GID_SID_TYPE  service_id;              /* GUE service ID */
-    GID_SID_TYPE  group_id;                /* GUE group ID */
-};
-
-static inline struct identity *
-make_identity(struct identity *ref,
-              GID_SID_TYPE service_id,
-              GID_SID_TYPE group_id)
-{
-    ref->service_id = bpf_htons(service_id);
-    ref->group_id = bpf_htons(group_id);
-    return ref;
-}
 ////////////////////////////////
 // Verify
 
 struct verify {
-    __u32  tunnel_id;
     struct encap_key encap;
 };
 
 static inline struct verify *
 make_verify(struct verify   *ref,
-            __u32  tunnel_id,
             struct encap_key *encap)
 {
-    ref->tunnel_id  = bpf_htonl(tunnel_id);
     __builtin_memcpy(&ref->encap, encap, sizeof(ref->encap));
     return ref;
 }
@@ -119,16 +98,16 @@ make_verify(struct verify   *ref,
 ////////////////////////////////
 // Service (GUE Header)
 struct service {
-    struct identity identity;
+    __u32  tunnel_id;
     struct verify   key;
 };
 
 static inline struct service *
 make_service(struct service  *ref,
-             struct identity *identity,
+             __u32  *tunnel_id,
              struct verify   *key)
 {
-    ref->identity   = *identity;
+    ref->tunnel_id   = *tunnel_id;
     ref->key        = *key;
     return ref;
 }
