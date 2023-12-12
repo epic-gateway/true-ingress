@@ -380,20 +380,6 @@ int main(int argc, char **argv)
         __u32 tid = atoi(argv[4]);
         struct encap_key ekey = { 0 };
 
-        if (argc == 9) {
-            proto = get_proto_number(argv[5]);
-            if( proto == 0) {
-                fprintf(stderr, "Unsupported IP proto \'%s\'\n", argv[5]);
-                return 1;
-            }
-
-            if (inet_aton(argv[6], &to) == 0) {
-                fprintf(stderr, "Invalid address %s\n", argv[6]);
-                return 1;
-            }
-            make_encap_key(&ekey, to.s_addr, atoi(argv[7]), proto, 0);
-        }
-
         make_identity(&id, atoi(argv[2]), atoi(argv[3]));
         make_verify(&pwd, tid, &ekey);
 
