@@ -38,11 +38,6 @@ struct guehdr {
 };
 
 struct gueexthdr {
-    __u32   gidsid;
-};
-
-struct guepinghdr {
-    struct gueexthdr ext;
     __u32   tunnelid;
 };
 
@@ -495,7 +490,7 @@ int gue_encap_v4(struct __sk_buff *skb, struct tunnel *tun, struct service *svc)
     // prepare new outer network header
     // fill GUE
     h_outer.gue = 0xa00405;   //GUE data header: 0x0504a000
-    h_outer.gue_id = svc->identity.service_id + (svc->identity.group_id << 16);
+    h_outer.gue_id = svc->tunnel_id;
 
     // fill IP
     h_outer.ip = iph_inner;
