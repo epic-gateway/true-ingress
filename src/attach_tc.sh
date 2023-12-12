@@ -24,7 +24,7 @@ function lookup()
 sudo mount -t bpf bpf /sys/fs/bpf/
 
 if [ ! "${NIC}" ] ; then
-    NIC=$(ip route | grep default | awk '{print $5}')
+    NIC=$(ip route | head -1 | grep default | awk '{print $5}')
 fi
 
 echo "Loading TC to ${NIC}..."
