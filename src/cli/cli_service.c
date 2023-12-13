@@ -68,14 +68,15 @@ int map_verify_get(int map_fd, __u32 *key, struct verify *value) {
 }
 
 bool map_verify_getall(int map_fd) {
-    __u32 prev_key, key;
+    __u32 prev_key=0xffffffff, key;
     struct verify value;
     __u32 count = 0;
 
     map_verify_print_header();
     while (bpf_map_get_next_key(map_fd, &prev_key, &key) == 0) {
         if (map_verify_get(map_fd, &key, &value)) {
-            break;
+						fprintf(stderr, "can't find record %d\n", key);
+						continue;
         }
         map_verify_print_record(&key, &value);
         ++count;
