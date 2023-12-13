@@ -201,51 +201,6 @@ In case bool=false: service does not exist.
 In case bool=true: returns tunnel identified by tunnel-id (group-id, service-id pair computed by `GetServiceKey()`). Uses `ForwardingGetAll()` in background.
 In case bool=false: tunnel does not exist. 
 
-
-### pfc_cli_go.go
-
-Binary which imports and uses Go API.
-It is demo application of Go API and can be used as an alternative to `test/pfc_add.sh`, `test/pfc_delete.sh` and `test/pfc_list.sh` scripts.
-There are `test/ebpf/test_go_0x.sh` tests which exactly do that.
-
-#### pfc_cli_go version
-
-Report version.
-
-> Note: There is no official versioning yet.
-
-    pfc_cli_go version
-
-#### pfc_cli_go check
-
-Check whether TrueIngress is present and running on the system.
-
-    pfc_cli_go check
-
-#### pfc_cli_go add
-
-Configure forwarding
-
-    pfc_cli_go add <interface> <group-id> <service-id> <pwd> <proto> <proxy-ip> <proxy-port> <service-ip> <service-port> <gue-ip> <gue-port>
-
-#### pfc_cli_go del
-
-Delete forwarding
-
-    pfc_cli_go del <group-id> <service-id>
-
-#### pfc_cli_go list
-
-List all configured tunnels and services.
-
-    pfc_cli_go list
-
-#### pfc_cli_go help
-
-Show help.
-
-    pfc_cli_go help
-
 ### gue_ping_svc_auto.go
 
 Go daemon which periodically sends GUE ping for all configured tunnels.

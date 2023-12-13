@@ -224,8 +224,6 @@ Service is running locally. To make it publicly available, create proxy setting 
 
 Once service and TrueIngress is running and configured, you can configure service forwarding by using `pfc_add.sh` script described below.
 
-> Note there is also Go binary (using Go API) with similar functionality `cmd/pfc_cli_go`.
-
 
 ##### Teardown
 

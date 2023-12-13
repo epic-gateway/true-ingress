@@ -5,4 +5,3 @@ src/cli_tunnel
 src/cli_service
 README.md
 gue_ping_svc_auto
-pfc_cli_go
