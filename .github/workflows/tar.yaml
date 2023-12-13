@@ -15,7 +15,7 @@ jobs:
       run: sudo scripts/dependencies.sh
 
     - name: Build package
-      run: make tar
+      run: "CI_COMMIT_REF_NAME=\"${{ github.ref_name }}\" CI_COMMIT_SHORT_SHA=\"${{ github.sha }}\" make tar"
 
     - name: Upload package
       uses: actions/upload-artifact@v3
