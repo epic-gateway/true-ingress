@@ -64,7 +64,6 @@ cli_cfg
 cli_tunnel
 cli_service
 gue_ping_svc_auto
-pfc_cli_go
 
 # tracing userspace programs
 
