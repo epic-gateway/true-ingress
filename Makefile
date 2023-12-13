@@ -41,6 +41,8 @@ go:
 tar: build
 	mkdir -p pkg/bin
 
+	echo $(CI_COMMIT_REF_NAME) / $(CI_COMMIT_SHORT_SHA) > pkg/bin/VERSION
+
 	# Copy eBPF
 	cp ./src/bpf/*.o pkg/bin/
 
