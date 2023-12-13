@@ -81,41 +81,26 @@ make_tunnel(struct tunnel *ref,
 }
 
 ////////////////////////////////
-// Verify
-
-struct verify {
-    struct encap_key encap;
-};
-
-static inline struct verify *
-make_verify(struct verify   *ref,
-            struct encap_key *encap)
-{
-    __builtin_memcpy(&ref->encap, encap, sizeof(ref->encap));
-    return ref;
-}
-
-////////////////////////////////
 // Service (GUE Header)
 struct service {
     __u32  tunnel_id;
-    struct verify   key;
+    struct encap_key encap;
 };
 
 static inline struct service *
 make_service(struct service  *ref,
              __u32  *tunnel_id,
-             struct verify   *key)
+             struct encap_key *key)
 {
     ref->tunnel_id   = *tunnel_id;
-    ref->key        = *key;
+    ref->encap        = *key;
     return ref;
 }
 
 ////////////////////////////////
 // Configuration
 
-#define CFG_RX_GUE      1       /* unimplemented */
+#define CFG_RX_PROXY    1       /* set in case of EGW (do not set for NODE) */
 #define CFG_RX_DNAT     2       /* unimplemented */
 #define CFG_RX_FWD      4       /* Forward packet after FIB lookup */
 #define CFG_RX_DUMP     8       /* Dump intercepted packet */

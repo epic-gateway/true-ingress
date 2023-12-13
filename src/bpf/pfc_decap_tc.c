@@ -115,10 +115,6 @@ int pfc_decap(struct __sk_buff *skb)
             return debug_action(TC_ACT_SHOT, debug);
         }
 
-        // get verify structure
-        struct verify *verify = bpf_map_lookup_elem(&map_verify, (struct identity *)&gueext->tunnelid);
-        ASSERT(verify != 0, debug_action(TC_ACT_UNSPEC, debug), "ERROR: Tunnel id %u not found!\n", bpf_ntohl(gueext->tunnelid));
-
         // Cache the tunnel id since decapping the packet invalidates gueext
         __u32 tunnelid = gueext->tunnelid;
 
@@ -145,13 +141,13 @@ int pfc_decap(struct __sk_buff *skb)
             }
         }
 
-        if (verify->encap.ifindex == 0) {                      // PureLB
+				if ((cfg->flags & CFG_RX_PROXY) == 0) {                      // PureLB
             struct encap_key skey = { { 0 } , 0 };
             struct endpoint dep = { 0 };
             ASSERT(parse_ep(skb, &skey.ep, &dep) != TC_ACT_SHOT, debug_action(TC_ACT_UNSPEC, debug), "ERROR: SRC EP parsing failed!\n");
 
-            struct service svc = { tunnelid, {{ 0 }}};
-            __builtin_memcpy(&svc.key, verify, sizeof(*verify));
+            struct service svc = { tunnelid, {{ 0 }, 0}};
+            __builtin_memcpy(&svc.encap, &dep, sizeof(struct endpoint));
 
             // update TABLE-ENCAP
             debug_print(debug, "updating encap table key: %x:%x:%x\n", skey.ep.ip, skey.ep.port, skey.ep.proto);
