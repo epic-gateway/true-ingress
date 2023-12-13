@@ -258,56 +258,6 @@ void parse_dest_ep(struct endpoint *ep, struct headers *hdr)
         ep->port = hdr->tcph->dest;
     else if (hdr->udph)
         ep->port = hdr->udph->dest;
-
-//    bpf_print("Parsed Destination EP: ip %x, port %u, proto %u\n", ep->ip, bpf_ntohs(ep->port), bpf_ntohs(ep->proto));
-//    bpf_print("Parsed Destination EP: %lx\n", *(__u64*)ep);
-}
-
-static inline
-int dnat4(struct __sk_buff *skb, struct headers *hdr, __u32 new_ip, __u16 new_port)
-{
-    int ret, off_l4_csum = 0, off_port = 0, flags = IS_PSEUDO;
-    __u32 old_ip = hdr->iph->daddr;
-    __u16 old_port = 0;
-
-    switch (hdr->iph->protocol) {
-    case IPPROTO_TCP:
-        off_l4_csum = hdr->off_tcph + TCP_CSUM_OFF;
-        off_port = hdr->off_tcph + TCP_DPORT_OFF;
-        break;
-
-    case IPPROTO_UDP:
-        off_l4_csum = hdr->off_udph + UDP_CSUM_OFF;
-        off_port = hdr->off_udph + UDP_DPORT_OFF;
-        flags |= BPF_F_MARK_MANGLED_0;
-        break;
-    }
-
-    ASSERT(off_port, TC_ACT_OK, "Couldn\'t determine port offset\n");
-    ASSERT(off_l4_csum, TC_ACT_OK, "Couldn\'t determine csum offset\n");
-
-    if (bpf_skb_load_bytes(skb, off_port, &old_port, sizeof(old_port)) < 0) {
-        return TC_ACT_OK;
-    }
-
-    // checksum
-    ret = bpf_l4_csum_replace(skb, off_l4_csum, old_ip, new_ip, flags | sizeof(new_ip));
-    ASSERT(ret >= 0, TC_ACT_UNSPEC, "bpf_l4_csum_replace failed: %d\n", ret);
-
-    ret = bpf_l4_csum_replace(skb, off_l4_csum, old_port, new_port, flags | sizeof(new_port));
-    ASSERT(ret >= 0, TC_ACT_UNSPEC, "bpf_l4_csum_replace failed: %d\n", ret);
-
-    ret = bpf_l3_csum_replace(skb, hdr->off_iph + IP_CSUM_OFF, old_ip, new_ip, sizeof(new_ip));
-    ASSERT(ret >= 0, TC_ACT_UNSPEC, "bpf_l3_csum_replace failed: %d\n", ret);
-
-    // values
-    ret = bpf_skb_store_bytes(skb, hdr->off_iph + IP_DST_OFF, &new_ip, sizeof(new_ip), 0);
-    ASSERT(ret >= 0, TC_ACT_UNSPEC, "bpf_skb_store_bytes() failed: %d\n", ret);
-
-    ret = bpf_skb_store_bytes(skb, off_port, &new_port, sizeof(new_port), 0);
-    ASSERT(ret >= 0, TC_ACT_UNSPEC, "bpf_skb_store_bytes() failed: %d\n", ret);
-
-    return TC_ACT_OK;
 }
 
 //////////////////////////////
