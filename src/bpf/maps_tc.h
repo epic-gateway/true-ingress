@@ -10,7 +10,6 @@
 #include "struct_tc.h"
 
 #define MAX_CONFIG_ENTRIES      1024
-#define MAX_TUNNEL_ENTRIES      256*1024
 #define MAX_SERVICE_ENTRIES     65535
 #define MAX_ENCAP_ENTRIES       1024*1024
 
@@ -46,16 +45,5 @@ struct bpf_elf_map SEC(ELF_SECTION_MAPS) map_tunnel = {
     .pinning        = PIN_GLOBAL_NS,
 };
 BPF_ANNOTATE_KV_PAIR(map_tunnel, __u32, struct tunnel);
-
-////////////////////////////////
-// TABLE-PROXY veth-ifindex -> MAC (6B)
-struct bpf_elf_map SEC(ELF_SECTION_MAPS) map_proxy = {
-    .type           = BPF_MAP_TYPE_HASH,
-    .size_key       = sizeof(__u32),
-    .size_value     = sizeof(struct mac),
-    .max_elem       = MAX_SERVICE_ENTRIES,
-    .pinning        = PIN_GLOBAL_NS,
-};
-BPF_ANNOTATE_KV_PAIR(map_proxy, __u32, struct mac);
 
 #endif /* MAPS_TC_H_ */
