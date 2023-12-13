@@ -36,7 +36,6 @@ check:
 
 go:
 	CGO_ENABLED=0 go build -ldflags "-X main.version=${CI_COMMIT_REF_NAME} -X main.commit=${CI_COMMIT_SHORT_SHA}" -tags 'osusergo netgo' ./cmd/gue_ping_svc_auto
-	CGO_ENABLED=0 go build -ldflags "-X main.version=${CI_COMMIT_REF_NAME} -X main.commit=${CI_COMMIT_SHORT_SHA}" -tags 'osusergo netgo' ./cmd/pfc_cli_go
 
 tar: build
 	mkdir -p pkg/bin
@@ -50,7 +49,7 @@ tar: build
 	cp ./src/cli/cli_cfg ./src/cli/cli_service ./src/cli/cli_tunnel pkg/bin/
 
 	# for GUE Ping
-	cp ./gue_ping_svc_auto ./pfc_cli_go pkg/bin/
+	cp ./gue_ping_svc_auto pkg/bin/
 
 	chmod +x pkg/bin/*
 
@@ -63,7 +62,7 @@ clean-tar:
 	rm -rf pkg
 
 $(CLEAN):
-	rm -rf pfc_cli_go gue_ping_svc_auto
+	rm -rf gue_ping_svc_auto
 	$(MAKE) -C $(subst _clean,,$@) clean
 
 help:

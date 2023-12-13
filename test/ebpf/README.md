@@ -3,41 +3,6 @@
 Tests to attach and detach TC programs to **EPIC** and/or **NODE**.
 Check kernel trace */sys/kernel/debug/tracing/trace* for output.
 
-## Dev tests
-
-## Go tests
-
-Simple tests using Go API (`cmd/pfc_cli_go`) to setup forwarding instead of bash sript (`pfc_add.sh`).
-
-### test_go_01.sh
-
-Variation to `test_simple_2gw_01.sh`.
-Test creating single forwarding on **EPIC** for service running on **Node1**.
-
-Run:
-
-    ./test_go_01.sh [-v|-V]
-
-    -v verbose output
-    -V very verbose output
-    
-Expected: PASS
-Status: PASS
-
-### test_go_02.sh
-
-Test creating 2 forwardings on **EPIC** for 2 services, both located on **Node1**.
-
-Run:
-
-    ./test_go_02.sh [-v|-V]
-
-    -v verbose output
-    -V very verbose output
-
-Expected: PASS
-Status: PASS
-
 ## GUE ping tests
 
 Tests for GUE ping resolution.

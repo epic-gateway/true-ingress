@@ -53,8 +53,7 @@ COPY --from=builder /usr/src/pfc/test/pfc_*.sh ./
 COPY --from=builder /usr/src/pfc/test/docker/server.py /usr/src/pfc/test/docker/udp_server.py /usr/src/pfc/test/docker/udp_client.py ./
 
 # for GUE Ping
-#COPY --from=builder /usr/src/pfc/test/docker/gue_ping*.py ./
-COPY --from=builder /usr/src/pfc/gue_ping_svc_auto /usr/src/pfc/pfc_cli_go ./
+COPY --from=builder /usr/src/pfc/gue_ping_svc_auto ./
 
 RUN chmod +x ./*
 
