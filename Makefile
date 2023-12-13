@@ -1,8 +1,8 @@
 SOURCES = libbpf/src headers common src/cli src/bpf
 CLEAN = $(addsuffix _clean,$(SOURCES))
 TARFILE = pkg/true-ingress.tar.bz2
-# These will be set if we're building in a gitlab CI environment and
-# we'll default it to "dev" in other cases
+# These will be set if we're building in a CI environment and we'll
+# default it to "dev" in other cases
 CI_COMMIT_REF_NAME ?= dev
 CI_COMMIT_SHORT_SHA ?= dev
 
@@ -13,8 +13,6 @@ all: tar
 clean: $(CLEAN) clean-tar
 
 build: $(SOURCES) go
-
-rebuild: clean build
 
 docker:
 	test/docker/prod.sh ${TAG}
@@ -66,10 +64,9 @@ $(CLEAN):
 	$(MAKE) -C $(subst _clean,,$@) clean
 
 help:
-	@echo 'all              build + check + prod-img'
+	@echo 'all              build everything'
 	@echo 'clean            remove build products from src folder'
 	@echo 'build            build content of scr folder'
-	@echo 'rebuild          clean + build'
 	@echo 'check            try to attach/detach TCs locally'
 	@echo 'docker           (re)build docker image (set TAG to override default tag)'
 	@echo 'push             push docker image (set TAG to override default tag)'

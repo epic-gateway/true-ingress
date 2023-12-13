@@ -1,4 +1,4 @@
 # SPDX-License-Identifier: (GPL-2.0 OR BSD-2-Clause)
 
 all:
-	sudo ./test_go.sh
+	sudo ./test_all.sh

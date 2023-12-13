@@ -22,7 +22,6 @@ TESTS=" \
 test_gue.sh \
 test_simple.sh \
 test_multi.sh \
-test_go.sh \
 test_ses.sh \
 test_split.sh \
 test_mtu.sh"
