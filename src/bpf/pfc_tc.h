@@ -454,7 +454,7 @@ int gue_encap_v4(struct __sk_buff *skb, struct tunnel *tun, struct service *svc)
     set_ipv4_csum((void *)&h_outer.ip);
 
     // fill UDP
-    int len = bpf_ntohs(iph_inner.tot_len) + sizeof(h_outer.udp) + sizeof(h_outer.gue) + 4 /*sizeof(h_outer.gueext*/;
+    int len = bpf_ntohs(iph_inner.tot_len) + sizeof(h_outer.udp) + sizeof(h_outer.gue) + sizeof(h_outer.gueext);
     h_outer.udp.dest    = tun->port_remote;
     h_outer.udp.source  = tun->port_local;
     h_outer.udp.len     = bpf_htons(len);
