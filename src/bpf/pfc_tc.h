@@ -45,18 +45,14 @@ struct tunhdr {
     struct iphdr        ip;
     struct udphdr       udp;
     __u32               gue;
-    __u32               gue_id;
+    struct gueexthdr    gue_id;
 } __attribute__((packed));
 
 // In order to safely parse a GUE packet we need to ensure that there
 // are at least this many bytes in the packet's skb data. Not all
 // packets have that at first. In some cases we need to
 // bpf_skb_pull_data() this many bytes before we can parse.
-#define TOTAL_GUE_HEADER_SIZE sizeof(struct ethhdr) \
-    + sizeof(struct iphdr) \
-    + sizeof(struct udphdr) \
-    + sizeof(struct guehdr) \
-    + sizeof(struct gueexthdr)
+#define TOTAL_GUE_HEADER_SIZE sizeof(struct ethhdr) + sizeof(struct tunhdr)
 
 // In order to safely call parse_ep() on a packet we need to ensure
 // that there are at least this many linear bytes in the packet's skb
@@ -332,7 +328,7 @@ static __always_inline
 int gue_encap_v4(struct __sk_buff *skb, struct tunnel *tun, struct service *svc)
 {
     struct iphdr iph_inner = { 0 };
-    struct tunhdr h_outer = {{0}, {0}, 0, 0};
+    struct tunhdr h_outer = {{0}, {0}, 0, {0}};
     int olen = sizeof(h_outer);
     __u64 flags = 0;
     int ret;
@@ -440,7 +436,7 @@ int gue_encap_v4(struct __sk_buff *skb, struct tunnel *tun, struct service *svc)
     // prepare new outer network header
     // fill GUE
     h_outer.gue = 0xa00405;   //GUE data header: 0x0504a000
-    h_outer.gue_id = svc->tunnel_id;
+    h_outer.gue_id.tunnelid = svc->tunnel_id;
 
     // fill IP
     h_outer.ip = iph_inner;
@@ -454,7 +450,7 @@ int gue_encap_v4(struct __sk_buff *skb, struct tunnel *tun, struct service *svc)
     set_ipv4_csum((void *)&h_outer.ip);
 
     // fill UDP
-    int len = bpf_ntohs(iph_inner.tot_len) + sizeof(h_outer.udp) + sizeof(h_outer.gue) + 4 /*sizeof(h_outer.gueext*/;
+    int len = bpf_ntohs(iph_inner.tot_len) + sizeof(h_outer.udp) + sizeof(h_outer.gue) + sizeof(h_outer.gue_id);
     h_outer.udp.dest    = tun->port_remote;
     h_outer.udp.source  = tun->port_local;
     h_outer.udp.len     = bpf_htons(len);
